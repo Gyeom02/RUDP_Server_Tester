@@ -3,10 +3,10 @@
 *.lo
 *.o
 *.obj
-Binary/
-Common/
-Libraries/
-Tools/
+
+
+
+
 .sln
 .vs/
 # Compiled Dynamic libraries
