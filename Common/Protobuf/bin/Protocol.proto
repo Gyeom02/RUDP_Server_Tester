@@ -1,0 +1,205 @@
+syntax = "proto3";
+package Protocol;
+
+import "Enum.proto";
+import "Struct.proto";
+
+message C_DISCONNECT
+{
+	int32 id = 1;
+	int32 roomid = 2;
+	int32 roomprimid = 3;
+}
+
+message S_DISCONNECT
+{
+
+}
+
+message C_INIT
+{
+	int32 hadid = 1;
+}
+
+message S_INIT
+{
+	int32 id = 1;
+	string nickname = 2;
+}
+
+
+message C_LOGIN
+{
+
+}
+
+message S_LOGIN
+{
+	int32 bsuccess = 1;
+	repeated Player players = 2; // 아이디 발급 전
+}
+
+message C_ENTER_GAME
+{
+	int64 playerIndex = 1;
+}
+
+message S_ENTER_GAME
+{
+	int32 bsuccess = 1;
+}
+message C_MSG
+{
+	string msg = 1;
+}
+
+message S_MSG
+{
+	string msg = 1;
+}
+
+message C_MAKEROOM
+{
+	int32 id = 1;
+}
+
+message S_MAKEROOM
+{
+	int32 randomcode = 1;
+	int32 roomid = 2;
+	int32 roomprimid = 3;
+	int32 roomlistid = 4;
+}
+
+message C_ENTERROOM
+{
+	int32 id = 1;
+	int32 roomid = 2;
+}
+
+message S_ENTERROOM
+{
+	int32 roomid = 1;
+	int32 roomprimid = 2;
+	int32 roomlistid = 3;
+	int32 teammode = 4;
+	repeated Player players = 5;
+}
+message S_NEWPLAYER
+{
+	Player players = 1;
+}
+
+message C_MOVETEAM
+{
+	int32 roomprimeid = 1;
+	int32 roomlistid = 2;
+	int32 movetolistid = 3;
+	int32 roomid = 4;
+}
+
+message S_MOVETEAM
+{
+	repeated MoveList moveinforms = 1;
+}
+
+message C_LEAVEROOM
+{
+	int32 roomid = 1;
+	int32 primid = 2;
+}
+
+message S_LEAVEROOM
+{
+	int32 primid = 1;
+	int32 listid = 2;
+	int32 newroomid = 3;
+
+}
+
+message C_CHANGETEAMMODE
+{
+	int32 roomid = 1;
+	int32 primid = 2;
+	int32 teammode = 3;
+	int32 id = 4;
+}
+
+message S_CHANGETEAMMODE
+{
+	int32 teammode = 1;
+	repeated MoveList moveteams = 2;
+}
+
+message C_MOVESELECTROOM
+{
+	int32 id = 1;
+	int32 roomid = 2;
+}
+
+message S_MOVESELECTROOM
+{
+
+}
+
+message C_CHANGECHARAC
+{
+	int32 primid = 1;
+	int32 roomid = 2;
+	int32 characid = 3;
+	int32 skinid = 4;
+}
+
+
+message S_CHANGECHARAC
+{
+	int32 primid = 1;
+	int32 characid = 2;
+	int32 skinid = 3;
+}
+
+message C_READY
+{
+	int32 primid = 1;
+	int32 roomid = 2;
+	int32 bready = 3;
+}
+
+
+message S_READY
+{
+	int32 primid = 1;
+	int32 bready = 2;
+}
+
+message S_STARTGAME
+{
+
+}
+
+message C_SENDIMPORT
+{
+	PlayerMove playermove = 1;
+}
+
+message S_SENDIMPORT
+{
+	repeated PlayerMove playermoves = 1;
+}
+
+message C_RUDPACK
+{
+	int32 bhascount = 1;
+	int32 start = 2;
+	int32 count = 3;
+	int32 playerid = 4;
+}
+
+
+message S_RUDPACK
+{
+	int32 bhascount = 1;
+	int32 start = 2;
+	int32 count = 3;
+	int32 playerid = 4;
+}
