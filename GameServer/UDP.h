@@ -20,6 +20,7 @@ public:
 	bool UDPInit();
 	void UDPClear();
 
+	void CheckPacketPriority(UDPSocketPtr udpSocket, NetAddress clientAddress, BYTE* buffer, int32 len);
 	void UDPPacketHandle(UDPSocketPtr udpSocket, NetAddress clientAddress, BYTE* buffer, int32 len);
 	void UDPDoJop();
 	UDPSocketPtr GetUDPSocket(int32 index)

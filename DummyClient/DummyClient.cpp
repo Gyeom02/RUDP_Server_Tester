@@ -20,7 +20,7 @@ public:
 	virtual void OnConnected() override
 	{
 		Protocol::C_LOGIN pkt;
-		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+		auto sendBuffer = ServerPacketHandler::MakeReliableBuffer(pkt, QoSCore::HIGH);
 		Send(sendBuffer);
 	}
 
@@ -58,7 +58,7 @@ int32 Init_Send()
 	SOCKADDR_IN netaddr = GUDP.GetUDPSocket(0)->GetNetAddress().GetSockAddr();
 	UDPSocketPtr socketPtr = GUDP.GetUDPSocket(0);
 	Protocol::C_INIT pkt;
-	SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+	SendBufferRef sendBuffer = ServerPacketHandler::MakeUnReliableBuffer(pkt);
 	//cout << netAddr.GetPort()<< endl;
 	//wcout << netAddr.GetIpAddress() << endl;
 	int32 addrLen = sizeof(netaddr);
@@ -224,11 +224,22 @@ int main()
 					//break;
 			}
 			});
-	for (int32 i = 0; i < 5; i++)
+	for (int32 i = 0; i < 3; i++)
 	{
 		GThreadManager->Launch([=]()
 			{
 				GUDP.UDPDoJop();
+
+			});
+
+	}
+	for (int32 i = 0; i < 2; i++)
+	{
+		
+		GThreadManager->Launch([=]()
+			{
+				//cout << "LaDoWork" << endl;
+				GQoS.DoWork();
 
 			});
 
@@ -239,7 +250,7 @@ int main()
 	for(auto& p : GPlayerManager.GetPlayers())
 		Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->GetOwnerSocket()), p.second->GetNetAddr(), sendBufferr);
 	*/
-	this_thread::sleep_for(2s);
+	this_thread::sleep_for(1s);
 	for (int32 i = 0; i < 1; i++) // i = 패킷 강도를 나타냄
 		GThreadManager->Launch([=]() // 플레이어 클래스마다 RUDP AckRange 클래스 배열을 갖고있고 돌아가면서 차있으면 AckRange 정보를 송신한다
 			{
@@ -253,10 +264,17 @@ int main()
 					{
 						if (p.second->playerId != 0)
 						{
+							
 							Protocol::C_MSG chatPkt;
 							chatPkt.set_msg(u8"Hello World !");
-							auto sendBufferchatPkt = ServerPacketHandler::MakeSendBuffer(chatPkt);
+							auto sendBufferchatPkt = ServerPacketHandler::MakeUnReliableBuffer(chatPkt);
 							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt);
+							
+							auto sendBufferchatPkttt = ServerPacketHandler::MakeReliableBuffer(chatPkt, QoSCore::LOW);
+							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkttt);
+
+							auto sendBufferchatPktt = ServerPacketHandler::MakeReliableBuffer(chatPkt, QoSCore::HIGH);
+							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPktt);
 						}
 					}
 					//PacketDeliverCondition();
@@ -295,7 +313,7 @@ int main()
 						pkt.set_count(count);
 						pkt.set_start(start);
 						pkt.set_playerid(player->playerId);
-						SendBufferRef sendBufferR = ServerPacketHandler::MakeSendBuffer(pkt);
+						SendBufferRef sendBufferR = ServerPacketHandler::MakeUnReliableBuffer(pkt);
 						player->Send(sendBufferR);
 						//cout << "Send RUDP ACK" << endl;
 					}

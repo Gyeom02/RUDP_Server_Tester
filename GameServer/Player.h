@@ -1,5 +1,6 @@
 #pragma once
 #include "UDP.h"
+#include "Object.h"
 using PlayerRef = shared_ptr<class Player>;
 struct Position
 {
@@ -44,13 +45,14 @@ struct Velocity
 	atomic<float> vz;
 };
 
-class Player : public enable_shared_from_this<Player>
+class Player : public Object
 {
 public:
 	Player(int32 id);
-	~Player() { cout << "Player ID : " << playerId << " Erased" << endl; } // 메모리 누수 확인
+	virtual ~Player() { cout << "Player ID : " << playerId << " Erased" << endl; } // 메모리 누수 확인
 
-	void Send(SendBufferRef sendBuffer);
+	 void Send(SendBufferRef sendBuffer);
+	virtual void PriortySend(SendBufferRef sendBuffer) override;
 	void SetImport(Position _pos, Rotation _rot, Velocity _vel);
 	void SetNickName(string nickname);
 	string GetNickName();

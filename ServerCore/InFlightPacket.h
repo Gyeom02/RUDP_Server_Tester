@@ -28,7 +28,7 @@ private:
 class InFlightPacket
 {
 public:
-	InFlightPacket(SOCKET socket, NetAddress netAddr, PacketSequenceNumber packetSN, SendBufferRef sendBuffer) : _socket(socket), _netAddr(netAddr), _packetSequenceNumber(packetSN), _sendBuffer(sendBuffer) { mTimeDispatched = GetTickCount64(); }
+	InFlightPacket(SOCKET object, NetAddress netAddr, PacketSequenceNumber packetSN, SendBufferRef sendBuffer) : _socket(object), _netAddr(netAddr), _packetSequenceNumber(packetSN), _sendBuffer(sendBuffer) { mTimeDispatched = GetTickCount64(); }
 	~InFlightPacket() {}
 
 	NetAddress GetNetAddr() { return _netAddr; }

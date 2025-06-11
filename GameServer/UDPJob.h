@@ -7,12 +7,13 @@ public:
 	UDPJob() {};
 	~UDPJob() {};
 
-	void Push(JobFunc job);
+	void Push(JobFunc job, int priority);
 	void DOJob();
 	JobFunc Pop();
 private:
 	USE_LOCK;
-	Queue<JobFunc> jobQueue;
+	Queue<JobFunc> highJobQueue;
+	Queue<JobFunc> lowJobQueue;
 };
 
 extern UDPJob GUDPJob;

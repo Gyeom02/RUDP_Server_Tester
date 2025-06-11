@@ -146,11 +146,19 @@ int main()
 				});
 
 		}
-		for (int32 i = 0; i < 4; i++)
+		for (int32 i = 0; i < 2; i++)
 		{
 			GThreadManager->Launch([=]()
 				{
 					GUDP.UDPDoJop();
+				});
+
+		}
+		for (int32 i = 0; i < 2; i++)
+		{
+			GThreadManager->Launch([=]()
+				{
+					GQoS.DoWork();
 				});
 
 		}
@@ -184,16 +192,16 @@ int main()
 					pkt.set_count(ackCount);
 					pkt.set_start(ackStart);
 					pkt.set_playerid(p.second->playerId);
-					SendBufferRef sendBuffer = ClientPacketHandler::MakeSendBuffer(pkt);
+					SendBufferRef sendBuffer = ClientPacketHandler::MakeUnReliableBuffer(pkt);
 					p.second->Send(sendBuffer);
 					//GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);
 					ackpreStart = ackStart;
-					cout << "Send RUDP ACK player->playerId : " << p.second->playerId << endl;
+					//cout << "Send RUDP ACK player->playerId : " << p.second->playerId << endl;
 				}
 				else
 					break;
 			}
-			player->GetDeliveyManager()->ProcessTimeOutPackets();
+			p.second->GetDeliveyManager()->ProcessTimeOutPackets();
 			//PacketDeliverCondition();
 		}
 	}

@@ -1,5 +1,6 @@
 #pragma once
 #include "JobQueue.h"
+constexpr size_t SHARD_COUNT = 64;
 
 class Room : public JobQueue
 {
@@ -77,6 +78,17 @@ private:
 
 using RoomRef = shared_ptr<Room>;
 
+class RoomShard
+{
+public:
+	void Make(RoomRef room);
+	void Remove(RoomRef room);
+	void Broadcast(SendBufferRef sendBuffer);
+	RoomRef GetRoom(int32 id);
+	unordered_map<int, RoomRef> _rooms;
+	USE_LOCK;
+};
+
 class Rooms
 {
 public:
@@ -87,8 +99,8 @@ public:
 	RoomRef GetRoom(int32 id); 
 
 private:
-	map<int32, RoomRef> _rooms;
-	USE_LOCK;
+	Array<RoomShard, SHARD_COUNT> _roomShards;
+	//USE_LOCK;
 };
 
 extern shared_ptr<Rooms> GRoom;

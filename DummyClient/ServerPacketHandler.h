@@ -4,6 +4,7 @@
 #include "NetAddress.h"
 //#include "DeliveryNotificationManager.h"
 #include "Player.h"
+#include "QoSCore.h"
 
 using PacketHandlerFunc = std::function<bool(UDPSocketPtr, NetAddress, BYTE*, int32)>;
 extern PacketHandlerFunc GPacketHandler[UINT16_MAX];
@@ -95,23 +96,25 @@ public:
 		PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
 		return GPacketHandler[header->id](udpSocket, clientAddr, buffer, len);
 	}
-	static SendBufferRef MakeSendBuffer(Protocol::C_DISCONNECT& pkt) { return MakeSendBuffer(pkt, PKT_C_DISCONNECT); }
-	static SendBufferRef MakeSendBuffer(Protocol::C_INIT& pkt) { return MakeSendBuffer(pkt, PKT_C_INIT); }
-	static SendBufferRef MakeSendBuffer(Protocol::C_LOGIN& pkt) { return MakeSendBuffer(pkt, PKT_C_LOGIN); }
-	static SendBufferRef MakeSendBuffer(Protocol::C_ENTER_GAME& pkt) { return MakeSendBuffer(pkt, PKT_C_ENTER_GAME); }
-	static SendBufferRef MakeSendBuffer(Protocol::C_MSG& pkt) { return MakeSendBuffer(pkt, PKT_C_MSG); }
-	static SendBufferRef MakeSendBuffer(Protocol::C_MAKEROOM& pkt) { return MakeSendBuffer(pkt, PKT_C_MAKEROOM); }
-	static SendBufferRef MakeSendBuffer(Protocol::C_ENTERROOM& pkt) { return MakeSendBuffer(pkt, PKT_C_ENTERROOM); }
-	static SendBufferRef MakeSendBuffer(Protocol::C_MOVETEAM& pkt) { return MakeSendBuffer(pkt, PKT_C_MOVETEAM); }
-	static SendBufferRef MakeSendBuffer(Protocol::C_LEAVEROOM& pkt) { return MakeSendBuffer(pkt, PKT_C_LEAVEROOM); }
-	static SendBufferRef MakeSendBuffer(Protocol::C_CHANGETEAMMODE& pkt) { return MakeSendBuffer(pkt, PKT_C_CHANGETEAMMODE); }
-	static SendBufferRef MakeSendBuffer(Protocol::C_MOVESELECTROOM& pkt) { return MakeSendBuffer(pkt, PKT_C_MOVESELECTROOM); }
-	static SendBufferRef MakeSendBuffer(Protocol::C_CHANGECHARAC& pkt) { return MakeSendBuffer(pkt, PKT_C_CHANGECHARAC); }
-	static SendBufferRef MakeSendBuffer(Protocol::C_READY& pkt) { return MakeSendBuffer(pkt, PKT_C_READY); }
-	static SendBufferRef MakeSendBuffer(Protocol::C_SENDIMPORT& pkt) { return MakeSendBuffer(pkt, PKT_C_SENDIMPORT); }
-	static SendBufferRef MakeSendBuffer(Protocol::C_RUDPACK& pkt) { return MakeSendBuffer(pkt, PKT_C_RUDPACK); }
 
 private:
+	static SendBufferRef MakeSendBuffer(Protocol::C_DISCONNECT& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_C_DISCONNECT, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_INIT& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_C_INIT, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_LOGIN& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_C_LOGIN, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_ENTER_GAME& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_C_ENTER_GAME, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_MSG& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_C_MSG, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_MAKEROOM& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_C_MAKEROOM, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_ENTERROOM& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_C_ENTERROOM, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_MOVETEAM& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_C_MOVETEAM, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_LEAVEROOM& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_C_LEAVEROOM, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_CHANGETEAMMODE& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_C_CHANGETEAMMODE, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_MOVESELECTROOM& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_C_MOVESELECTROOM, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_CHANGECHARAC& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_C_CHANGECHARAC, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_READY& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_C_READY, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_SENDIMPORT& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_C_SENDIMPORT, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_RUDPACK& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_C_RUDPACK, breliable, class_traffic); }
+	
+
 	template<typename PacketType, typename ProcessFunc>
 	static bool HandlePacket(ProcessFunc func, UDPSocketPtr udpSocket, NetAddress clientAddr, BYTE * buffer, int32 len)
 	{
@@ -124,7 +127,7 @@ private:
 	}
 
 	template<typename T>
-	static SendBufferRef MakeSendBuffer(T& pkt, uint16 pktId) 
+	static SendBufferRef MakeSendBuffer(T& pkt, uint16 pktId, const bool& breliable, const uint16& class_traffic) 
 	{
 		const uint16 dataSize = static_cast<uint16>(pkt.ByteSizeLong());
 		const uint16 packetSize = dataSize + sizeof(PacketHeader);
@@ -133,6 +136,8 @@ private:
 		PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 		header->size = packetSize;
 		header->id = pktId;
+		header->breliable = breliable;
+		header->priority = class_traffic;
 		header->retransnum = 0;
 		ASSERT_CRASH(pkt.SerializeToArray(&header[1], dataSize));
 		sendBuffer->Close(packetSize);
@@ -140,5 +145,10 @@ private:
 		return sendBuffer;
 	}
 
+public:
 
+	template<typename PKT>
+	static SendBufferRef MakeReliableBuffer(PKT pkt, uint16 priority) { _ASSERT(priority < QoSCore::MAX);  return MakeSendBuffer(pkt, true, priority); }
+	template<typename PKT>
+	static SendBufferRef MakeUnReliableBuffer(PKT pkt) { return MakeSendBuffer(pkt, false, QoSCore::FPC); } //
 };

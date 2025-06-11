@@ -30,13 +30,13 @@ class DeliveryNotificationManager : public enable_shared_from_this<DeliveryNotif
 public:
 	enum : ULONGLONG
 	{
-		TIMEOUT = 20000,
+		TIMEOUT = 3000,
 	};
 	DeliveryNotificationManager();
 	~DeliveryNotificationManager();
 
 	//¼Û½Å
-	InFlightPacketPtr WriteSeqeuenceNumber(SOCKET socket, NetAddress netAddr, SendBufferRef sendBuffer);
+	InFlightPacketPtr WriteSeqeuenceNumber(SOCKET object, NetAddress netAddr, SendBufferRef sendBuffer);
 	void ProcessAcks(int32 start, int32 count, bool hasCount);
 	void HandlePacketDeliveryFailure(const InFlightPacketPtr& inFlightPacket);
 	void HandlePacketDeliverySuccess(const InFlightPacketPtr& inFlightPacket);

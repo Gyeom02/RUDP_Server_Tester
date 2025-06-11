@@ -172,7 +172,7 @@ void Room::ListSort(int32 teamNum, int32 index) //좀 더 LOCK 수정 봐야함
 			startindex++;
 			less--;
 		}
-		SendBufferRef sendBuffer = ClientPacketHandler::MakeSendBuffer(pkt);
+		SendBufferRef sendBuffer = ClientPacketHandler::MakeReliableBuffer(pkt, QoSCore::HIGH);
 		Broadcast(sendBuffer);
 
 		
@@ -197,7 +197,7 @@ void Room::ListSort(int32 teamNum, int32 index) //좀 더 LOCK 수정 봐야함
 		inform->set_moveteamnum(-1);
 
 		SetListID(sortindex, startindex, listToPrim[sortindex]);
-		SendBufferRef sendBuffer = ClientPacketHandler::MakeSendBuffer(pkt);
+		SendBufferRef sendBuffer = ClientPacketHandler::MakeReliableBuffer(pkt, QoSCore::HIGH);
 		Broadcast(sendBuffer);
 	}
 	else if (TeamModeNum == 3) //2팀
@@ -224,7 +224,7 @@ void Room::ListSort(int32 teamNum, int32 index) //좀 더 LOCK 수정 봐야함
 			startindex++;
 			less--;
 		}
-		SendBufferRef sendBuffer = ClientPacketHandler::MakeSendBuffer(pkt);
+		SendBufferRef sendBuffer = ClientPacketHandler::MakeReliableBuffer(pkt, QoSCore::HIGH);
 		Broadcast(sendBuffer);
 	}
 }
@@ -347,20 +347,20 @@ void Room::ListSortFromZero()
 	}
 }
 
-void Rooms::Make(RoomRef room)
+void RoomShard::Make(RoomRef room)
 {
-//_rooms.insert(make_pair(room->GetRoomID(), room));
+	//_rooms.insert(make_pair(room->GetRoomID(), room));
 	WRITE_LOCK;
 	_rooms[room->GetRoomID()] = room;
 }
 
-void Rooms::Remove(RoomRef room)
+void RoomShard::Remove(RoomRef room)
 {
 	WRITE_LOCK;
 	_rooms.erase(room->GetRoomID());
 }
 
-void Rooms::Broadcast(SendBufferRef sendBuffer)
+void RoomShard::Broadcast(SendBufferRef sendBuffer)
 {
 	WRITE_LOCK;
 	for (auto& p : _rooms)
@@ -369,7 +369,7 @@ void Rooms::Broadcast(SendBufferRef sendBuffer)
 	}
 }
 
-RoomRef Rooms::GetRoom(int32 id)
+RoomRef RoomShard::GetRoom(int32 id)
 {
 	READ_LOCK;
 	auto room = _rooms.find(id);
@@ -377,4 +377,28 @@ RoomRef Rooms::GetRoom(int32 id)
 		return nullptr;
 
 	return (room->second);
+}
+void Rooms::Make(RoomRef room)
+{
+//_rooms.insert(make_pair(room->GetRoomID(), room));
+	_roomShards[room->GetRoomID() % SHARD_COUNT].Make(room);
+}
+
+void Rooms::Remove(RoomRef room)
+{
+	_roomShards[room->GetRoomID() % SHARD_COUNT].Remove(room);
+}
+
+void Rooms::Broadcast(SendBufferRef sendBuffer)
+{
+	for (int i = 0; i < SHARD_COUNT; i++)
+	{
+		_roomShards[i].Broadcast(sendBuffer);
+	}
+}
+
+RoomRef Rooms::GetRoom(int32 id)
+{
+	
+	return _roomShards[id % SHARD_COUNT].GetRoom(id);
 }

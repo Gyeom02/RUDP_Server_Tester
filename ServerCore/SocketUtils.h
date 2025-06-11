@@ -16,24 +16,24 @@ public:
 	static void Init();
 	static void Clear();
 
-	static bool BindWindowsFunction(SOCKET socket, GUID guid, LPVOID* fn);
+	static bool BindWindowsFunction(SOCKET object, GUID guid, LPVOID* fn);
 	static SOCKET CreateSocket();
 
-	static bool SetLinger(SOCKET socket, uint16 onoff, uint16 linger);
-	static bool SetReuseAddress(SOCKET socket, bool flag);
-	static bool SetRecvBufferSize(SOCKET socket, int32 size);
-	static bool SetSendBufferSize(SOCKET socket, int32 size);
-	static bool SetTcpNoDelay(SOCKET socket, bool flag);
-	static bool SetUpdateAcceptSocket(SOCKET socket, SOCKET listenSocket);
+	static bool SetLinger(SOCKET object, uint16 onoff, uint16 linger);
+	static bool SetReuseAddress(SOCKET object, bool flag);
+	static bool SetRecvBufferSize(SOCKET object, int32 size);
+	static bool SetSendBufferSize(SOCKET object, int32 size);
+	static bool SetTcpNoDelay(SOCKET object, bool flag);
+	static bool SetUpdateAcceptSocket(SOCKET object, SOCKET listenSocket);
 
-	static bool Bind(SOCKET socket, NetAddress netAddr);
-	static bool BindAnyAddress(SOCKET socket, uint16 port);
-	static bool Listen(SOCKET socket, int32 backlog = SOMAXCONN);
-	static void Close(SOCKET& socket);
+	static bool Bind(SOCKET object, NetAddress netAddr);
+	static bool BindAnyAddress(SOCKET object, uint16 port);
+	static bool Listen(SOCKET object, int32 backlog = SOMAXCONN);
+	static void Close(SOCKET& object);
 };
 
 template<typename T>
-static inline bool SetSockOpt(SOCKET socket, int32 level, int32 optName, T optVal)
+static inline bool SetSockOpt(SOCKET object, int32 level, int32 optName, T optVal)
 {
-	return SOCKET_ERROR != ::setsockopt(socket, level, optName, reinterpret_cast<char*>(&optVal), sizeof(T));
+	return SOCKET_ERROR != ::setsockopt(object, level, optName, reinterpret_cast<char*>(&optVal), sizeof(T));
 }
