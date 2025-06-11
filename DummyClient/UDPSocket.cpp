@@ -107,7 +107,7 @@ int32 UDPSocket::Send(PlayerRef player, SendBufferRef sendBuffer)
 		FPCSend(player, sendBuffer);
 		return 0;
 	}
-	GQoS.Push(player, sendBuffer);
+	GQoS->Push(player->playerId, player, sendBuffer);
 	return 0;
 }
 
@@ -143,8 +143,9 @@ int UDPSocket::FPCSend(PlayerRef player, SendBufferRef sendBuffer)
 {
 	//NetAddress netAddr = player->netAddress;
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
+	//cout << "FPCSend : " << player->playerId << endl;
 	header->playerId = player->playerId;
-//	cout << "FPCSend PlayerID : " << player->playerId << endl;
+	//cout << "FPCSend PlayerID : " << header->playerId << endl;
 	SOCKADDR_IN netaddr = player->netAddress.GetSockAddr();
 	//cout << netAddr.GetPort()<< endl;
 	//wcout << netAddr.GetIpAddress() << endl;
@@ -155,6 +156,7 @@ int UDPSocket::FPCSend(PlayerRef player, SendBufferRef sendBuffer)
 		{
 			if (::WSAGetLastError() == WSAEWOULDBLOCK)
 				continue;
+			//cout << header->playerId << " : Failed Sending PAcket" << endl;
 			break;
 		}
 		else break;

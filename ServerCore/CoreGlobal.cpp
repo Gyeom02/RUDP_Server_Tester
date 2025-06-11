@@ -9,6 +9,7 @@
 #include "JobTimer.h"
 #include "DBConnectionPool.h"
 #include "ConsoleLog.h"
+#include "QoSCore.h"
 //#include "DeliveryNotificationManager.h"
 
 ThreadManager*		GThreadManager = nullptr;
@@ -21,7 +22,7 @@ JobTimer*			GJobTimer = nullptr;
 DeadLockProfiler*	GDeadLockProfiler = nullptr;
 DBConnectionPool*	GDBConnectionPool = nullptr;
 ConsoleLog*			GConsoleLogger = nullptr;
-
+QoSCore* GQoS = nullptr;
 class CoreGlobal
 {
 public:
@@ -37,6 +38,7 @@ public:
 		GDeadLockProfiler = new DeadLockProfiler();
 		GDBConnectionPool = new DBConnectionPool();
 		GConsoleLogger = new ConsoleLog();
+		GQoS = new QoSCore();;
 		SocketUtils::Init();
 
 	}
@@ -52,6 +54,7 @@ public:
 		delete GDeadLockProfiler;
 		delete GDBConnectionPool;
 		delete GConsoleLogger;
+		delete GQoS;
 		SocketUtils::Clear();
 	//	delete GUDP;
 	}

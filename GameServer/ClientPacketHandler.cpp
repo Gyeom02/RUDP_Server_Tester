@@ -3,7 +3,7 @@
 #include "Player.h"
 #include "Room.h"
 #include "PlayerManager.h"
-
+#include "QoSCore.h"
 PacketHandlerFunc GPacketHandler[UINT16_MAX];
 
 // 직접 컨텐츠 작업자
@@ -35,7 +35,7 @@ bool Handle_C_DISCONNECT(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHe
 	GPlayerManager.Remove(id);
 	// ID Reuse Setting
 	GPlayerManager.PushID(id);
-
+	GQoS->ErasePlayer(id);
 	//Room Release
 	if (roomid == -1) // 방에 들어가있지 않음
 	{
@@ -90,6 +90,9 @@ bool Handle_C_INIT(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* 
 	playerRef->ownerSocket = udpSocket;
 
 	GPlayerManager.Add(id, playerRef);
+
+	GQoS->GetShard(id)->MakeQoSPlayer(id);
+
 	if (GPlayerManager.GetPlayer(id) == nullptr)
 		cout << "NNULPTR" << endl;
 	else cout << id << endl;

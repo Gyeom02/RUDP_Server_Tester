@@ -16,6 +16,7 @@ bool Handle_S_RUDPACK(UDPSocketPtr udpSocket, NetAddress netAddress, PacketHeade
 	/*if (pkt.playerid() == 0)
 		return false;*/
 	PlayerRef player = GPlayerManager.GetPlayer(header->playerId);
+	//cout << "Handle_S_RUDPACK PlayerID : " << header->playerId << endl;
  	player->GetDeliveryManager()->ProcessAcks(start, count, bhascount);
 	return true;
 }
@@ -33,10 +34,12 @@ bool Handle_S_DISCONNECT(UDPSocketPtr udpSocket, NetAddress netAddress, PacketHe
 bool Handle_S_INIT(UDPSocketPtr udpSocket, NetAddress netAddress, PacketHeader* header, Protocol::S_INIT& pkt)
 {
 	PlayerRef _player = MakeShared<Player>(pkt.id());
-	_player->ownerSocket = GUDP.GetUDPSocket(pkt.id() - 1)->shared_from_this();
+	_player->ownerSocket = GUDP.GetUDPSocket(0)->shared_from_this();
 	_player->netAddress = _player->ownerSocket->GetNetAddress();
 	GPlayerManager.Add(pkt.id(), _player);
-
+	
+	GQoS->GetShard(pkt.id())->MakeQoSPlayer(pkt.id());
+	
 	//PlayerRef player = GPlayerManager.GetPlayer();
 	
 	_player->playerId.store(int32(pkt.id()));

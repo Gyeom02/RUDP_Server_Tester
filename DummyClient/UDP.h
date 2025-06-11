@@ -11,7 +11,7 @@ class UDP
 public:
 	static enum
 	{
-		SOCKNUM = 2
+		SOCKNUM = 1
 	};
 	UDP();
 	virtual ~UDP() { UDPClear(); }

@@ -62,9 +62,11 @@ void UDPSocket::UDPWork()
 				PacketHeader* header = reinterpret_cast<PacketHeader*>(&udpRecvBuffer.ReadPos()[processLen]);
 				if (header->size > recvLen)
 					break;
-				if (header->priority != QoSCore::FPC && header->breliable && header->id != PKT_C_INIT && header->id != 1003 && header->id != PKT_C_RUDPACK && header->id != PKT_S_RUDPACK)
+				//cout << "SERVER GOT MSG FROM : " << header->playerId << endl;
+				if (header->breliable)
 				{
 					PlayerRef player = GPlayerManager.GetPlayer(header->playerId);
+					
 					if (player->GetDeliveyManager()->ProcessSequenceNumber(header->sn) == false)
 					{
 						processLen += header->size;
@@ -75,7 +77,7 @@ void UDPSocket::UDPWork()
 				::memcpy(cpybuffer, &udpRecvBuffer.ReadPos()[processLen], header->size);
 				
 				GUDP.CheckPacketPriority(shared_from_this(), NetAddress(recvAddr), cpybuffer, header->size);
-				
+				//cout << "SERVER GOT MSG FROM : " << header->playerId << endl;
 				processLen += header->size;
 			}
 			if (processLen < 0 || dataSize < processLen || udpRecvBuffer.OnRead(processLen) == false)
@@ -107,7 +109,7 @@ int32 UDPSocket::Send(PlayerRef player, SendBufferRef sendBuffer)
 		FPCSend(player, sendBuffer);
 		return 0;
 	}
-	GQoS.Push(player, sendBuffer);
+	GQoS->Push(player->playerId, player, sendBuffer);
 	return 0;
 }
 

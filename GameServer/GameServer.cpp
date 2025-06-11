@@ -154,14 +154,7 @@ int main()
 				});
 
 		}
-		for (int32 i = 0; i < 2; i++)
-		{
-			GThreadManager->Launch([=]()
-				{
-					GQoS.DoWork();
-				});
-
-		}
+		
 	}
 	int32 ackpreStart = 0;
 	int32 ackStart = 1;
@@ -172,7 +165,7 @@ int main()
 	{
 		if (GPlayerManager.GetPlayers().empty())
 			continue;
-		for (auto& p : GPlayerManager.GetPlayers())
+		for (auto p : GPlayerManager.GetPlayers())
 		{
 			//auto player = p.second;
 			memset(&netAddr, 0, sizeof(netAddr));
