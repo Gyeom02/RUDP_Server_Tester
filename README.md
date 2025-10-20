@@ -10,5 +10,4 @@ RUDP 소켓통신
 ![0 1ms_RUDP](https://github.com/user-attachments/assets/0d1989c0-c159-4678-8fd2-6a325cfa9cf1)
 
 
-https://github.com/user-attachments/assets/70e8587b-111a-4dc5-8394-fad01d27100e
 
