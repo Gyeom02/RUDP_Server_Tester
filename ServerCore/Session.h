@@ -100,6 +100,8 @@ struct PacketHeader
 {
 	uint16 size;
 	uint16 id; // 프로토콜ID (ex. 1=로그인, 2=이동요청)
+	uint16 priority;
+	bool breliable = true;
 	int32 playerId; 
 	int32 sn; // sequenceNumber (RUDP패킷 추적할때 사용)
 	int32 retransnum = 0;

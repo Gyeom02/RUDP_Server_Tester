@@ -2,10 +2,17 @@
 #include "UDPJob.h"
 UDPJob GUDPJob;
 
-void UDPJob::Push(JobFunc job)
+void UDPJob::Push(JobFunc job, int priority)
 {
 	WRITE_LOCK;
-	jobQueue.push(job);
+	if(priority == QoSCore::HIGH)
+	{
+		highJobQueue.push(job);
+	}
+	else if (priority == QoSCore::LOW)
+	{
+		lowJobQueue.push(job);
+	}
 }
 
 void UDPJob::DOJob()
@@ -19,9 +26,20 @@ void UDPJob::DOJob()
 JobFunc UDPJob::Pop()
 {
 	WRITE_LOCK;
-	if (jobQueue.empty())
-		return nullptr;
-	JobFunc func = jobQueue.front();
-	jobQueue.pop();
+	JobFunc func = nullptr;
+	if (!highJobQueue.empty())
+	{
+	//	cout << "HighJobQueue Size : " << highJobQueue.size() << " -> ";
+		func = highJobQueue.front();
+		highJobQueue.pop();
+	//	cout << highJobQueue.size() << endl;
+	}
+	else if (!lowJobQueue.empty())
+	{
+	//	cout << "LowJobQueue Size : " << lowJobQueue.size() << " -> ";
+		func = lowJobQueue.front();
+		lowJobQueue.pop();
+	//	cout << lowJobQueue.size() << endl;
+	}
 	return func;
 }

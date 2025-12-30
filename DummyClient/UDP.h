@@ -4,13 +4,14 @@
 
 using UDPSocketPtr = shared_ptr<UDPSocket>;
 
+
 class UDP
 {
 
 public:
 	static enum
 	{
-		SOCKNUM = 10
+		SOCKNUM = 1
 	};
 	UDP();
 	virtual ~UDP() { UDPClear(); }
@@ -19,6 +20,7 @@ public:
 	bool UDPInit();
 	void UDPClear();
 
+	void CheckPacketPriority(UDPSocketPtr udpSocket, NetAddress clientAddress, BYTE* buffer, int32 len);
 	void UDPPacketHandle(UDPSocketPtr udpSocket, NetAddress clientAddress, BYTE* buffer, int32 len);
 	void UDPDoJop();
 	UDPSocketPtr GetUDPSocket(int32 index)

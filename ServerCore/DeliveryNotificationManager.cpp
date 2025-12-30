@@ -9,7 +9,7 @@ DeliveryNotificationManager::~DeliveryNotificationManager()
 {
 }
 
-InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(SOCKET socket, NetAddress netAddr, SendBufferRef sendBuffer)
+InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(SOCKET object, NetAddress netAddr, SendBufferRef sendBuffer)
 {
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 	PacketSequenceNumber sequenceNumber = mNextOutgoingSequenceNumber++;
@@ -19,7 +19,7 @@ InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(SOCKET socke
 
 	WRITE_LOCK;
 
-	mInFlightPackets.emplace_back(MakeShared<InFlightPacket>(socket, netAddr, sequenceNumber, sendBuffer));
+	mInFlightPackets.emplace_back(MakeShared<InFlightPacket>(object, netAddr, sequenceNumber, sendBuffer));
 	return mInFlightPackets.back();
 }
 
@@ -51,6 +51,7 @@ void DeliveryNotificationManager::ProcessAcks(int32 start, int32 count, bool has
 		}
 		else if (nextInFlightPacketSequenceNumber == nextAckdSequenceNumber)
 		{
+		//	cout << "DeliverySuccess" << endl;
 			HandlePacketDeliverySuccess(nextInFlightPacket);
 			mInFlightPackets.pop_front();
 			++nextAckdSequenceNumber;
@@ -60,6 +61,7 @@ void DeliveryNotificationManager::ProcessAcks(int32 start, int32 count, bool has
 		{
 			//일부 응답이 어떤 연유에선지 제거되었음(시간 초과 가능성)
 			//나머지를 계속하여 검사함
+		//	cout << "nextInFlightPacketSequenceNumber > nextAckdSequenceNumber" << endl;
 			nextAckdSequenceNumber = nextInFlightPacketSequenceNumber;
 		}
 	}
@@ -74,6 +76,7 @@ void DeliveryNotificationManager::HandlePacketDeliveryFailure(const InFlightPack
 void DeliveryNotificationManager::HandlePacketDeliverySuccess(const InFlightPacketPtr& inFlightPacket)
 {
 	++mDeliveredPacketCount;
+	//cout << "DeliveredCount : " << mDeliveredPacketCount << endl;
 	inFlightPacket->HandleDeliverySuccess(shared_from_this());
 }
 
@@ -133,7 +136,7 @@ void DeliveryNotificationManager::ProcessTimeOutPackets()
 			mInFlightPackets.pop_front();
 		}
 		else
-			break; //이후 다음 패킷부터는 초과가 아님(시간순서대로 넣어져있기 때문이다)
+			return; //이후 다음 패킷부터는 초과가 아님(시간순서대로 넣어져있기 때문이다)
 	}
 }
 

@@ -10,7 +10,14 @@ Player::Player(int32 id)
 void Player::Send(SendBufferRef sendBuffer)
 {
 	WRITE_LOCK;
-	ownerSocket->Send(shared_from_this(), sendBuffer);
+	
+	ownerSocket->Send(static_pointer_cast<Player>(shared_from_this()), sendBuffer);
+}
+
+void Player::PriortySend(SendBufferRef sendBuffer)
+{
+	WRITE_LOCK;
+	ownerSocket->PriortySend(static_pointer_cast<Player>(shared_from_this()), sendBuffer);
 }
 
 void Player::SetImport(Position _pos, Rotation _rot, Velocity _vel)

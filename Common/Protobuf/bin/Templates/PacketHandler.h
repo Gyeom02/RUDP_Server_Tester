@@ -4,6 +4,7 @@
 #include "NetAddress.h"
 //#include "DeliveryNotificationManager.h"
 #include "Player.h"
+#include "QoSCore.h"
 
 using PacketHandlerFunc = std::function<bool(UDPSocketPtr, NetAddress, BYTE*, int32)>;
 extern PacketHandlerFunc GPacketHandler[UINT16_MAX];
@@ -40,11 +41,13 @@ public:
 		return GPacketHandler[header->id](udpSocket, clientAddr, buffer, len);
 	}
 
-{%- for pkt in parser.send_pkt %}
-	static SendBufferRef MakeSendBuffer(Protocol::{{pkt.name}}& pkt) { return MakeSendBuffer(pkt, PKT_{{pkt.name}}); }
-{%- endfor %}
-
 private:
+		
+{%- for pkt in parser.send_pkt %}
+	static SendBufferRef MakeSendBuffer(Protocol::{{pkt.name}}& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_{{pkt.name}}, breliable, class_traffic); }
+{%- endfor %}
+	
+
 	template<typename PacketType, typename ProcessFunc>
 	static bool HandlePacket(ProcessFunc func, UDPSocketPtr udpSocket, NetAddress clientAddr, BYTE * buffer, int32 len)
 	{
@@ -57,7 +60,7 @@ private:
 	}
 
 	template<typename T>
-	static SendBufferRef MakeSendBuffer(T& pkt, uint16 pktId) 
+	static SendBufferRef MakeSendBuffer(T& pkt, uint16 pktId, const bool& breliable, const uint16& class_traffic) 
 	{
 		const uint16 dataSize = static_cast<uint16>(pkt.ByteSizeLong());
 		const uint16 packetSize = dataSize + sizeof(PacketHeader);
@@ -66,6 +69,8 @@ private:
 		PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 		header->size = packetSize;
 		header->id = pktId;
+		header->breliable = breliable;
+		header->priority = class_traffic;
 		header->retransnum = 0;
 		ASSERT_CRASH(pkt.SerializeToArray(&header[1], dataSize));
 		sendBuffer->Close(packetSize);
@@ -73,5 +78,10 @@ private:
 		return sendBuffer;
 	}
 
+public:
 
+	template<typename PKT>
+	static SendBufferRef MakeReliableBuffer(PKT pkt, uint16 priority) { _ASSERT(priority < QoSCore::MAX);  return MakeSendBuffer(pkt, true, priority); }
+	template<typename PKT>
+	static SendBufferRef MakeUnReliableBuffer(PKT pkt) { return MakeSendBuffer(pkt, false, QoSCore::FPC); } //
 };

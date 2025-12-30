@@ -2,16 +2,16 @@
 #include "UDP.h"
 
 
-#define SERVERADDR L"192.168.219.147"
+#define SERVERADDR L"192.168.219.102"
 
 UDP GUDP;
 bool UDP::UDPSocketReset(int32 index)
 {
-	UDPSocketPtr socket = MakeShared<UDPSocket>();
+	UDPSocketPtr object = MakeShared<UDPSocket>();
 
-	_udpSockets[index] = socket; //UDP Socket들을 모아놓고 저장하는 Array에 넣는 줄
+	_udpSockets[index] = object; //UDP Socket들을 모아놓고 저장하는 Array에 넣는 줄
 
-	SOCKET& _udpSocket = socket->GetSocket();
+	SOCKET& _udpSocket = object->GetSocket();
 	/*if (_udpSocket != INVALID_SOCKET)
 		return false;*/
 	_udpSocket = WSASocket(AF_INET, SOCK_DGRAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
@@ -20,23 +20,18 @@ bool UDP::UDPSocketReset(int32 index)
 		cout << "Failed Creating UDP Socket : " << index << endl;
 		return false;
 	}
-	
+
 	SOCKADDR_IN udpAddr;
 	::memset(&udpAddr, 0, sizeof(udpAddr));
 	udpAddr.sin_family = AF_INET;
-#ifdef _SERVER
-	udpAddr.sin_port = htons(7777 + index);
-#else
-	udpAddr.sin_port = htons(7777);
-#endif
+	udpAddr.sin_port = ::htons(7777 + index);
 	IN_ADDR address;
 	InetPtonW(AF_INET, SERVERADDR, &address);
 	udpAddr.sin_addr = address;
 
-	/*int optval = 1;
 
-	setsockopt(_udpSocket, SOL_SOCKET, SO_REUSEADDR, (const char*)&optval, sizeof(optval));*/
-
+	//int optval = 1;
+	//setsockopt(_udpSocket, SOL_SOCKET, SO_REUSEADDR, (const char*)&optval, sizeof(optval));
 #ifdef _SERVER
 	if (::bind(_udpSocket, (SOCKADDR*)&udpAddr, sizeof(udpAddr)) == SOCKET_ERROR)
 	{
@@ -45,19 +40,17 @@ bool UDP::UDPSocketReset(int32 index)
 	}
 #else
 #endif
-	socket->GetNetAddress() = NetAddress(udpAddr);
-
-	//if(::setsockopt())
+	object->GetNetAddress() = NetAddress(udpAddr);
 
 	u_long bflag = 1;
-	if (::ioctlsocket(socket->GetSocket(), FIONBIO, &bflag) == INVALID_SOCKET)
+	if (::ioctlsocket(object->GetSocket(), FIONBIO, &bflag) == INVALID_SOCKET)
 	{
 		cout << "Failed UDP Non-Blocking : " << index << endl;
 		return false;
 	}
-	WSAEVENT& _wsaEvent = socket->GetWSAEvent();
+	WSAEVENT& _wsaEvent = object->GetWSAEvent();
 	_wsaEvent = WSACreateEvent();
-	
+
 	if (::WSAEventSelect(_udpSocket, _wsaEvent, FD_READ | FD_WRITE | FD_CLOSE) == SOCKET_ERROR)
 	{
 		cout << "Failed UDP WSAEventSelect : " << index << endl;
@@ -93,15 +86,30 @@ void UDP::UDPClear()
 {
 	for (int32 i = 0; i < SOCKNUM; i++)
 	{
-		UDPSocketPtr socket = _udpSockets[i];
-		WSACloseEvent(socket->GetWSAEvent());
+		UDPSocketPtr object = _udpSockets[i];
+		WSACloseEvent(object->GetWSAEvent());
 		//cout << "UDP Clear : " << i << endl;
 	}
 	_udpSockets.fill({});
 	_IsUDPOn = false;
 }
 
-
+void UDP::CheckPacketPriority(UDPSocketPtr udpSocket, NetAddress clientAddress, BYTE* buffer, int32 len)
+{
+	PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
+	if (header->priority == QoSCore::FPC)
+	{
+		GUDPJob.Push([=]() {
+			GUDP.UDPPacketHandle(udpSocket, clientAddress, buffer, header->size);
+			}, QoSCore::LOW);
+	}
+	else
+	{
+		GUDPJob.Push([=]() {
+			GUDP.UDPPacketHandle(udpSocket, clientAddress, buffer, header->size);
+			}, QoSCore::HIGH);
+	}
+}
 
 void UDP::UDPPacketHandle(UDPSocketPtr udpSocket, NetAddress clientAddress, BYTE* buffer, int32 len)
 {

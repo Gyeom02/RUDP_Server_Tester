@@ -35,8 +35,11 @@ public:
 
 public:
 	int32 Send(PlayerRef player, SendBufferRef sendBuffer);
-	int32 AckSend(NetAddress netAddr, SendBufferRef sendBuffer);
+	int32 PriortySend(PlayerRef player, SendBufferRef sendBuffer);
 private:
+	int ReliableSend(PlayerRef player, SendBufferRef sendBuffer);
+	int UnReliableSend(PlayerRef player, SendBufferRef sendBuffer);
+	int FPCSend(PlayerRef player, SendBufferRef sendBuffer); // Pure Straight Send Function
 	SOCKET _socket = INVALID_SOCKET;
 	WSAEVENT _wsaEvent;
 	int32 _clientNum = 0;

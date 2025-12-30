@@ -14,6 +14,7 @@ using namespace std;
 #include <mswsock.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
+#include <chrono>
 
 #include "Lock.h"
 #include "ObjectPool.h"
@@ -24,4 +25,5 @@ using namespace std;
 #include "JobQueue.h"
 #include "ConsoleLog.h"
 #include "DeliveryNotificationManager.h"
+#include "QoSCore.h"
 //#include "UDP.h"
