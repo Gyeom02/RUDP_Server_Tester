@@ -16,7 +16,7 @@ MemoryPool::~MemoryPool()
 		::_aligned_free(memory);
 }
 
-void MemoryPool::Push(MemoryHeader* ptr)
+void MemoryPool::PushSend(MemoryHeader* ptr)
 {
 	ptr->allocSize = 0;
 

@@ -64,7 +64,7 @@ public:
 
 private:
 	SendBufferChunkRef	Pop();
-	void				Push(SendBufferChunkRef buffer);
+	void				PushSend(SendBufferChunkRef buffer);
 
 	static void			PushGlobal(SendBufferChunk* buffer);
 

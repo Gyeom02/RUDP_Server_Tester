@@ -62,21 +62,43 @@ void UDPSocket::UDPWork()
 				PacketHeader* header = reinterpret_cast<PacketHeader*>(&udpRecvBuffer.ReadPos()[processLen]);
 				if (header->size > recvLen)
 					break;
-				if (header->priority != QoSCore::FPC && header->breliable && header->id != PKT_C_INIT && header->id != 1003 && header->id != PKT_C_RUDPACK && header->id != PKT_S_RUDPACK)
+
+				// TODO  다른 방식으로 숨겨야함
+				
+				if (header->id != PKT_C_INIT && header->id != PKT_S_INIT)
 				{
 					PlayerRef player = GPlayerManager.GetPlayer(header->playerId);
-					if (player->GetDeliveryManager()->ProcessSequenceNumber(header->sn) == false)
+					if (!player)
 					{
 						processLen += header->size;
 						continue;
 					}
+
+					if (player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn) == false)
+					{
+						processLen += header->size;
+						continue;
+					}
+					GQoS->PushRecv(header->playerId, &udpRecvBuffer.ReadPos()[processLen], header->size);
+					processLen += header->size;
 				}
-				BYTE* cpybuffer = new BYTE[1000];
-				::memcpy(cpybuffer, &udpRecvBuffer.ReadPos()[processLen], header->size);
+				else //새로 연결한 클라이언트
+				{
+					BYTE* cpybuffer = new BYTE[1000];
+					::memcpy(cpybuffer, &udpRecvBuffer.ReadPos()[processLen], header->size);
 
-				GUDP.CheckPacketPriority(shared_from_this(), NetAddress(recvAddr), cpybuffer, header->size);
+					ServerPacketHandler::HandlePacket(shared_from_this(), NetAddress(recvAddr), cpybuffer, header->size);
+					processLen += header->size;
+				}
+				// TODO  다른 방식으로 숨겨야함
 
-				processLen += header->size;
+				
+
+				
+				
+				//GUDP.CheckPacketPriority(shared_from_this(), NetAddress(recvAddr), cpybuffer, header->size);
+
+				//
 			}
 			if (processLen < 0 || dataSize < processLen || udpRecvBuffer.OnRead(processLen) == false)
 			{
@@ -102,12 +124,15 @@ void UDPSocket::UDPWork()
 int32 UDPSocket::Send(PlayerRef player, SendBufferRef sendBuffer)
 {
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
-	if (header->breliable == false)
+	if (header->channel == QoSCore::Channel::RPCT)
 	{
-		FPCSend(player, sendBuffer);
-		return 0;
+		if (player->CanRPCT())
+		{
+			FPCSend(player, sendBuffer);
+			return 0;
+		}
 	}
-	GQoS->Push(player->playerId, player, sendBuffer);
+	GQoS->PushSend(player->playerId, sendBuffer);
 	return 0;
 }
 
@@ -115,14 +140,23 @@ int32 UDPSocket::Send(PlayerRef player, SendBufferRef sendBuffer)
 int32 UDPSocket::PriortySend(PlayerRef player, SendBufferRef sendBuffer)
 {
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
-	if (header->priority == QoSCore::FPC)
-		return FPCSend(player, sendBuffer);
-	if (header->breliable)
+	/*if (header->priority == QoSCore::FPC)
+		return FPCSend(player, sendBuffer);*/
+	switch (header->channel)
+	{
+	case QoSCore::Channel::RO:
 		return ReliableSend(player, sendBuffer);
-	else
+	case QoSCore::Channel::URO:
+		return UnReliable_Ordered_Send(player, sendBuffer);
+	case QoSCore::Channel::RPCT:
 		return UnReliableSend(player, sendBuffer);
-}
+	default:
+		break;
+	}
+	
+		
 
+}
 int UDPSocket::ReliableSend(PlayerRef player, SendBufferRef sendBuffer)
 {
 	NetAddress netAddr = player->netAddress;
@@ -133,6 +167,18 @@ int UDPSocket::ReliableSend(PlayerRef player, SendBufferRef sendBuffer)
 
 	return FPCSend(player, sendBuffer);
 }
+
+int UDPSocket::UnReliable_Ordered_Send(PlayerRef player, SendBufferRef sendBuffer)
+{
+	
+	//PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
+	//header->playerId = player->playerId;
+
+	player->GetDeliveryManager()->WriteSeqeuenceNumber_URO(sendBuffer);
+
+	return FPCSend(player, sendBuffer);
+}
+
 
 int UDPSocket::UnReliableSend(PlayerRef player, SendBufferRef sendBuffer)
 {

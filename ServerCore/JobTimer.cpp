@@ -41,9 +41,9 @@ void JobTimer::Distribute(uint64 now)
 	for (TimerItem& item : items)
 	{
 		if (JobQueueRef owner = item.jobData->owner.lock())
-			owner->Push(item.jobData->job);
+			owner->PushSend(item.jobData->job);
 
-		ObjectPool<JobData>::Push(item.jobData);
+		ObjectPool<JobData>::PushSend(item.jobData);
 	}
 
 	// 끝났으면 풀어준다
@@ -57,7 +57,7 @@ void JobTimer::Clear()
 	while (_items.empty() == false)
 	{
 		const TimerItem& timerItem = _items.top();
-		ObjectPool<JobData>::Push(timerItem.jobData);
+		ObjectPool<JobData>::PushSend(timerItem.jobData);
 		_items.pop();
 	}
 }

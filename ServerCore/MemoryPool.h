@@ -42,7 +42,7 @@ public:
 	MemoryPool(int32 allocSize);
 	~MemoryPool();
 
-	void			Push(MemoryHeader* ptr);
+	void			PushSend(MemoryHeader* ptr);
 	MemoryHeader*	Pop();
 
 private:

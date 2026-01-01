@@ -74,7 +74,7 @@ public:
 	bool bready = false;
 
 /* DeliveryManager */
-	DeliveryManagerRef GetDeliveyManager() { return deliveryManager; }
+	DeliveryManagerRef GetDeliveryManager() { return deliveryManager; }
 
 private:
 	USE_LOCK;

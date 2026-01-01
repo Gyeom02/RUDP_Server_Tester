@@ -6,10 +6,10 @@
 	JobQueue
 ---------------*/
 
-void JobQueue::Push(JobRef job, bool pushOnly)
+void JobQueue::PushSend(JobRef job, bool pushOnly)
 {
 	const int32 prevCount = _jobCount.fetch_add(1);
-	_jobs.Push(job); // WRITE_LOCK
+	_jobs.PushSend(job); // WRITE_LOCK
 
 	// 첫번째 Job을 넣은 쓰레드가 실행까지 담당
 	if (prevCount == 0)
@@ -22,7 +22,7 @@ void JobQueue::Push(JobRef job, bool pushOnly)
 		else
 		{
 			// 여유 있는 다른 쓰레드가 실행하도록 GlobalQueue에 넘긴다
-			GGlobalQueue->Push(shared_from_this());
+			GGlobalQueue->PushSend(shared_from_this());
 		}
 	}
 }
@@ -53,7 +53,7 @@ void JobQueue::Execute()
 		{
 			LCurrentJobQueue = nullptr;
 			// 여유 있는 다른 쓰레드가 실행하도록 GlobalQueue에 넘긴다
-			GGlobalQueue->Push(shared_from_this());
+			GGlobalQueue->PushSend(shared_from_this());
 			break;
 		}			
 	}

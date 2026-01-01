@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>C:\Users\dhsto\Documents\visual_studio\RUDP_Server_Tester\Binary\Debug\DummyClient.exe</FullPath>
+      <FullPath>C:\Users\dhsto\Documents\visual_studio\RUDP_Server\Binary\Debug\DummyClient.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

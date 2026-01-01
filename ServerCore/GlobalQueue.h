@@ -10,7 +10,7 @@ public:
 	GlobalQueue();
 	~GlobalQueue();
 
-	void					Push(JobQueueRef jobQueue);
+	void					PushSend(JobQueueRef jobQueue);
 	JobQueueRef				Pop();
 
 private:

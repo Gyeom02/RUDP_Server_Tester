@@ -4,7 +4,7 @@ template<typename T>
 class LockQueue
 {
 public:
-	void Push(T item)
+	void PushSend(T item)
 	{
 		WRITE_LOCK;
 		_items.push(item);

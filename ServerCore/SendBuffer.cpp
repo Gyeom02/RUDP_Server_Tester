@@ -97,7 +97,7 @@ SendBufferChunkRef SendBufferManager::Pop()
 	return SendBufferChunkRef(xnew<SendBufferChunk>(), PushGlobal);
 }
 
-void SendBufferManager::Push(SendBufferChunkRef buffer)
+void SendBufferManager::PushSend(SendBufferChunkRef buffer)
 {
 	WRITE_LOCK;
 	_sendBufferChunks.push_back(buffer);
@@ -107,5 +107,5 @@ void SendBufferManager::PushGlobal(SendBufferChunk* buffer)
 {
 	cout << "PushGlobal SENDBUFFERCHUNK" << endl;
 
-	GSendBufferManager->Push(SendBufferChunkRef(buffer, PushGlobal));
+	GSendBufferManager->PushSend(SendBufferChunkRef(buffer, PushGlobal));
 }

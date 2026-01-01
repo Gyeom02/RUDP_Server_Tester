@@ -65,7 +65,7 @@ DBConnection* DBConnectionPool::Pop()
 	return connection;
 }
 
-void DBConnectionPool::Push(DBConnection* connection)
+void DBConnectionPool::PushSend(DBConnection* connection)
 {
 	WRITE_LOCK;
 	_connections.push_back(connection);

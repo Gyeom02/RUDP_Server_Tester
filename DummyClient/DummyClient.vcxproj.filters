@@ -45,7 +45,7 @@
     <ClCompile Include="UDP.cpp">
       <Filter>UDP</Filter>
     </ClCompile>
-    <ClCompile Include="UDPJob.cpp">
+    <ClCompile Include="UDPRecvHandler.cpp">
       <Filter>UDP</Filter>
     </ClCompile>
     <ClCompile Include="PlayerManager.cpp">
@@ -71,7 +71,7 @@
     <ClInclude Include="ServerPacketHandler.h">
       <Filter>Content</Filter>
     </ClInclude>
-    <ClInclude Include="UDPJob.h">
+    <ClInclude Include="UDPRecvHandler.h">
       <Filter>UDP</Filter>
     </ClInclude>
     <ClInclude Include="UDPSocket.h">

@@ -94,23 +94,23 @@ public:
 	}
 
 private:
-	static SendBufferRef MakeSendBuffer(Protocol::S_DISCONNECT& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_DISCONNECT, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_INIT& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_INIT, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_LOGIN& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_LOGIN, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_ENTER_GAME& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_ENTER_GAME, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_MSG& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_MSG, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_MAKEROOM& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_MAKEROOM, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_ENTERROOM& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_ENTERROOM, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_NEWPLAYER& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_NEWPLAYER, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_MOVETEAM& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_MOVETEAM, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_LEAVEROOM& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_LEAVEROOM, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_CHANGETEAMMODE& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_CHANGETEAMMODE, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_MOVESELECTROOM& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_MOVESELECTROOM, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_CHANGECHARAC& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_CHANGECHARAC, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_READY& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_READY, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_STARTGAME& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_STARTGAME, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_SENDIMPORT& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_SENDIMPORT, breliable, class_traffic); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_RUDPACK& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_S_RUDPACK, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_DISCONNECT& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_DISCONNECT, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_INIT& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_INIT, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_LOGIN& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_LOGIN, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_ENTER_GAME& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_ENTER_GAME, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_MSG& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_MSG, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_MAKEROOM& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_MAKEROOM, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_ENTERROOM& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_ENTERROOM, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_NEWPLAYER& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_NEWPLAYER, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_MOVETEAM& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_MOVETEAM, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_LEAVEROOM& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_LEAVEROOM, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_CHANGETEAMMODE& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_CHANGETEAMMODE, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_MOVESELECTROOM& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_MOVESELECTROOM, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_CHANGECHARAC& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_CHANGECHARAC, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_READY& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_READY, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_STARTGAME& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_STARTGAME, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_SENDIMPORT& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_SENDIMPORT, channel, priorty); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_RUDPACK& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_S_RUDPACK, channel, priorty); }
 	
 
 	template<typename PacketType, typename ProcessFunc>
@@ -125,7 +125,7 @@ private:
 	}
 
 	template<typename T>
-	static SendBufferRef MakeSendBuffer(T& pkt, uint16 pktId, const bool& breliable, const uint16& class_traffic) 
+	static SendBufferRef MakeSendBuffer(T& pkt, uint16 pktId, const uint16& channel, const uint16& priorty)
 	{
 		const uint16 dataSize = static_cast<uint16>(pkt.ByteSizeLong());
 		const uint16 packetSize = dataSize + sizeof(PacketHeader);
@@ -134,8 +134,8 @@ private:
 		PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 		header->size = packetSize;
 		header->id = pktId;
-		header->breliable = breliable;
-		header->priority = class_traffic;
+		header->channel = channel;
+		header->priority = priorty;
 		header->retransnum = 0;
 		ASSERT_CRASH(pkt.SerializeToArray(&header[1], dataSize));
 		sendBuffer->Close(packetSize);
@@ -146,7 +146,9 @@ private:
 public:
 
 	template<typename PKT>
-	static SendBufferRef MakeReliableBuffer(PKT pkt, uint16 priority) { _ASSERT(priority < QoSCore::MAX);  return MakeSendBuffer(pkt, true, priority); }
+	static SendBufferRef MakeReliableBuffer(PKT pkt, uint16 priorty) {  return MakeSendBuffer(pkt, QoSCore::Channel::RO, priorty); }
 	template<typename PKT>
-	static SendBufferRef MakeUnReliableBuffer(PKT pkt) { return MakeSendBuffer(pkt, false, QoSCore::FPC); } //
+	static SendBufferRef MakeUnReliableBuffer(PKT pkt) { return MakeSendBuffer(pkt, QoSCore::Channel::URO, QoSCore::Priority::LOW); } //
+	template<typename PKT>
+	static SendBufferRef MakeReplicateBuffer(PKT pkt) { return MakeSendBuffer(pkt, QoSCore::Channel::RPCT, QoSCore::Priority::LOW); } //
 };

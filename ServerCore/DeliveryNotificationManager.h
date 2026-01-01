@@ -35,6 +35,10 @@ public:
 	DeliveryNotificationManager();
 	~DeliveryNotificationManager();
 
+	//Public
+	// 
+	bool CheckPacketChannel(int16 channel, int32 sn);
+	//////
 	//송신
 	InFlightPacketPtr WriteSeqeuenceNumber(SOCKET object, NetAddress netAddr, SendBufferRef sendBuffer);
 	void ProcessAcks(int32 start, int32 count, bool hasCount);
@@ -58,7 +62,16 @@ public:
 
 	int32 GetSuccessReSendPacketNum() { return mSuccessReSendPacketNum.load(); }
 	atomic<int32> mSuccessReSendPacketNum = 0;
+
+
+	/*--------------------------------------------*/
+	/*   Unreliable Ordered Packet의 함수   */
+
+	bool ProcessSequenceNumber_URO(PacketSequenceNumber SN);
+
+	bool WriteSeqeuenceNumber_URO(SendBufferRef sendBuffer);
 private:
+	/*   Reliable Ordered Packet의 변수   */
 	//송신
 	atomic<int32> mNextOutgoingSequenceNumber = 0; // 현재 송신된 패킷의 번호를 알려주는 변수
 	atomic<int32> mDroppedPacketCount = 0;
@@ -72,6 +85,13 @@ private:
 
 	atomic<int32> mTimeOutCount = 0;
 	atomic<int32> mSequenceNotMatchedCount = 0;
-	
+
+	/*    ---------------------------    */
+
+	/*   Unreliable Ordered Packet의 변수   */
+	atomic<int32> mNextOutgoingSequenceNumber_URO = 0;
+	atomic<int32> mNextExpectedSequenceNumber_URO = 0;
+
+
 	USE_LOCK;
 };

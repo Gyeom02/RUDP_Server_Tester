@@ -44,7 +44,7 @@ public:
 private:
 		
 {%- for pkt in parser.send_pkt %}
-	static SendBufferRef MakeSendBuffer(Protocol::{{pkt.name}}& pkt,const bool& breliable= true, const uint16& class_traffic = 0) { return MakeSendBuffer(pkt, PKT_{{pkt.name}}, breliable, class_traffic); }
+	static SendBufferRef MakeSendBuffer(Protocol::{{pkt.name}}& pkt, const uint16& channel, const uint16& priorty) { return MakeSendBuffer(pkt, PKT_{{pkt.name}}, channel, priorty); }
 {%- endfor %}
 	
 
@@ -60,7 +60,7 @@ private:
 	}
 
 	template<typename T>
-	static SendBufferRef MakeSendBuffer(T& pkt, uint16 pktId, const bool& breliable, const uint16& class_traffic) 
+	static SendBufferRef MakeSendBuffer(T& pkt, uint16 pktId, const uint16& channel, const uint16& priorty)
 	{
 		const uint16 dataSize = static_cast<uint16>(pkt.ByteSizeLong());
 		const uint16 packetSize = dataSize + sizeof(PacketHeader);
@@ -69,8 +69,8 @@ private:
 		PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 		header->size = packetSize;
 		header->id = pktId;
-		header->breliable = breliable;
-		header->priority = class_traffic;
+		header->channel = channel;
+		header->priority = priorty;
 		header->retransnum = 0;
 		ASSERT_CRASH(pkt.SerializeToArray(&header[1], dataSize));
 		sendBuffer->Close(packetSize);
@@ -81,7 +81,9 @@ private:
 public:
 
 	template<typename PKT>
-	static SendBufferRef MakeReliableBuffer(PKT pkt, uint16 priority) { _ASSERT(priority < QoSCore::MAX);  return MakeSendBuffer(pkt, true, priority); }
+	static SendBufferRef MakeReliableBuffer(PKT pkt, uint16 priorty) {  return MakeSendBuffer(pkt, QoSCore::Channel::RO, priorty); }
 	template<typename PKT>
-	static SendBufferRef MakeUnReliableBuffer(PKT pkt) { return MakeSendBuffer(pkt, false, QoSCore::FPC); } //
+	static SendBufferRef MakeUnReliableBuffer(PKT pkt) { return MakeSendBuffer(pkt, QoSCore::Channel::URO, QoSCore::Priority::LOW); } //
+	template<typename PKT>
+	static SendBufferRef MakeReplicateBuffer(PKT pkt) { return MakeSendBuffer(pkt, QoSCore::Channel::RPCT, QoSCore::Priority::LOW); } //
 };

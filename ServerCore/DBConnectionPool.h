@@ -15,7 +15,7 @@ public:
 	void					Clear();
 
 	DBConnection*			Pop();
-	void					Push(DBConnection* connection);
+	void					PushSend(DBConnection* connection);
 
 private:
 	USE_LOCK;

@@ -38,7 +38,7 @@ bool Handle_S_INIT(UDPSocketPtr udpSocket, NetAddress netAddress, PacketHeader* 
 	_player->netAddress = _player->ownerSocket->GetNetAddress();
 	GPlayerManager.Add(pkt.id(), _player);
 	
-	GQoS->GetShard(pkt.id())->MakeQoSPlayer(pkt.id());
+	GQoS->GetShard(pkt.id())->MakeQoSPlayer(_player, pkt.id());
 	
 	//PlayerRef player = GPlayerManager.GetPlayer();
 	
@@ -70,7 +70,7 @@ bool Handle_S_ENTER_GAME(UDPSocketPtr udpSocket, NetAddress netAddress, PacketHe
 }
 bool Handle_S_MSG(UDPSocketPtr udpSocket, NetAddress netAddress, PacketHeader* header, Protocol::S_MSG& pkt)
 {
-	//std::cout << pkt.msg() << endl;
+//	std::cout << pkt.msg() << endl;
 //	GPlayerManager._recvPacketNum++;
 	return true;
 }

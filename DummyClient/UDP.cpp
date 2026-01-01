@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "UDP.h"
+#include "ThreadManager.h"
 
-
-#define SERVERADDR L"192.168.219.102"
+#define SERVERADDR L"192.168.219.104"
 
 UDP GUDP;
 bool UDP::UDPSocketReset(int32 index)
@@ -94,67 +94,96 @@ void UDP::UDPClear()
 	_IsUDPOn = false;
 }
 
-void UDP::CheckPacketPriority(UDPSocketPtr udpSocket, NetAddress clientAddress, BYTE* buffer, int32 len)
-{
-	PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
-	if (header->priority == QoSCore::FPC)
-	{
-		GUDPJob.Push([=]() {
-			GUDP.UDPPacketHandle(udpSocket, clientAddress, buffer, header->size);
-			}, QoSCore::LOW);
-	}
-	else
-	{
-		GUDPJob.Push([=]() {
-			GUDP.UDPPacketHandle(udpSocket, clientAddress, buffer, header->size);
-			}, QoSCore::HIGH);
-	}
-}
-
-void UDP::UDPPacketHandle(UDPSocketPtr udpSocket, NetAddress clientAddress, BYTE* buffer, int32 len)
-{
-	PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
-
-	ServerPacketHandler::HandlePacket(udpSocket, clientAddress, buffer, len);
-	//if (header->id == 1004) // 1004는 임시 패킷 번호(메세지 전송 패킷)이다
-	//{
-
-	//	Protocol::C_CHAT pkt;
-	//	if (pkt.ParseFromArray(buffer + sizeof(PacketHeader), header->size - sizeof(PacketHeader)) != false)
-	//	{
-	//		cout << "Client : " << pkt.msg() << endl;
-	//	}
-	//	/*----------------------------예상 처리 코드-------------------------- - */
-
-	//	/*Protocol::C_SENDMessage pkt;
-	//	if (pkt.ParseFromArray(buffer + sizeof(PacketHeader), header->size - sizeof(PacketHeader)) != false)
-	//	{
-	//		//	SendBufferRef sendBuffer = ClientPacketHandler::MakeSendBuffer(pkt);
-
-	//		SOCKADDR_IN otherClientSockAddr;
-	//		otherClientSockAddr.sin_family = AF_INET;
-
-	//		PlayerRef OtherPlayer = nullptr;
-	//		if (GRoom->IsExsistPlayer(pkt.roomid(), pkt.opposeid()))
-	//		{
-	//			OtherPlayer = GRoom->GetRooms()[pkt.roomid()]->GetPlayers()[pkt.opposeid()];
-	//		}
-	//		
-	//		if (OtherPlayer != nullptr)
-	//		{
-	//			inet_pton(AF_INET, OtherPlayer->udpAddr.c_str(), &otherClientSockAddr.sin_addr);
-	//			otherClientSockAddr.sin_port = OtherPlayer->udpPort;
-
-	//			::sendto(udpSocket, (char*)(buffer), len, 0, (SOCKADDR*)&clientAddress, sizeof(clientAddress));
-	//		}//::sendto(udpSocket, (char*)(sendBuffer->Buffer()), sendBuffer->WriteSize(), 0, (SOCKADDR*)&otherClientSockAddr, sizeof(otherClientSockAddr));
-	//	}*/
-	//}
-}
-
-void UDP::UDPDoJop()
+void UDP::UDPDo_PopRecv_Work(int32 start_index, int32 end_index)
 {
 	while (true)
 	{
-		GUDPJob.DOJob();
+		
 	}
 }
+
+void UDP::InitRecvLogicWorkers()
+{
+	//for (int i = 0; i < POPRECV_WORKER_NUM; i++)
+	//{
+	//	/*QOS_SHARD_COUNT*/
+	//	int start = i * (QOS_SHARD_COUNT / POPRECV_WORKER_NUM);
+	//	int end = start + (QOS_SHARD_COUNT / POPRECV_WORKER_NUM) - 1;
+	//	end = end > QOS_SHARD_COUNT - 1 ? QOS_SHARD_COUNT - 1 : end;
+
+	//	GThreadManager->Launch([this, start, end]() {
+	//		UDPDo_PopRecv_Work(start, end);
+	//		});
+	//}
+	for (int i = 0; i < MAX_WORKER_NUM; i++)
+	{
+		_udpRecvWorkers[i] = make_shared<UDPRecvHandler>(GQoS->GetShard_index(i % QOS_SHARD_COUNT));
+	}
+	
+}
+
+//void UDP::CheckPacketChannel(UDPSocketPtr udpSocket, NetAddress clientAddress, BYTE* buffer, int32 len)
+//{
+//	PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
+//	if (header->priority == QoSCore::FPC)
+//	{
+//		GUDPJob.PushSend([=]() {
+//			GUDP.UDPPacketHandle(udpSocket, clientAddress, buffer, header->size);
+//			}, QoSCore::LOW);
+//	}
+//	else
+//	{
+//		GUDPJob.PushSend([=]() {
+//			GUDP.UDPPacketHandle(udpSocket, clientAddress, buffer, header->size);
+//			}, QoSCore::HIGH);
+//	}
+//}
+//
+//void UDP::UDPPacketHandle(UDPSocketPtr udpSocket, NetAddress clientAddress, BYTE* buffer, int32 len)
+//{
+//	PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
+//
+//	ServerPacketHandler::HandlePacket(udpSocket, clientAddress, buffer, len);
+//	//if (header->id == 1004) // 1004는 임시 패킷 번호(메세지 전송 패킷)이다
+//	//{
+//
+//	//	Protocol::C_CHAT pkt;
+//	//	if (pkt.ParseFromArray(buffer + sizeof(PacketHeader), header->size - sizeof(PacketHeader)) != false)
+//	//	{
+//	//		cout << "Client : " << pkt.msg() << endl;
+//	//	}
+//	//	/*----------------------------예상 처리 코드-------------------------- - */
+//
+//	//	/*Protocol::C_SENDMessage pkt;
+//	//	if (pkt.ParseFromArray(buffer + sizeof(PacketHeader), header->size - sizeof(PacketHeader)) != false)
+//	//	{
+//	//		//	SendBufferRef sendBuffer = ClientPacketHandler::MakeSendBuffer(pkt);
+//
+//	//		SOCKADDR_IN otherClientSockAddr;
+//	//		otherClientSockAddr.sin_family = AF_INET;
+//
+//	//		PlayerRef OtherPlayer = nullptr;
+//	//		if (GRoom->IsExsistPlayer(pkt.roomid(), pkt.opposeid()))
+//	//		{
+//	//			OtherPlayer = GRoom->GetRooms()[pkt.roomid()]->GetPlayers()[pkt.opposeid()];
+//	//		}
+//	//		
+//	//		if (OtherPlayer != nullptr)
+//	//		{
+//	//			inet_pton(AF_INET, OtherPlayer->udpAddr.c_str(), &otherClientSockAddr.sin_addr);
+//	//			otherClientSockAddr.sin_port = OtherPlayer->udpPort;
+//
+//	//			::sendto(udpSocket, (char*)(buffer), len, 0, (SOCKADDR*)&clientAddress, sizeof(clientAddress));
+//	//		}//::sendto(udpSocket, (char*)(sendBuffer->Buffer()), sendBuffer->WriteSize(), 0, (SOCKADDR*)&otherClientSockAddr, sizeof(otherClientSockAddr));
+//	//	}*/
+//	//}
+//}
+
+//
+//void UDP::UDPDoWork()
+//{
+//	while (true)
+//	{
+//		GUDPRecvHandler.DOWork();
+//	}
+//}

@@ -9,6 +9,25 @@ DeliveryNotificationManager::~DeliveryNotificationManager()
 {
 }
 
+bool DeliveryNotificationManager::CheckPacketChannel(int16 channel, int32 sn)
+{
+	switch (channel)
+	{
+	case QoSCore::Channel::RO:
+		if (ProcessSequenceNumber(sn) == false)
+			return false;
+		break;
+	case QoSCore::Channel::URO:
+		if (ProcessSequenceNumber_URO(sn) == false)
+			return false;
+		break;
+	case QoSCore::Channel::RPCT:
+		break;
+	}
+
+	return true;
+
+}
 InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(SOCKET object, NetAddress netAddr, SendBufferRef sendBuffer)
 {
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
@@ -138,6 +157,36 @@ void DeliveryNotificationManager::ProcessTimeOutPackets()
 		else
 			return; //이후 다음 패킷부터는 초과가 아님(시간순서대로 넣어져있기 때문이다)
 	}
+}
+
+bool DeliveryNotificationManager::ProcessSequenceNumber_URO(PacketSequenceNumber SN)
+{
+	if (SN.GetSN() >= mNextExpectedSequenceNumber_URO) //예상하던 수신 패킷 세퀀스넘버가 맞음
+	{
+		mNextExpectedSequenceNumber_URO = SN.GetSN() + 1;
+		//AddPendingAck(SN);
+		return true;
+	}
+
+	else if (SN.GetSN() < mNextExpectedSequenceNumber_URO) //기다리고 있었던 수신 패킷 세퀀스 넘버가 아님 조용히 넘김
+	{
+		return false;
+	}
+
+	return false;
+}
+
+bool DeliveryNotificationManager::WriteSeqeuenceNumber_URO(SendBufferRef sendBuffer)
+{
+	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
+
+	if (header == nullptr)
+		return false;
+	PacketSequenceNumber sequenceNumber = mNextOutgoingSequenceNumber_URO++;
+	header->sn = sequenceNumber.GetSN(); // 패킷 헤더에 SequenceNumber 부착
+
+	//++mDispatchedPacketCount;
+	return true;
 }
 
 bool AckRange::ExtendIfShould(PacketSequenceNumber SN)

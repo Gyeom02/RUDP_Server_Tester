@@ -20,7 +20,7 @@ bool Handle_C_RUDPACK(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeade
 		//cout << "Handle_C_RUDPACK PlayerID : " << pkt.playerid() << " | SequenceStart : " << pkt.start() << endl;
 		return false;
 	}
-	player->GetDeliveyManager()->ProcessAcks(start, count, bhascount);
+	player->GetDeliveryManager()->ProcessAcks(start, count, bhascount);
 	//cout << "Handle_C_RUDPACK PlayerID : " << pkt.playerid() << " | SequenceStart : " << pkt.start() << endl;
 	return true;
 }
@@ -91,7 +91,7 @@ bool Handle_C_INIT(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* 
 
 	GPlayerManager.Add(id, playerRef);
 
-	GQoS->GetShard(id)->MakeQoSPlayer(id);
+	GQoS->GetShard(id)->MakeQoSPlayer(playerRef, id);
 
 	if (GPlayerManager.GetPlayer(id) == nullptr)
 		cout << "NNULPTR" << endl;
@@ -106,6 +106,11 @@ bool Handle_C_INIT(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* 
 
 	udpSocket->Send(playerRef, sendBuffer);
 
+
+	//진짜 임시 개쓰레기 코드임
+	delete[] reinterpret_cast<BYTE*>(header);
+	header = nullptr;
+	///////////////////////
 	return true;
 }
 bool Handle_C_LOGIN(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_LOGIN& pkt)
@@ -179,7 +184,7 @@ bool Handle_C_ENTER_GAME(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHe
 
 bool Handle_C_MSG(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_MSG& pkt)
 {
-	//std::cout << pkt.msg() << "^^" << endl;
+	std::cout << pkt.msg() << "^^" << endl;
 
 	//Protocol::S_MSG chatPkt;
 	//chatPkt.set_msg(pkt.msg());

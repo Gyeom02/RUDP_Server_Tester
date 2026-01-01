@@ -20,7 +20,7 @@ public:
 	virtual void OnConnected() override
 	{
 		Protocol::C_LOGIN pkt;
-		auto sendBuffer = ServerPacketHandler::MakeReliableBuffer(pkt, QoSCore::HIGH);
+		auto sendBuffer = ServerPacketHandler::MakeReliableBuffer(pkt, QoSCore::LOW);
 		Send(sendBuffer);
 	}
 
@@ -128,6 +128,7 @@ void PacketLost(PlayerRef player)
 {
 	cout << " Not Matched : " << player->GetDeliveryManager()->GetSequenceNotMatchedCount() << " | TimeOut : " << player->GetDeliveryManager()->GetTimeOutCount() << endl;
 }
+
 void CloseApp()
 {
 	for (auto& [id, player] : GPlayerManager.GetPlayers())
@@ -244,7 +245,7 @@ int main()
 	//			//break;
 	//	}
 	//	});
-	for (int32 i = 0; i < GUDP.SOCKNUM; i++)
+	for (int32 i = 0; i < GUDP.SOCKNUM; i++) //Socket 마다 RecvFrom Work Thread를 생성하는거임 (비효율적임 나중에 개선)
 		GThreadManager->Launch([=]() {
 			while (true)
 			{
@@ -255,16 +256,17 @@ int main()
 					//break;
 			}
 			});
-	for (int32 i = 0; i < 3; i++)
-	{
-		GThreadManager->Launch([=]()
-			{
-				GUDP.UDPDoJop();
+	//for (int32 i = 0; i < 3; i++) //Recv된 패킷을 처리하는 Thread들을 생성하는것
+	//{
+	//	GThreadManager->Launch([=]()
+	//		{
+	//			GUDP.UDPDoWork();
 
-			});
+	//		});
 
-	}
-	
+	//}
+
+	GUDP.InitRecvLogicWorkers(); //Recv된 패킷을 처리하는 Thread들을 생성하는것
 
 	/*Protocol::C_INIT chatPktt;
 	auto sendBufferr = ServerPacketHandler::MakeSendBuffer(chatPktt);
@@ -291,13 +293,14 @@ int main()
 							auto sendBufferchatPkt = ServerPacketHandler::MakeUnReliableBuffer(chatPkt);
 							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt);
 							
-							auto sendBufferchatPkttt = ServerPacketHandler::MakeReliableBuffer(chatPkt, QoSCore::LOW);
+							auto sendBufferchatPkttt = ServerPacketHandler::MakeUnReliableBuffer(chatPkt);
 							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkttt);
 
-							auto sendBufferchatPktt = ServerPacketHandler::MakeReliableBuffer(chatPkt, QoSCore::HIGH);
+							auto sendBufferchatPktt = ServerPacketHandler::MakeReplicateBuffer(chatPkt);
 							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPktt);
 						}
 					}
+					//this_thread::sleep_for(100000000s);
 					//PacketDeliverCondition();
 
 					//if (GetTickCount64() - now >= timeout)
@@ -344,7 +347,7 @@ int main()
 			}
 			player->GetDeliveryManager()->ProcessTimeOutPackets();
 			//PacketLost();
-			PacketDeliverCondition(player);
+		//	PacketDeliverCondition(player);
 		}
 		
 	}

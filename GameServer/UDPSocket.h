@@ -38,6 +38,7 @@ public:
 	int32 PriortySend(PlayerRef player, SendBufferRef sendBuffer);
 private:
 	int ReliableSend(PlayerRef player, SendBufferRef sendBuffer);
+	int UnReliable_Ordered_Send(PlayerRef player, SendBufferRef sendBuffer);
 	int UnReliableSend(PlayerRef player, SendBufferRef sendBuffer);
 	int FPCSend(PlayerRef player, SendBufferRef sendBuffer); // Pure Straight Send Function
 	SOCKET _socket = INVALID_SOCKET;

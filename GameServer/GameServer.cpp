@@ -44,10 +44,11 @@ void PacketDeliverCondition(PlayerRef player)
 {
 	if (!player)
 		return;
-	DeliveryManagerRef GDeliveryManager = player->GetDeliveyManager();
+	DeliveryManagerRef GDeliveryManager = player->GetDeliveryManager();
 	cout << "플레이어 ID : " << player->playerId << " 전체 보낸 패킷 수 : " << GDeliveryManager->GetDispatchedPacketCount() << " 성공패킷 : " << GDeliveryManager->GetDeliveredPacketCount()
 		<< " 실패패킷 : " << GDeliveryManager->GetDroppedPacketCount() - GDeliveryManager->GetSuccessReSendPacketNum() << " 성공 + 실패 : " << GDeliveryManager->GetDeliveredPacketCount() + (GDeliveryManager->GetDroppedPacketCount() - GDeliveryManager->GetSuccessReSendPacketNum()) << endl;
 }
+
 
 int main()
 {
@@ -146,26 +147,28 @@ int main()
 				});
 
 		}
-		for (int32 i = 0; i < 2; i++)
+		/*for (int32 i = 0; i < 2; i++)
 		{
 			GThreadManager->Launch([=]()
 				{
-					GUDP.UDPDoJop();
+					GUDP.UDPDoWork();
 				});
 
-		}
-		
+		}*/
+		//Thread
+		GUDP.InitRecvLogicWorkers();
 	}
 	int32 ackpreStart = 0;
 	int32 ackStart = 1;
 	int32 ackCount = 0;
 	bool hasCount = false;
 	NetAddress netAddr;
+
+	//Thread 최적화 필요
 	while (true)
 	{
-		if (GPlayerManager.GetPlayers().empty())
-			continue;
-		for (auto p : GPlayerManager.GetPlayers())
+		
+		for (auto& p : GPlayerManager.GetPlayers())
 		{
 			//auto player = p.second;
 			memset(&netAddr, 0, sizeof(netAddr));
@@ -173,7 +176,7 @@ int main()
 			while (true) //AckRange 비울때까지
 			{
 
-				if (p.second->GetDeliveyManager()->WritePendingAcks(ackStart, ackCount, hasCount)) // 보낼 Ack이 쌓였다
+				if (p.second->GetDeliveryManager()->WritePendingAcks(ackStart, ackCount, hasCount)) // 보낼 Ack이 쌓였다
 				{
 					/*if (ackpreStart == ackStart && ackpreStart > 1)
 					{
@@ -194,7 +197,7 @@ int main()
 				else
 					break;
 			}
-			p.second->GetDeliveyManager()->ProcessTimeOutPackets();
+			p.second->GetDeliveryManager()->ProcessTimeOutPackets();
 			//PacketDeliverCondition();
 		}
 	}

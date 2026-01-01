@@ -211,7 +211,7 @@ CALL $(SolutionDir)Common\Procedures\GenProcs.bat</Command>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="UDP.cpp" />
-    <ClCompile Include="UDPJob.cpp" />
+    <ClCompile Include="UDPRecvHandler.cpp" />
     <ClCompile Include="UDPSocket.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -227,7 +227,7 @@ CALL $(SolutionDir)Common\Procedures\GenProcs.bat</Command>
     <ClInclude Include="Room.h" />
     <ClInclude Include="Struct.pb.h" />
     <ClInclude Include="UDP.h" />
-    <ClInclude Include="UDPJob.h" />
+    <ClInclude Include="UDPRecvHandler.h" />
     <ClInclude Include="UDPSocket.h" />
   </ItemGroup>
   <ItemGroup>

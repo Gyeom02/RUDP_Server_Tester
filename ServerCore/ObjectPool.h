@@ -19,7 +19,7 @@ public:
 		return memory;
 	}
 
-	static void Push(Type* obj)
+	static void PushSend(Type* obj)
 	{
 		obj->~Type();
 #ifdef _STOMP
@@ -32,7 +32,7 @@ public:
 	template<typename... Args>
 	static shared_ptr<Type> MakeShared(Args&&... args)
 	{
-		shared_ptr<Type> ptr = { Pop(forward<Args>(args)...), Push };
+		shared_ptr<Type> ptr = { Pop(forward<Args>(args)...), PushSend };
 		return ptr;
 	}
 

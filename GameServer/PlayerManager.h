@@ -9,7 +9,7 @@ public:
 	void Remove(int32 id);
 	void BroadCast(SendBufferRef sendBuffer);
 	PlayerRef GetPlayer(int32 id);
-	Map<int32, PlayerRef>& GetPlayers() { return _players; }
+	Map<int32, PlayerRef> GetPlayers() { USE_LOCK;  return _players; }
 	/* Reuse ID Function */
 	int32 ReuseID();
 	void PushID(int32 id);
