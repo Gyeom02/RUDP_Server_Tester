@@ -95,7 +95,7 @@ private:
 /*-----------------
 	PacketSession
 ------------------*/
-
+#pragma pack(push, 1)
 struct PacketHeader
 {
 	uint16 size;
@@ -107,6 +107,7 @@ struct PacketHeader
 	int32 sn; // sequenceNumber (RUDP패킷 추적할때 사용)
 	int32 retransnum = 0;
 };
+#pragma pack(pop)
 
 class PacketSession : public Session
 {

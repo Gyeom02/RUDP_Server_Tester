@@ -50,39 +50,64 @@ void DeliveryNotificationManager::ProcessAcks(int32 start, int32 count, bool has
 	PacketSequenceNumber nextAckdSequenceNumber = ackRange.GetStart();
 	int32 onePastAckdSequenceNumber = nextAckdSequenceNumber.GetSN() + ackRange.GetCount();
 
-	WRITE_LOCK;
+	
 
-	while (nextAckdSequenceNumber.GetSN() < onePastAckdSequenceNumber && !mInFlightPackets.empty())
+	while (nextAckdSequenceNumber.GetSN() < onePastAckdSequenceNumber)
 	{
-		const auto& nextInFlightPacket = mInFlightPackets.front();
-		//패킷의 시퀀스 번호가 확인응답의 시퀀스 번호보다 작으면 확인응답을 받지 못한 것이므로 아마 누락되었을 것임
-		PacketSequenceNumber nextInFlightPacketSequenceNumber = nextInFlightPacket->GetSequenceNumber();
+		int success_flag = -1;
+		InFlightPacketPtr nextInFlightPacket;
+		{
+			WRITE_LOCK;
+			if (mInFlightPackets.empty())
+				break;
+			nextInFlightPacket = mInFlightPackets.front();
+			//패킷의 시퀀스 번호가 확인응답의 시퀀스 번호보다 작으면 확인응답을 받지 못한 것이므로 아마 누락되었을 것임
+			PacketSequenceNumber nextInFlightPacketSequenceNumber = nextInFlightPacket->GetSequenceNumber();
 
-		if (nextInFlightPacketSequenceNumber.GetSN() < nextAckdSequenceNumber.GetSN())
-		{
-			//사본을 만든다음, 목록에서 일단 제거함
-			//핸들링 도중 살아있는 패킷이 무엇인지 찾아볼 때 이 패킷에 보여서는 안되기 때문이다.
-			auto copyOfInFlightPacket = nextInFlightPacket;
-			mInFlightPackets.pop_front();
-			HandlePacketDeliveryFailure(copyOfInFlightPacket);
-			mSequenceNotMatchedCount++;
-			//cout << nextInFlightPacketSequenceNumber.GetSN() << " < " << nextAckdSequenceNumber.GetSN() << endl;
+			if (nextInFlightPacketSequenceNumber.GetSN() < nextAckdSequenceNumber.GetSN())
+			{
+				//사본을 만든다음, 목록에서 일단 제거함
+				//핸들링 도중 살아있는 패킷이 무엇인지 찾아볼 때 이 패킷에 보여서는 안되기 때문이다.
+				//auto copyOfInFlightPacket = nextInFlightPacket;
+				mInFlightPackets.pop_front();
+				mSequenceNotMatchedCount++;
+				success_flag = 1;
+				
+				//cout << nextInFlightPacketSequenceNumber.GetSN() << " < " << nextAckdSequenceNumber.GetSN() << endl;
+			}
+
+			else if (nextInFlightPacketSequenceNumber == nextAckdSequenceNumber)
+			{
+				//	cout << "DeliverySuccess" << endl;
+
+				mInFlightPackets.pop_front();
+				++nextAckdSequenceNumber;
+				success_flag = 2;
+				
+			}
+
+			else if (nextInFlightPacketSequenceNumber > nextAckdSequenceNumber)
+			{
+				//일부 응답이 어떤 연유에선지 제거되었음(시간 초과 가능성)
+				//나머지를 계속하여 검사함
+			//	cout << "nextInFlightPacketSequenceNumber > nextAckdSequenceNumber" << endl;
+				nextAckdSequenceNumber = nextInFlightPacketSequenceNumber;
+				success_flag = 3;
+			}
 		}
-		else if (nextInFlightPacketSequenceNumber == nextAckdSequenceNumber)
-		{
-		//	cout << "DeliverySuccess" << endl;
+	
+		if (success_flag == 1)
+			HandlePacketDeliveryFailure(nextInFlightPacket);
+		else if (success_flag == 2)
 			HandlePacketDeliverySuccess(nextInFlightPacket);
-			mInFlightPackets.pop_front();
-			++nextAckdSequenceNumber;
-		}
-
-		else if (nextInFlightPacketSequenceNumber > nextAckdSequenceNumber)
-		{
-			//일부 응답이 어떤 연유에선지 제거되었음(시간 초과 가능성)
-			//나머지를 계속하여 검사함
-		//	cout << "nextInFlightPacketSequenceNumber > nextAckdSequenceNumber" << endl;
-			nextAckdSequenceNumber = nextInFlightPacketSequenceNumber;
-		}
+		else if (success_flag == 2)
+			continue;
+		else
+#ifdef _DEBUG 
+			_ASSERT(false);
+#else		
+			break;
+#endif
 	}
 }
 

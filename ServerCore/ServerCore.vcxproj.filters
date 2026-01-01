@@ -31,7 +31,7 @@
     <Filter Include="RUDP">
       <UniqueIdentifier>{75600c0e-69e9-49a3-a81e-05c7214616af}</UniqueIdentifier>
     </Filter>
-    <Filter Include="QoS">
+    <Filter Include="RUDP\QoS">
       <UniqueIdentifier>{73cfb9f9-ef84-4c56-80d1-b6d4cbb85ed5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -175,10 +175,10 @@
       <Filter>RUDP</Filter>
     </ClInclude>
     <ClInclude Include="Nids.h">
-      <Filter>QoS</Filter>
+      <Filter>RUDP\QoS</Filter>
     </ClInclude>
     <ClInclude Include="QoSCore.h">
-      <Filter>QoS</Filter>
+      <Filter>RUDP\QoS</Filter>
     </ClInclude>
     <ClInclude Include="Object.h">
       <Filter>Main</Filter>
@@ -297,10 +297,10 @@
       <Filter>RUDP</Filter>
     </ClCompile>
     <ClCompile Include="Nids.cpp">
-      <Filter>QoS</Filter>
+      <Filter>RUDP\QoS</Filter>
     </ClCompile>
     <ClCompile Include="QoSCore.cpp">
-      <Filter>QoS</Filter>
+      <Filter>RUDP\QoS</Filter>
     </ClCompile>
     <ClCompile Include="Object.cpp">
       <Filter>Main</Filter>

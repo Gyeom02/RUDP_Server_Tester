@@ -46,7 +46,7 @@ struct SavedSendPacket
 };
 struct SavedRecvPacket
 {
-	SavedRecvPacket(BYTE* buffer, int32 size);
+	explicit SavedRecvPacket(BYTE* buffer, int32 size); // 그냥 쌩 new BYTE* Pointer 아님 큰일남,소멸자에서 해당 버퍼를 delete 처리하기 때문이다
 	~SavedRecvPacket();
 
 

@@ -296,7 +296,7 @@ int main()
 							auto sendBufferchatPkttt = ServerPacketHandler::MakeUnReliableBuffer(chatPkt);
 							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkttt);
 
-							auto sendBufferchatPktt = ServerPacketHandler::MakeReplicateBuffer(chatPkt);
+							auto sendBufferchatPktt = ServerPacketHandler::MakeUnReliableBuffer(chatPkt);
 							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPktt);
 						}
 					}
