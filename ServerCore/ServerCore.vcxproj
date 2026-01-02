@@ -176,6 +176,7 @@
     <ClInclude Include="DeadLockProfiler.h" />
     <ClInclude Include="DeliveryNotificationManager.h" />
     <ClInclude Include="FileUtils.h" />
+    <ClInclude Include="FragmentManager.h" />
     <ClInclude Include="GlobalQueue.h" />
     <ClInclude Include="InFlightPacket.h" />
     <ClInclude Include="IocpCore.h" />
@@ -200,6 +201,7 @@
     <ClInclude Include="rapidxml_utils.hpp" />
     <ClInclude Include="RecvBuffer.h" />
     <ClInclude Include="RefCounting.h" />
+    <ClInclude Include="RUDPWindow.h" />
     <ClInclude Include="SendBuffer.h" />
     <ClInclude Include="Service.h" />
     <ClInclude Include="Session.h" />
@@ -225,6 +227,7 @@
     <ClCompile Include="DeadLockProfiler.cpp" />
     <ClCompile Include="DeliveryNotificationManager.cpp" />
     <ClCompile Include="FileUtils.cpp" />
+    <ClCompile Include="FragmentManager.cpp" />
     <ClCompile Include="GlobalQueue.cpp" />
     <ClCompile Include="InFlightPacket.cpp" />
     <ClCompile Include="IocpCore.cpp" />
@@ -249,6 +252,7 @@
     <ClCompile Include="QoSCore.cpp" />
     <ClCompile Include="RecvBuffer.cpp" />
     <ClCompile Include="RefCounting.cpp" />
+    <ClCompile Include="RUDPWindow.cpp" />
     <ClCompile Include="SendBuffer.cpp" />
     <ClCompile Include="Service.cpp" />
     <ClCompile Include="Session.cpp" />

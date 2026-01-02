@@ -273,6 +273,10 @@ int main()
 	for(auto& p : GPlayerManager.GetPlayers())
 		Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->GetOwnerSocket()), p.second->GetNetAddr(), sendBufferr);
 	*/
+
+	string longtext = "";
+	while (longtext.size() < 3000)
+		longtext += "ABCDEFGHIJKLNMOPQRSWZXABCDEFGHIJKLNMOPQRSWZXABCDEFGHIJKLNMOPQRSWZX";
 	this_thread::sleep_for(1s);
 	for (int32 i = 0; i < 1; i++) // i = 패킷 강도를 나타냄
 		GThreadManager->Launch([=]() // 플레이어 클래스마다 RUDP AckRange 클래스 배열을 갖고있고 돌아가면서 차있으면 AckRange 정보를 송신한다
@@ -287,20 +291,26 @@ int main()
 					{
 						if (p.second->playerId != 0)
 						{
+							Protocol::C_MSG chatPktt;
+							chatPktt.set_msg("Hello Server");
+							auto sendBufferchatPkttt = ServerPacketHandler::MakeReliableBuffer(chatPktt, QoSCore::LOW);
+							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkttt);
 							//cout << "SENDING MSG ID : " << p.second->playerId << endl;
 							Protocol::C_MSG chatPkt;
-							chatPkt.set_msg(u8"Hello World !");
-							auto sendBufferchatPkt = ServerPacketHandler::MakeUnReliableBuffer(chatPkt);
-							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt);
+							chatPkt.set_msg(longtext);
 							
-							auto sendBufferchatPkttt = ServerPacketHandler::MakeUnReliableBuffer(chatPkt);
-							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkttt);
+							auto sendBufferchatPkt = ServerPacketHandler::MakeReliableBuffer(chatPkt, QoSCore::LOW);
+							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt);
 
-							auto sendBufferchatPktt = ServerPacketHandler::MakeUnReliableBuffer(chatPkt);
+							auto sendBufferchatPktt = ServerPacketHandler::MakeUnReliableBuffer(chatPktt);
 							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPktt);
+							
+							
+							auto sendBufferchatPktttt = ServerPacketHandler::MakeReplicateBuffer(chatPktt);
+							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPktttt);
 						}
 					}
-					//this_thread::sleep_for(100000000s);
+					//this_thread::sleep_for(50ms);
 					//PacketDeliverCondition();
 
 					//if (GetTickCount64() - now >= timeout)
@@ -347,7 +357,7 @@ int main()
 			}
 			player->GetDeliveryManager()->ProcessTimeOutPackets();
 			//PacketLost();
-		//	PacketDeliverCondition(player);
+			PacketDeliverCondition(player);
 		}
 		
 	}

@@ -2,6 +2,7 @@
 #include "DeliveryNotificationManager.h"
 
 DeliveryNotificationManager::DeliveryNotificationManager()
+	: mNextExpectedSequenceNumber(0), _recvWindow(mNextExpectedSequenceNumber)
 {
 }
 
@@ -100,7 +101,7 @@ void DeliveryNotificationManager::ProcessAcks(int32 start, int32 count, bool has
 			HandlePacketDeliveryFailure(nextInFlightPacket);
 		else if (success_flag == 2)
 			HandlePacketDeliverySuccess(nextInFlightPacket);
-		else if (success_flag == 2)
+		else if (success_flag == 3)
 			continue;
 		else
 #ifdef _DEBUG 
@@ -126,17 +127,36 @@ void DeliveryNotificationManager::HandlePacketDeliverySuccess(const InFlightPack
 
 bool DeliveryNotificationManager::ProcessSequenceNumber(PacketSequenceNumber SN)
 {
-	if (SN.GetSN() >= mNextExpectedSequenceNumber) //예상하던 수신 패킷 세퀀스넘버가 맞음
+	
+	if (SN.GetSN() < mNextExpectedSequenceNumber) //기다리고 있었던 수신 패킷 세퀀스 넘버가 아님 조용히 넘김
 	{
-		mNextExpectedSequenceNumber = SN.GetSN() + 1;
-		AddPendingAck(SN);
-		return true;
-	}
-
-	else if (SN.GetSN() < mNextExpectedSequenceNumber) //기다리고 있었던 수신 패킷 세퀀스 넘버가 아님 조용히 넘김
-	{
+		
 		return false;
 	}
+
+	//
+	
+	if (!_recvWindow.CheckRecved(SN.GetSN())) // 중복 Seq
+		return false;
+	//cout << "  SN.GetSN() : " << SN.GetSN() << endl;
+	
+	if (SN.GetSN() > mNextExpectedSequenceNumber) //예상하던 수신 패킷 세퀀스넘버가 맞음
+	{
+		//cout << "TRUE1" << endl;
+		AddPendingAck(SN);
+		return true;
+		
+	}
+	else if (SN.GetSN() == mNextExpectedSequenceNumber)
+	{
+		mNextExpectedSequenceNumber += 1;
+		
+		AddPendingAck(SN);
+
+		//cout << "TRUE2" << endl;
+		return true;
+	}
+	
 
 	return false;
 

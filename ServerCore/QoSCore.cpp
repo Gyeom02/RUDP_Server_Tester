@@ -219,6 +219,7 @@ void QoSPlayer::PushRecv(BYTE* buffer, int32 size)
 	}
 }
 
+
 shared_ptr<SavedRecvPacket> QoSPlayer::PopRecv_RO()
 {
 	shared_ptr<SavedRecvPacket> savePacket;
@@ -301,6 +302,25 @@ shared_ptr<SavedRecvPacket> QoSPlayer::PopRecv_RFCT()
 
 	
 }
+
+void QoSPlayer::OnOrderedRecv(int32 SeqNum, BYTE* buffer, int32 size)
+{
+	
+	//int PacketNum = 0;
+	
+	if (_fragmentManager.OnOrderedRecv(SeqNum, buffer, size, _orderedPacketQueue))
+	{
+		while (!_orderedPacketQueue.empty())
+		{
+			
+			vector<BYTE>& v = _orderedPacketQueue.front();
+			PushRecv(v.data(), v.size());
+			_orderedPacketQueue.pop();
+		}
+	}
+
+}
+
 
 void QoSPlayer::ResetSendReady()
 {
@@ -393,13 +413,43 @@ void QoSShard::PushRecv(int32 playerid, BYTE* buffer, int32 size)
 
 }
 
+void QoSShard::OnOrderedRecv(int32 SeqNum, int32 playerid, BYTE* buffer, int32 size)
+{
+	shared_ptr<QoSPlayer> qosplaayer;
 
+	{
+		READ_LOCK;
+		auto iter = _qosPlayers.find(playerid);
+
+
+		if (iter == _qosPlayers.end())
+			return;
+
+		qosplaayer = iter->second;
+	}
+	qosplaayer->OnOrderedRecv(SeqNum, buffer, size);
+}
 
 QoSCore::QoSCore()
 {
 	for (int i = 0; i < QOS_SHARD_COUNT; i++)
 	{
 		_qosShards[i] = make_unique<QoSShard>();
+	}
+}
+
+void QoSCore::OnRecv(int32 SeqNum, int32 playerId, BYTE* buffer, int32 size)
+{
+	PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
+	if (header->channel == QoSCore::Channel::RO) // Reliable Ordered
+	{
+		
+		OnOrderedRecv(SeqNum, playerId, buffer, size);
+	
+	}
+	else // UnReliable Ordered or RFCT
+	{
+		PushRecv(playerId, buffer, size);
 	}
 }
 
@@ -415,6 +465,12 @@ void QoSCore::PushRecv(int32 playerId, BYTE* buffer, int32 size)
 	QoSShard* shard = GetShard(playerId);
 	shard->PushRecv(playerId, buffer, size);
 
+}
+
+void QoSCore::OnOrderedRecv(int32 SeqNum, int32 playerId, BYTE* buffer, int32 size)
+{
+	QoSShard* shard = GetShard(playerId);
+	shard->OnOrderedRecv(SeqNum, playerId, buffer, size);
 }
 
 void QoSCore::StopShards()

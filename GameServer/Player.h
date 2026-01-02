@@ -74,11 +74,16 @@ public:
 	bool bready = false;
 
 /* DeliveryManager */
+	int32 GetExpectedSeqNum() { return GetDeliveryManager()->GetExpectedSeqNum(); }
+
 	DeliveryManagerRef GetDeliveryManager() { return deliveryManager; }
 
+	int32 GetFragmentPrimID() { int32 id = _giveFragmentID.fetch_add(1); return id; }
 private:
 	USE_LOCK;
 	string	_nickname;
 	DeliveryManagerRef deliveryManager;
+
+	atomic<int32> _giveFragmentID = 0;
 };
 

@@ -31,9 +31,12 @@ void Lock::WriteLock(const char* name)
 				return;
 			}
 		}
-
+	#ifdef _DEBUG
+	#else
 		if (::GetTickCount64() - beginTick >= ACQUIRE_TIMEOUT_TICK)
 			CRASH("LOCK_TIMEOUT");
+	#endif
+		
 
 		this_thread::yield();
 	}

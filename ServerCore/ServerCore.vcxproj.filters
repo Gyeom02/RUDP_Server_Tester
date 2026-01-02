@@ -183,6 +183,12 @@
     <ClInclude Include="Object.h">
       <Filter>Main</Filter>
     </ClInclude>
+    <ClInclude Include="FragmentManager.h">
+      <Filter>RUDP\QoS</Filter>
+    </ClInclude>
+    <ClInclude Include="RUDPWindow.h">
+      <Filter>RUDP</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CorePch.cpp">
@@ -304,6 +310,12 @@
     </ClCompile>
     <ClCompile Include="Object.cpp">
       <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="FragmentManager.cpp">
+      <Filter>RUDP\QoS</Filter>
+    </ClCompile>
+    <ClCompile Include="RUDPWindow.cpp">
+      <Filter>RUDP</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "InFlightPacket.h"
+#include "RUDPWindow.h"
 
 class AckRange
 {
@@ -70,6 +71,11 @@ public:
 	bool ProcessSequenceNumber_URO(PacketSequenceNumber SN);
 
 	bool WriteSeqeuenceNumber_URO(SendBufferRef sendBuffer);
+
+	/*--------------------------------------------*/
+	/*   _recvWindow의 함수   */
+	int32 GetExpectedSeqNum() { return _recvWindow.GetExpectedSqeNum(); }
+
 private:
 	/*   Reliable Ordered Packet의 변수   */
 	//송신
@@ -92,6 +98,7 @@ private:
 	atomic<int32> mNextOutgoingSequenceNumber_URO = 0;
 	atomic<int32> mNextExpectedSequenceNumber_URO = 0;
 
-
+	RUDPRecvWindow _recvWindow;
+	RUDPSendWindow _sendWindow;
 	USE_LOCK;
 };

@@ -4,6 +4,7 @@
 #include <map>
 #include "Object.h"
 #include "Lock.h"
+#include "FragmentManager.h"
 
 #define RECV_WRITE_LOCK WRITE_LOCK_IDX(0)
 #define SEND_WRITE_LOCK WRITE_LOCK_IDX(1)
@@ -68,26 +69,33 @@ private:
 public:
 	QoSPlayer(ObjectRef& owner, QoSShard* _shard, int32 tokenper, int32 burst) : _owner(owner), _ownerShard(_shard), _sendBucket(tokenper, burst) { cout << "QoSPlayer Added " << endl; }
 	~QoSPlayer() { cout << "QoSPlayer Erased " << endl; }
-
-	void PopSend();
+	
 	void PushSend(SendBufferRef packet);
+	void PopSend();
+	
 	
 	void PushRecv(BYTE* buffer, int32 size);
-	array<queue<shared_ptr<SavedSendPacket>>, QUEUE_MAX> _sendQueues;
-	array<queue<shared_ptr<SavedRecvPacket>>, QUEUE_MAX> _recvQueues;
-	shared_ptr<SavedSendPacket> _sendRPCTPacket_ptr;
-	shared_ptr<SavedRecvPacket> _recvRPCTPacket_ptr;
-	ObjectRef& GetOwner() { return _owner; }
-
-public:
+	
 	shared_ptr<SavedRecvPacket> PopRecv_RO();
 	shared_ptr<SavedRecvPacket> PopRecv_URO();
 	shared_ptr<SavedRecvPacket> PopRecv_RFCT();
 
-
+	void OnOrderedRecv(int32 SeqNum, BYTE* buffer, int32 size);
 
 	void ResetSendReady();
 	void ResetRecvReady(); // Recv Logic Worker에서 일처리가 끝난 후 이제 이 Player를 안 쓸거라는 의미-> 다른 쓰레드에서 접근 가능
+	
+	
+
+public:
+	ObjectRef& GetOwner() { return _owner; }
+
+	array<queue<shared_ptr<SavedSendPacket>>, QUEUE_MAX> _sendQueues;
+	array<queue<shared_ptr<SavedRecvPacket>>, QUEUE_MAX> _recvQueues;
+	shared_ptr<SavedSendPacket> _sendRPCTPacket_ptr;
+	shared_ptr<SavedRecvPacket> _recvRPCTPacket_ptr;
+
+	
 private:
 	//TokenBucket _recvBucket;
 	ObjectRef _owner;
@@ -101,6 +109,9 @@ private:
 	//atomic<bool> _sendRPCTPending = false;
 	//atomic<bool> _recvRPCTPending = false;
 	//atomic<bool> _bRecvWorkerUsing = false; //어떤한 RecvWorker가 사용중인지 알려주는 Flag
+	/* For Fragment Handle Function And Values */
+	Ordered_FG_Manager _fragmentManager;
+	queue<vector<BYTE>> _orderedPacketQueue;
 	USE_MANY_LOCKS(2);
 };
 
@@ -117,6 +128,8 @@ public:
 	void PushSend(int32 playerid, SendBufferRef packet);
 	void PushRecv(int32 playerid, BYTE* buffer, int32 size);
 	
+	void OnOrderedRecv(int32 SeqNum, int32 playerid, BYTE* buffer, int32 size);
+
 	void DoSendWork();
 	//void DoRecvWork();
 	void Stop() { running = false; }
@@ -160,8 +173,13 @@ public:
 		PRIORTY_NULL = 3,
 	};
 	QoSCore();
+
+	void OnRecv(int32 SeqNum, int32 playerId, BYTE* buffer, int32 size);
+
 	void PushSend(int32 playerId, SendBufferRef packet);
 	void PushRecv(int32 playerId, BYTE* buffer, int32 size);
+
+	void OnOrderedRecv(int32 SeqNum, int32 playerId, BYTE* buffer, int32 size);
 
 	void StopShards();
 	void ErasePlayer(int32 id);
@@ -169,6 +187,9 @@ public:
 	QoSShard* GetShard_index(int32 index);
 	QoSShard* GetBusyShard_RCV(); // RecvWorker에서 자신이 담당하는 Shard의 recvReadyQueue가 비어있을때 도움이 필요한 다른 Shard를 찾는 함수
 	QoSShard* GetBusyShard_SEND(); // SendWorker에서 자신이 담당하는 Shard의 sendReadyQueue가 비어있을때 도움이 필요한 다른 Shard를 찾는 함수
+
+
+	
 private:
 	
 	array<unique_ptr<QoSShard>, QOS_SHARD_COUNT> _qosShards;

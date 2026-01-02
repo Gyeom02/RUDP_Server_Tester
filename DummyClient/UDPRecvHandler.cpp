@@ -48,7 +48,7 @@ void UDPRecvHandler::DOWork()
 				
 			}
 		}
-
+		
 		HandleRecvPacket(_player);
 	}
 }
@@ -71,6 +71,7 @@ void UDPRecvHandler::HandleRecvPacket(std::shared_ptr<QoSPlayer> _Player)
 			
 			break;
 		}
+		
 		ServerPacketHandler::HandlePacket(player->ownerSocket, player->netAddress, savePacket->_buffer, savePacket->_size);
 				
 	} while (coin--);

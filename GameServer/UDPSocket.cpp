@@ -70,15 +70,17 @@ void UDPSocket::UDPWork()
 					PlayerRef player = GPlayerManager.GetPlayer(header->playerId);
 					if (!player)
 					{
+						//cout << "if (!player)" << endl;
 						processLen += header->size;
 						continue;
 					}
 					if (player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn) == false)
 					{
+						//cout << "(player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn) == false)" << endl;
 						processLen += header->size;
 						continue;
 					}
-					GQoS->PushRecv(header->playerId, &udpRecvBuffer.ReadPos()[processLen], header->size);
+					GQoS->OnRecv(player->GetExpectedSeqNum(), header->playerId, &udpRecvBuffer.ReadPos()[processLen], header->size);
 					processLen += header->size;
 				}
 				else //새로 연결한 클라이언트
@@ -122,16 +124,10 @@ void UDPSocket::UDPWork()
 
 int32 UDPSocket::Send(PlayerRef player, SendBufferRef sendBuffer)
 {
-	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
-	if (header->channel == QoSCore::Channel::RPCT)
-	{
-		if (player->CanRPCT())
-		{
-			FPCSend(player, sendBuffer);
-			return 0;
-		}
-	}
-	GQoS->PushSend(player->playerId, sendBuffer);
+	if (CheckMSSover(sendBuffer))
+		SizeOverSend(player, sendBuffer);
+	else
+		NormalSend(player, sendBuffer);
 	return 0;
 }
 
@@ -156,6 +152,105 @@ int32 UDPSocket::PriortySend(PlayerRef player, SendBufferRef sendBuffer)
 		
 
 }
+bool UDPSocket::CheckMSSover(SendBufferRef sendBuffer)
+{
+	if (sendBuffer->WriteSize() > USER_MSS)
+		return true;
+	return false;
+}
+
+int32 UDPSocket::NormalSend(PlayerRef player, SendBufferRef sendBuffer)
+{
+	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
+	if (header->channel == QoSCore::Channel::RPCT)
+	{
+		if (player->CanRPCT())
+		{
+			FPCSend(player, sendBuffer);
+			return 0;
+		}
+	}
+	GQoS->PushSend(player->playerId, sendBuffer);
+	return 0;
+}
+int32 UDPSocket::SizeOverSend(PlayerRef player, SendBufferRef sendBuffer)
+{
+	const PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
+
+	int32 payloadSize = header->size - sizeof(PacketHeader); // 게산에 사용됨
+	const int32 const_payloadSize = payloadSize; // 원본 Payload를 보여줌
+	const int32 divideNum = payloadSize / (USER_MSS - sizeof(FragmentHeader)) + 1; // 조각화 수를 보여줌
+	int32 dividePacketBaseSize = (payloadSize / divideNum) + (divideNum - 1);
+	
+	int32 packetDivideIndex = 0; // 조각화된 순서
+	int32 Finished_Size = 0; //패킷 조각화 처리가 끝난 전체 크기(이를 통해 다음에 진행할 조각화 패킷의 offset을 구할 수 있음)
+	
+
+	/*PacketHeader newHeader;
+	memcpy(&newHeader, header, sizeof(PacketHeader));
+
+	newHeader.bFragment = 1;
+	*/
+
+	FragmentHeader newFgHeader;
+	//값이 변하지 않는 고유 값은 미리 정의
+	newFgHeader.primID = player->GetFragmentPrimID();
+	newFgHeader.original_size = const_payloadSize;
+	newFgHeader.frag_count = divideNum;
+
+	for (int i = 0; i < divideNum; i++)
+	{
+		/* 초기화 및 기본값 세팅*/
+
+		int32 newPayloadSize = dividePacketBaseSize;
+		if (dividePacketBaseSize > payloadSize)
+			newPayloadSize = payloadSize;
+
+		int32 PktTotallSize = sizeof(PacketHeader) + sizeof(FragmentHeader) + newPayloadSize;
+		//PacketHeader 값 바꿈
+		//newHeader.size = sizeof(PacketHeader) + sizeof(FragmentHeader) + PktSize;
+		
+		//FragmentHeader 값이 변하는 변수들
+		newFgHeader.size = newPayloadSize;
+		newFgHeader.index = packetDivideIndex;
+		newFgHeader.offset = Finished_Size;
+		
+		/*-----------------------*/
+
+		SendBufferRef fragmentSendBuffer = MakeFragmentBuffer(PktTotallSize);
+		
+		PacketHeader* newHeader = reinterpret_cast<PacketHeader*>(fragmentSendBuffer->Buffer());
+		memcpy(newHeader, header, sizeof(PacketHeader));
+
+		newHeader->bFragment = 1;
+		newHeader->size = PktTotallSize;
+
+		FragmentHeader* newFgHeader_dummy = reinterpret_cast<FragmentHeader*>(fragmentSendBuffer->Buffer() + sizeof(PacketHeader));
+		memcpy(newFgHeader_dummy, &newFgHeader, sizeof(FragmentHeader));
+
+
+		memcpy(fragmentSendBuffer->Buffer() + sizeof(PacketHeader) + sizeof(FragmentHeader), sendBuffer->Buffer() + sizeof(PacketHeader), newPayloadSize);
+		
+
+		NormalSend(player, fragmentSendBuffer);
+
+		Finished_Size += newPayloadSize;
+		packetDivideIndex++;
+		payloadSize -= newPayloadSize;
+	}
+	return 0;
+}
+
+SendBufferRef UDPSocket::MakeFragmentBuffer(int32 size)
+{
+	SendBufferRef fragmentSendBuffer = GSendBufferManager->Open(size);
+	fragmentSendBuffer->Close(size);
+
+	return fragmentSendBuffer;
+}
+
+
+
 int UDPSocket::ReliableSend(PlayerRef player, SendBufferRef sendBuffer)
 {
 	NetAddress netAddr = player->netAddress;

@@ -50,12 +50,12 @@ message S_ENTER_GAME
 }
 message C_MSG
 {
-	string msg = 1;
+	bytes msg = 1;
 }
 
 message S_MSG
 {
-	string msg = 1;
+	bytes msg = 1;
 }
 
 message C_MAKEROOM

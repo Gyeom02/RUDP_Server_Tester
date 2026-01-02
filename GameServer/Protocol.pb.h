@@ -1389,7 +1389,7 @@ class C_MSG final :
   enum : int {
     kMsgFieldNumber = 1,
   };
-  // string msg = 1;
+  // bytes msg = 1;
   void clear_msg();
   const std::string& msg() const;
   template <typename ArgT0 = const std::string&, typename... ArgT>
@@ -1526,7 +1526,7 @@ class S_MSG final :
   enum : int {
     kMsgFieldNumber = 1,
   };
-  // string msg = 1;
+  // bytes msg = 1;
   void clear_msg();
   const std::string& msg() const;
   template <typename ArgT0 = const std::string&, typename... ArgT>
@@ -5130,7 +5130,7 @@ inline void S_ENTER_GAME::set_bsuccess(::PROTOBUF_NAMESPACE_ID::int32 value) {
 
 // C_MSG
 
-// string msg = 1;
+// bytes msg = 1;
 inline void C_MSG::clear_msg() {
   msg_.ClearToEmpty();
 }
@@ -5142,7 +5142,7 @@ template <typename ArgT0, typename... ArgT>
 inline PROTOBUF_ALWAYS_INLINE
 void C_MSG::set_msg(ArgT0&& arg0, ArgT... args) {
  
- msg_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+ msg_.SetBytes(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
   // @@protoc_insertion_point(field_set:Protocol.C_MSG.msg)
 }
 inline std::string* C_MSG::mutable_msg() {
@@ -5179,7 +5179,7 @@ inline void C_MSG::set_allocated_msg(std::string* msg) {
 
 // S_MSG
 
-// string msg = 1;
+// bytes msg = 1;
 inline void S_MSG::clear_msg() {
   msg_.ClearToEmpty();
 }
@@ -5191,7 +5191,7 @@ template <typename ArgT0, typename... ArgT>
 inline PROTOBUF_ALWAYS_INLINE
 void S_MSG::set_msg(ArgT0&& arg0, ArgT... args) {
  
- msg_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+ msg_.SetBytes(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
   // @@protoc_insertion_point(field_set:Protocol.S_MSG.msg)
 }
 inline std::string* S_MSG::mutable_msg() {

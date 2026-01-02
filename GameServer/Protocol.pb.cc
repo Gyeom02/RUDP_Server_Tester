@@ -746,7 +746,7 @@ const char descriptor_table_protodef_Protocol_2eproto[] PROTOBUF_SECTION_VARIABL
   "\007players\030\002 \003(\0132\020.Protocol.Player\"#\n\014C_EN"
   "TER_GAME\022\023\n\013playerIndex\030\001 \001(\003\" \n\014S_ENTER"
   "_GAME\022\020\n\010bsuccess\030\001 \001(\005\"\024\n\005C_MSG\022\013\n\003msg\030"
-  "\001 \001(\t\"\024\n\005S_MSG\022\013\n\003msg\030\001 \001(\t\"\030\n\nC_MAKEROO"
+  "\001 \001(\014\"\024\n\005S_MSG\022\013\n\003msg\030\001 \001(\014\"\030\n\nC_MAKEROO"
   "M\022\n\n\002id\030\001 \001(\005\"X\n\nS_MAKEROOM\022\022\n\nrandomcod"
   "e\030\001 \001(\005\022\016\n\006roomid\030\002 \001(\005\022\022\n\nroomprimid\030\003 "
   "\001(\005\022\022\n\nroomlistid\030\004 \001(\005\")\n\013C_ENTERROOM\022\n"
@@ -2457,12 +2457,11 @@ const char* C_MSG::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::inte
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
     switch (tag >> 3) {
-      // string msg = 1;
+      // bytes msg = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           auto str = _internal_mutable_msg();
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          CHK_(::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Protocol.C_MSG.msg"));
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -2495,13 +2494,9 @@ failure:
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // string msg = 1;
+  // bytes msg = 1;
   if (!this->msg().empty()) {
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
-      this->_internal_msg().data(), static_cast<int>(this->_internal_msg().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
-      "Protocol.C_MSG.msg");
-    target = stream->WriteStringMaybeAliased(
+    target = stream->WriteBytesMaybeAliased(
         1, this->_internal_msg(), target);
   }
 
@@ -2521,10 +2516,10 @@ size_t C_MSG::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // string msg = 1;
+  // bytes msg = 1;
   if (!this->msg().empty()) {
     total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
         this->_internal_msg());
   }
 
@@ -2662,12 +2657,11 @@ const char* S_MSG::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::inte
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
     switch (tag >> 3) {
-      // string msg = 1;
+      // bytes msg = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           auto str = _internal_mutable_msg();
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          CHK_(::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Protocol.S_MSG.msg"));
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -2700,13 +2694,9 @@ failure:
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // string msg = 1;
+  // bytes msg = 1;
   if (!this->msg().empty()) {
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
-      this->_internal_msg().data(), static_cast<int>(this->_internal_msg().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
-      "Protocol.S_MSG.msg");
-    target = stream->WriteStringMaybeAliased(
+    target = stream->WriteBytesMaybeAliased(
         1, this->_internal_msg(), target);
   }
 
@@ -2726,10 +2716,10 @@ size_t S_MSG::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // string msg = 1;
+  // bytes msg = 1;
   if (!this->msg().empty()) {
     total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
         this->_internal_msg());
   }
 

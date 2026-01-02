@@ -6,7 +6,9 @@ using PlayerRef = shared_ptr<class Player>;
 class UDPSocket : public enable_shared_from_this<UDPSocket>
 {
 	enum {
-		CLMAX = 100
+		CLMAX = 100,
+		MSS = 1460,
+		USER_MSS = MSS - sizeof(PacketHeader),
 	};
 public:
 	UDPSocket();
@@ -36,6 +38,15 @@ public:
 public:
 	int32 Send(PlayerRef player, SendBufferRef sendBuffer);
 	int32 PriortySend(PlayerRef player, SendBufferRef sendBuffer);
+
+protected:
+	bool CheckMSSover(SendBufferRef sendBuffer);
+
+	int32 NormalSend(PlayerRef player, SendBufferRef sendBuffer);
+	int32 SizeOverSend(PlayerRef player, SendBufferRef sendBuffer);
+
+	SendBufferRef MakeFragmentBuffer(int32 size);
+	
 private:
 	int ReliableSend(PlayerRef player, SendBufferRef sendBuffer);
 	int UnReliable_Ordered_Send(PlayerRef player, SendBufferRef sendBuffer);
