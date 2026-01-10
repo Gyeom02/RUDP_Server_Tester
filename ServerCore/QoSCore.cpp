@@ -377,12 +377,11 @@ void QoSShard::PushSend(int32 playerid, SendBufferRef packet)
 	{
 		READ_LOCK;
 		auto iter  = _qosPlayers.find(playerid);
-#ifdef _DEBUG
-		_ASSERT(iter != _qosPlayers.end());
-#else
+
+
 		if (iter == _qosPlayers.end())
 			return;
-#endif 
+
 		
 		qosplaayer = iter->second;
 	}

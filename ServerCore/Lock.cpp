@@ -32,6 +32,10 @@ void Lock::WriteLock(const char* name)
 			}
 		}
 	#ifdef _DEBUG
+#ifdef _LOCKTIMEOUT_CHECK
+		if (::GetTickCount64() - beginTick >= ACQUIRE_TIMEOUT_TICK)
+			CRASH("LOCK_TIMEOUT");
+#endif
 	#else
 		if (::GetTickCount64() - beginTick >= ACQUIRE_TIMEOUT_TICK)
 			CRASH("LOCK_TIMEOUT");

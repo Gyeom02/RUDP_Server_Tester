@@ -14,16 +14,16 @@ class RUDPRecvWindow
 
 public:
 	
-	explicit RUDPRecvWindow(int32 _expctedSeqNum);
+	explicit RUDPRecvWindow(uint32 _expctedSeqNum);
 
-	bool CheckRecved(int32 SeqNum);
+	bool CheckRecved(uint32 SeqNum);
 	void DetachExpectedSeq();
 
-	int32 GetExpectedSqeNum() { return _expctedSeqNum;  }
+	uint32 GetExpectedSqeNum() { return _expctedSeqNum;  }
 private:
-	int32 _expctedSeqNum = 0;
+	uint32 _expctedSeqNum = 0;
 
-	int32 windowSize = RUDPWIND::SN_RANGE_HALF;
+	uint32 windowSize = RUDPWIND::SN_RANGE_HALF;
 
 	vector<uint8> _RecvedBitMap;
 };

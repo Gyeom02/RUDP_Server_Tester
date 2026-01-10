@@ -79,7 +79,7 @@ private:
 	queue<std::vector<BYTE>> _readyPacket;
 
 	int32 _expectedSeqNum = 0;
-	vector<uint32> _fragmentPassSNs;
+	vector<uint8> _fragmentPassSNs;
 	//priority_queue<int16, vector<int16>, greater<int16>> _fragmentPassSNs; //orderdcfs에서는 조각화 패킷들의 패스 키 정렬 배열
 	USE_LOCK;
 };

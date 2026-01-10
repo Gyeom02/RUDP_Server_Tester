@@ -1,13 +1,13 @@
 #include "pch.h"
 #include "RUDPWindow.h"
 
-RUDPRecvWindow::RUDPRecvWindow(int32 _expctedSeqNum)
+RUDPRecvWindow::RUDPRecvWindow(uint32 _expctedSeqNum)
  : _expctedSeqNum(_expctedSeqNum), _RecvedBitMap(RUDPWIND::SN_MAX_SIZE, 0)
 {
 	
 }
 
-bool RUDPRecvWindow::CheckRecved(int32 SeqNum)
+bool RUDPRecvWindow::CheckRecved(uint32 SeqNum)
 {
 	//int32 index = (SeqNum - _expctedSeqNum) % WINDOW_SIZE;
 	int32 index = SeqNum % RUDPWIND::SN_MAX_SIZE;

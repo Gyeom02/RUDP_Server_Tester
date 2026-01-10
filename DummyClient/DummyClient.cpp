@@ -299,18 +299,18 @@ int main()
 						{
 							Protocol::C_MSG chatPktt;
 							chatPktt.set_msg("Hello Server");
-							auto sendBufferchatPkttt = ServerPacketHandler::MakeReliableBuffer(chatPktt, QoSCore::LOW);
+							/*auto sendBufferchatPkttt = ServerPacketHandler::MakeReliableBuffer(chatPktt, QoSCore::LOW);
 							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkttt);
-							//cout << "SENDING MSG ID : " << p.second->playerId << endl;
+							*///cout << "SENDING MSG ID : " << p.second->playerId << endl;
 							Protocol::C_MSG chatPkt;
 							chatPkt.set_msg(longtext);
-							
+							/*
 							auto sendBufferchatPkt = ServerPacketHandler::MakeReliableBuffer(chatPkt, QoSCore::LOW);
-							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt);
+							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt);*/
 
-							auto sendBufferchatPktt = ServerPacketHandler::MakeUnReliableBuffer(chatPktt);
+							/*auto sendBufferchatPktt = ServerPacketHandler::MakeUnReliableBuffer(chatPktt);
 							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPktt);
-							
+							*/
 							
 							auto sendBufferchatPktttt = ServerPacketHandler::MakeReplicateBuffer(chatPktt);
 							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPktttt);

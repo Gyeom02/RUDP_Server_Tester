@@ -1,5 +1,6 @@
 #pragma once
 #define SERVERADDR L"192.168.219.105"
+#define _LOCKTIMEOUT_CHECK
 
 #include "Types.h"
 #include "CoreMacro.h"
