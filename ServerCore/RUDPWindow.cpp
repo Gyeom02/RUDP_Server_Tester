@@ -2,7 +2,7 @@
 #include "RUDPWindow.h"
 
 RUDPRecvWindow::RUDPRecvWindow(int32 _expctedSeqNum)
- : _expctedSeqNum(_expctedSeqNum), _RecvedBitMap(WINDOW_SIZE, 0)
+ : _expctedSeqNum(_expctedSeqNum), _RecvedBitMap(RUDPWIND::SN_MAX_SIZE, 0)
 {
 	
 }
@@ -10,7 +10,7 @@ RUDPRecvWindow::RUDPRecvWindow(int32 _expctedSeqNum)
 bool RUDPRecvWindow::CheckRecved(int32 SeqNum)
 {
 	//int32 index = (SeqNum - _expctedSeqNum) % WINDOW_SIZE;
-	int32 index = SeqNum % WINDOW_SIZE;
+	int32 index = SeqNum % RUDPWIND::SN_MAX_SIZE;
 	if (index < 0)
 		return false;
 
@@ -29,6 +29,6 @@ void RUDPRecvWindow::DetachExpectedSeq() // 예상하던 Seq의 패킷이 들어옴
 {
 	
 	_expctedSeqNum++;
-	_RecvedBitMap[_expctedSeqNum % WINDOW_SIZE] = 0;
-	_RecvedBitMap[WINDOW_SIZE - 1] = 0;
+	_RecvedBitMap[_expctedSeqNum % RUDPWIND::SN_MAX_SIZE] = 0;
+	_RecvedBitMap[RUDPWIND::SN_RANGE_HALF - 1] = 0;
 }

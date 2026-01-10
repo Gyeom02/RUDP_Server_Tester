@@ -44,6 +44,12 @@ void PacketDeliverCondition(PlayerRef player)
 {
 	if (!player)
 		return;
+	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	//GetConsoleScreenBufferInfo(h, &info);
+	COORD pos = { (SHORT)0, (SHORT)player->playerId };
+	SetConsoleCursorPosition(h, pos);
+
 	DeliveryManagerRef GDeliveryManager = player->GetDeliveryManager();
 	cout << "플레이어 ID : " << player->playerId << " 전체 보낸 패킷 수 : " << GDeliveryManager->GetDispatchedPacketCount() << " 성공패킷 : " << GDeliveryManager->GetDeliveredPacketCount()
 		<< " 실패패킷 : " << GDeliveryManager->GetDroppedPacketCount() - GDeliveryManager->GetSuccessReSendPacketNum() << " 성공 + 실패 : " << GDeliveryManager->GetDeliveredPacketCount() + (GDeliveryManager->GetDroppedPacketCount() - GDeliveryManager->GetSuccessReSendPacketNum()) << endl;
@@ -158,11 +164,14 @@ int main()
 		//Thread
 		GUDP.InitRecvLogicWorkers();
 	}
-	int32 ackpreStart = 0;
-	int32 ackStart = 1;
-	int32 ackCount = 0;
+	uint32 ackpreStart = 0;
+	uint32 ackStart = 1;
+	uint32 ackCount = 0;
 	bool hasCount = false;
 	NetAddress netAddr;
+
+
+	system("cls");
 
 	//Thread 최적화 필요
 	while (true)
@@ -198,7 +207,7 @@ int main()
 					break;
 			}
 			p.second->GetDeliveryManager()->ProcessTimeOutPackets();
-			//PacketDeliverCondition();
+			PacketDeliverCondition(p.second);
 		}
 	}
 	GThreadManager->Join();

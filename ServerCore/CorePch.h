@@ -1,4 +1,5 @@
 #pragma once
+#define SERVERADDR L"192.168.219.105"
 
 #include "Types.h"
 #include "CoreMacro.h"

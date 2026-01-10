@@ -5,7 +5,7 @@
 class PacketSequenceNumber
 {
 public:
-	PacketSequenceNumber(int32 n = -1) :_sequenceNumber(n) {}
+	PacketSequenceNumber(uint32 n = -1) :_sequenceNumber(n) {}
 	PacketSequenceNumber(const PacketSequenceNumber& psn) { _sequenceNumber = psn._sequenceNumber; }
 	~PacketSequenceNumber() {}
 
@@ -17,11 +17,11 @@ public:
 	void operator ++() { ++_sequenceNumber; }
 
 
-	int32 GetSN() { return _sequenceNumber; }
-	void SetSN(int32 sn) { _sequenceNumber = sn; }
+	uint32 GetSN() { return _sequenceNumber; }
+	void SetSN(uint32 sn) { _sequenceNumber = sn; }
 
 private:
-	int32 _sequenceNumber = -1;
+	uint32 _sequenceNumber = -1;
 	
 };
 

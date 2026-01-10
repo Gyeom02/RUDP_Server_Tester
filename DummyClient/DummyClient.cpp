@@ -118,6 +118,12 @@ int32 Recv(UDPSocketPtr udpSocket, NetAddress netAddr)
 void PacketDeliverCondition(PlayerRef player)
 {
 	//cout << "GetSuccessReSendPacketNum : " << GDeliveryManager->GetSuccessReSendPacketNum() << endl;
+	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	//GetConsoleScreenBufferInfo(h, &info);
+	COORD pos = { (SHORT)0, (SHORT)player->playerId };
+	SetConsoleCursorPosition(h, pos);
+
 	DeliveryManagerRef GDeliveryManager = player->GetDeliveryManager();
 	cout << "플레이어 ID : " << player->playerId << " 전체 보낸 패킷 수 : " << GDeliveryManager->GetDispatchedPacketCount() << " 성공패킷 : " << GDeliveryManager->GetDeliveredPacketCount()
 	<< " 실패패킷 : " << GDeliveryManager->GetDroppedPacketCount() - GDeliveryManager->GetSuccessReSendPacketNum() << " 성공 + 실패 : " << GDeliveryManager->GetDeliveredPacketCount()+ (GDeliveryManager->GetDroppedPacketCount() - GDeliveryManager->GetSuccessReSendPacketNum()) << endl;
@@ -322,11 +328,12 @@ int main()
 	//	cout << "a" << endl;
 	//while(true)
 	//	GUDP.UDPDoJop();
-	int32 start =0;
-	int32 count = 0;
+	uint32 start =0;
+	uint32 count = 0;
 	bool bhascount;
 	
-	
+	system("cls");
+
 	while (true)
 	{
 		//this_thread::sleep_for(100ms);

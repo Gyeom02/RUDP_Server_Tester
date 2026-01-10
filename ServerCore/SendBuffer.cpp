@@ -105,7 +105,7 @@ void SendBufferManager::PushSend(SendBufferChunkRef buffer)
 
 void SendBufferManager::PushGlobal(SendBufferChunk* buffer)
 {
-	cout << "PushGlobal SENDBUFFERCHUNK" << endl;
+	//cout << "PushGlobal SENDBUFFERCHUNK" << endl;
 
 	GSendBufferManager->PushSend(SendBufferChunkRef(buffer, PushGlobal));
 }

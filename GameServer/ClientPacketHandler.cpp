@@ -186,12 +186,14 @@ bool Handle_C_MSG(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* h
 {
 	std::cout << pkt.msg() << "^^" << endl;
 
-	//Protocol::S_MSG chatPkt;
-	//chatPkt.set_msg(pkt.msg());
-	//auto sendBuffer = ClientPacketHandler::MakeSendBuffer(chatPkt);
-	//
-	////GRoom->DoAsync(&Room::Broadcast, sendBuffer);
-	//udpSocket->Send(clientAddr, sendBuffer);
+	/*Protocol::S_MSG chatPkt;
+	chatPkt.set_msg(pkt.msg());
+	auto sendBuffer = ClientPacketHandler::MakeReliableBuffer(chatPkt, QoSCore::Priority::LOW);
+	PlayerRef player = GPlayerManager.GetPlayer(header->playerId);
+	udpSocket->Send(player, sendBuffer);
+	*/
+	//////GRoom->DoAsync(&Room::Broadcast, sendBuffer);
+	
 	return true;
 }
 bool Handle_C_MAKEROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_MAKEROOM& pkt)

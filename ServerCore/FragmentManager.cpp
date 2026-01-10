@@ -2,7 +2,7 @@
 #include "FragmentManager.h"
 
 
-FragmentContext::FragmentContext(PacketHeader* header, int16 primid, int16 frag_count, int16 original_size) // 처음 생성된거임
+FragmentContext::FragmentContext(PacketHeader* header, uint32 primid, int16 frag_count, int16 original_size) // 처음 생성된거임
     : primID(primid), frag_Count(frag_count), original_Size(original_size)
     
 {
@@ -37,7 +37,7 @@ void FragmentContext::Store(BYTE* buffer, int32 size, int16 offset, int16 index)
 }
 
 
-bool Ordered_FG_Manager::OnOrderedRecv(int32 seqNum, BYTE* buffer, int32 size, OUT queue<vector<BYTE>>& outReadyQueue)
+bool Ordered_FG_Manager::OnOrderedRecv(uint32 seqNum, BYTE* buffer, int32 size, OUT queue<vector<BYTE>>& outReadyQueue)
 {
     PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
     
@@ -69,14 +69,14 @@ bool Ordered_FG_Manager::OnOrderedRecv(int32 seqNum, BYTE* buffer, int32 size, O
     }
 }
 
-bool Ordered_FG_Manager::OnFragment(int32 seqNum, BYTE* buffer, int32 size, OUT queue<vector<BYTE>>& outReadyQueue)
+bool Ordered_FG_Manager::OnFragment(uint32 seqNum, BYTE* buffer, int32 size, OUT queue<vector<BYTE>>& outReadyQueue)
 {
 
     PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
     FragmentHeader* FgHeader = reinterpret_cast<FragmentHeader*>(buffer + sizeof(PacketHeader));
     BYTE* payload = reinterpret_cast<BYTE*>(buffer + sizeof(PacketHeader) + sizeof(FragmentHeader));
     int32 payloadSize = FgHeader->size;
-    int32 seq_index = FgHeader->primID;
+    uint32 seq_index = FgHeader->primID;
     //오염 체크
     
     
@@ -97,7 +97,7 @@ bool Ordered_FG_Manager::OnFragment(int32 seqNum, BYTE* buffer, int32 size, OUT 
     shared_ptr<FragmentContext> copy_ctx;
     if (iter == _fragCtxs.end()) // 처음 발견한 primID를 갖고있는 조각화 패킷을 발견
     {
-        shared_ptr<FragmentContext> ctx = make_shared<FragmentContext>(header, FgHeader->primID, FgHeader->frag_count, FgHeader->original_size);
+        shared_ptr<FragmentContext> ctx = make_shared<FragmentContext>(header, seq_index, FgHeader->frag_count, FgHeader->original_size);
         //_fragCtxs[FgHeader->primID] = ctx;
 
         _fragCtxs[seq_index] = ctx;
@@ -138,7 +138,7 @@ bool Ordered_FG_Manager::OnFragment(int32 seqNum, BYTE* buffer, int32 size, OUT 
       //  memcpy(outBuffer.data(), copy_ctx->_storedBuffer.data(), copy_ctx->GetSize());
         // outBuffer = newbuffer;
 
-        int16 Sn = copy_ctx->_fragmentSeqNums.top();
+        uint32 Sn = copy_ctx->_fragmentSeqNums.top();
         copy_ctx->_fragmentSeqNums.pop();
         
         copy_ctx->SetPrimID(Sn);
@@ -149,7 +149,9 @@ bool Ordered_FG_Manager::OnFragment(int32 seqNum, BYTE* buffer, int32 size, OUT 
             Sn = copy_ctx->_fragmentSeqNums.top();
             copy_ctx->_fragmentSeqNums.pop();
 
-            _fragmentPassSNs.push(Sn); //Pass Key Push
+            PushPassSN(Sn);
+            //_fragmentPassSNs.push(Sn); //Pass Key Push
+            
             /*
 
             copy_ctx->SetPrimID(Sn);
@@ -202,7 +204,7 @@ bool Ordered_FG_Manager::OnFragment(int32 seqNum, BYTE* buffer, int32 size, OUT 
 //    _readyPacket.push(std::move(_packet));
 //}
 
-bool Ordered_FG_Manager::IsThereReadyPacket(int32 expectedseqNum, OUT queue<vector<BYTE>>& _queue)
+bool Ordered_FG_Manager::IsThereReadyPacket(uint32 expectedseqNum, OUT queue<vector<BYTE>>& _queue)
 {
     bool isexist = false;
     
@@ -210,11 +212,11 @@ bool Ordered_FG_Manager::IsThereReadyPacket(int32 expectedseqNum, OUT queue<vect
     do
     {
         //cout << "IsThereReadyPacket" << endl;
-        if (!_fragmentPassSNs.empty() && _expectedSeqNum == _fragmentPassSNs.top())
+        if (!_fragmentPassSNs.empty() && TryPassSN(_expectedSeqNum))
         {
             //PASS
             _expectedSeqNum++;
-            _fragmentPassSNs.pop();
+           //_fragmentPassSNs.pop();
         //    cout << "!_fragmentPassSNs.empty() && _expectedSeqNum == _fragmentPassSNs.top()" << endl;
             continue;
         }

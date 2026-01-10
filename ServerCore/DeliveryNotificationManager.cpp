@@ -10,7 +10,7 @@ DeliveryNotificationManager::~DeliveryNotificationManager()
 {
 }
 
-bool DeliveryNotificationManager::CheckPacketChannel(int16 channel, int32 sn)
+bool DeliveryNotificationManager::CheckPacketChannel(int16 channel, uint32 sn)
 {
 	switch (channel)
 	{
@@ -43,7 +43,7 @@ InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(SOCKET objec
 	return mInFlightPackets.back();
 }
 
-void DeliveryNotificationManager::ProcessAcks(int32 start, int32 count, bool hasCount)
+void DeliveryNotificationManager::ProcessAcks(uint32 start, uint32 count, bool hasCount)
 {
 	AckRange ackRange;
 	ackRange.AckRead(start, count);
@@ -171,7 +171,7 @@ void DeliveryNotificationManager::AddPendingAck(PacketSequenceNumber SN)
 	}
 }
 
-bool DeliveryNotificationManager::WritePendingAcks(OUT int32& start, OUT int32& count, OUT bool& hasCount)
+bool DeliveryNotificationManager::WritePendingAcks(OUT uint32& start, OUT uint32& count, OUT bool& hasCount)
 {
 	WRITE_LOCK;
 	bool hasAcks = (mPendingAcks.size() > 0);
@@ -247,7 +247,7 @@ bool AckRange::ExtendIfShould(PacketSequenceNumber SN)
 	}
 }
 
-void AckRange::AckWrite(OUT int32& start, OUT int32& count, OUT bool& hasCount)
+void AckRange::AckWrite(OUT uint32& start, OUT uint32& count, OUT bool& hasCount)
 {
 	start = mStart;
 	hasCount = mCount > 1;
@@ -260,7 +260,7 @@ void AckRange::AckWrite(OUT int32& start, OUT int32& count, OUT bool& hasCount)
 	//netAddr = netAddress;
 }
 
-void AckRange::AckRead(int32 start, int32 count)
+void AckRange::AckRead(uint32 start, uint32 count)
 {
 	mStart = start;
 

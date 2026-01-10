@@ -104,14 +104,14 @@ struct PacketHeader
 	uint16 channel = -1;
 	uint16 priority = -1;
 	int32 playerId; 
-	int32 sn; // sequenceNumber (RUDP패킷 추적할때 사용)
+	uint32 sn; // sequenceNumber (RUDP패킷 추적할때 사용)
 	int32 retransnum = 0;
 	int16 bFragment = 0; // 조각화 유무 알려주는 Flag
 };
 
 struct FragmentHeader
 {
-	int16 primID = -1; // 수신자로부터 조각화될때 나눠진 패킷들이 공통으로 갖는 식별 ID -> 조각화 된 패킷들의 Seq중 제일 앞에 있는것
+	uint16 primID = -1; // 수신자로부터 조각화될때 나눠진 패킷들이 공통으로 갖는 식별 ID -> 조각화 된 패킷들의 Seq중 제일 앞에 있는것
 	int16 index = -1; // 조각화 패킷들 중의 순서
 	int16 frag_count = -1; // 총 조각화된 패킷의 수
 	int16 offset = -1; // 원본 패킷에서의 이 조각화 패킷의 시작 오프셋(Byte 단위)
