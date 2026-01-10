@@ -78,8 +78,9 @@ private:
 	std::map<uint32, shared_ptr<FragmentContext>> _fragCtxs; // < Fragment::PrimID,  shared_ptr<FragmentContext>> 을 pair로 갖는 map / 조각화가 모두 모이면 _orderdCtxs로 옮겨짐
 	queue<std::vector<BYTE>> _readyPacket;
 
-	int32 _expectedSeqNum = 0;
+	uint32 _expectedSeqNum = 0;
 	vector<uint8> _fragmentPassSNs;
+
 	//priority_queue<int16, vector<int16>, greater<int16>> _fragmentPassSNs; //orderdcfs에서는 조각화 패킷들의 패스 키 정렬 배열
 	USE_LOCK;
 };
