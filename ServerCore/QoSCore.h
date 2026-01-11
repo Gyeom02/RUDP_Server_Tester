@@ -155,6 +155,9 @@ private:
 	bool running = false;
 	USE_MANY_LOCKS(3); // index(0) -> _qosPlayers를 위한것, index(1)-> RecvReadyQueue를 위한것,  index(2) ->RecvReadyQueue를 위한것,
 };
+
+
+
 class QoSCore
 {
 public:
@@ -189,7 +192,7 @@ public:
 	QoSShard* GetBusyShard_SEND(); // SendWorker에서 자신이 담당하는 Shard의 sendReadyQueue가 비어있을때 도움이 필요한 다른 Shard를 찾는 함수
 
 
-	
+
 private:
 	
 	array<unique_ptr<QoSShard>, QOS_SHARD_COUNT> _qosShards;

@@ -4,7 +4,7 @@
 Player::Player(int32 id) 
 	: playerId(id), roomId(-1), roomprimid(-1), teamNum(-1)
 { 
-	deliveryManager = MakeShared<DeliveryNotificationManager>();
+	
 }
 
 void Player::Send(SendBufferRef sendBuffer)

@@ -197,6 +197,7 @@ int main()
 					pkt.set_count(ackCount);
 					pkt.set_start(ackStart);
 					pkt.set_playerid(p.second->playerId);
+					pkt.set_rwindsize(p.second->GetRWind());
 					SendBufferRef sendBuffer = ClientPacketHandler::MakeUnReliableBuffer(pkt);
 					p.second->Send(sendBuffer);
 					//GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);

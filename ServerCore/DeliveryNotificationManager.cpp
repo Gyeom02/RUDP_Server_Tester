@@ -10,12 +10,12 @@ DeliveryNotificationManager::~DeliveryNotificationManager()
 {
 }
 
-bool DeliveryNotificationManager::CheckPacketChannel(int16 channel, uint32 sn)
+bool DeliveryNotificationManager::CheckPacketChannel(int16 channel, uint32 sn, int32 size)
 {
 	switch (channel)
 	{
 	case QoSCore::Channel::RO:
-		if (ProcessSequenceNumber(sn) == false)
+		if (ProcessSequenceNumber(sn, size) == false)
 			return false;
 		break;
 	case QoSCore::Channel::URO:
@@ -125,7 +125,7 @@ void DeliveryNotificationManager::HandlePacketDeliverySuccess(const InFlightPack
 	inFlightPacket->HandleDeliverySuccess(shared_from_this());
 }
 
-bool DeliveryNotificationManager::ProcessSequenceNumber(PacketSequenceNumber SN)
+bool DeliveryNotificationManager::ProcessSequenceNumber(PacketSequenceNumber SN, int32 size)
 {
 	
 	if (SN.GetSN() < mNextExpectedSequenceNumber) //기다리고 있었던 수신 패킷 세퀀스 넘버가 아님 조용히 넘김
@@ -135,7 +135,9 @@ bool DeliveryNotificationManager::ProcessSequenceNumber(PacketSequenceNumber SN)
 	}
 
 	//
-	
+	if (!_recvWindow.IsSpaceExistToRecv(size)) // rwind valid size check
+		return false;
+
 	if (!_recvWindow.CheckRecved(SN.GetSN())) // 중복 Seq
 		return false;
 	//cout << "  SN.GetSN() : " << SN.GetSN() << endl;

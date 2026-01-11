@@ -409,7 +409,8 @@ constexpr C_RUDPACK::C_RUDPACK(
   : bhascount_(0)
   , start_(0)
   , count_(0)
-  , playerid_(0){}
+  , playerid_(0)
+  , rwindsize_(0){}
 struct C_RUDPACKDefaultTypeInternal {
   constexpr C_RUDPACKDefaultTypeInternal()
     : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
@@ -424,7 +425,8 @@ constexpr S_RUDPACK::S_RUDPACK(
   : bhascount_(0)
   , start_(0)
   , count_(0)
-  , playerid_(0){}
+  , playerid_(0)
+  , rwindsize_(0){}
 struct S_RUDPACKDefaultTypeInternal {
   constexpr S_RUDPACKDefaultTypeInternal()
     : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
@@ -656,6 +658,7 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_Protocol_2eproto::offsets[] PR
   PROTOBUF_FIELD_OFFSET(::Protocol::C_RUDPACK, start_),
   PROTOBUF_FIELD_OFFSET(::Protocol::C_RUDPACK, count_),
   PROTOBUF_FIELD_OFFSET(::Protocol::C_RUDPACK, playerid_),
+  PROTOBUF_FIELD_OFFSET(::Protocol::C_RUDPACK, rwindsize_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::Protocol::S_RUDPACK, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -665,6 +668,7 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_Protocol_2eproto::offsets[] PR
   PROTOBUF_FIELD_OFFSET(::Protocol::S_RUDPACK, start_),
   PROTOBUF_FIELD_OFFSET(::Protocol::S_RUDPACK, count_),
   PROTOBUF_FIELD_OFFSET(::Protocol::S_RUDPACK, playerid_),
+  PROTOBUF_FIELD_OFFSET(::Protocol::S_RUDPACK, rwindsize_),
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, sizeof(::Protocol::C_DISCONNECT)},
@@ -698,7 +702,7 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 195, -1, sizeof(::Protocol::C_SENDIMPORT)},
   { 201, -1, sizeof(::Protocol::S_SENDIMPORT)},
   { 207, -1, sizeof(::Protocol::C_RUDPACK)},
-  { 216, -1, sizeof(::Protocol::S_RUDPACK)},
+  { 217, -1, sizeof(::Protocol::S_RUDPACK)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -776,12 +780,12 @@ const char descriptor_table_protodef_Protocol_2eproto[] PROTOBUF_SECTION_VARIABL
   "\030\001 \001(\005\022\016\n\006bready\030\002 \001(\005\"\r\n\013S_STARTGAME\"8\n"
   "\014C_SENDIMPORT\022(\n\nplayermove\030\001 \001(\0132\024.Prot"
   "ocol.PlayerMove\"9\n\014S_SENDIMPORT\022)\n\013playe"
-  "rmoves\030\001 \003(\0132\024.Protocol.PlayerMove\"N\n\tC_"
+  "rmoves\030\001 \003(\0132\024.Protocol.PlayerMove\"a\n\tC_"
   "RUDPACK\022\021\n\tbhascount\030\001 \001(\005\022\r\n\005start\030\002 \001("
-  "\005\022\r\n\005count\030\003 \001(\005\022\020\n\010playerid\030\004 \001(\005\"N\n\tS_"
-  "RUDPACK\022\021\n\tbhascount\030\001 \001(\005\022\r\n\005start\030\002 \001("
-  "\005\022\r\n\005count\030\003 \001(\005\022\020\n\010playerid\030\004 \001(\005b\006prot"
-  "o3"
+  "\005\022\r\n\005count\030\003 \001(\005\022\020\n\010playerid\030\004 \001(\005\022\021\n\trw"
+  "indsize\030\005 \001(\005\"a\n\tS_RUDPACK\022\021\n\tbhascount\030"
+  "\001 \001(\005\022\r\n\005start\030\002 \001(\005\022\r\n\005count\030\003 \001(\005\022\020\n\010p"
+  "layerid\030\004 \001(\005\022\021\n\trwindsize\030\005 \001(\005b\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_Protocol_2eproto_deps[2] = {
   &::descriptor_table_Enum_2eproto,
@@ -789,7 +793,7 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_Protocol_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_Protocol_2eproto = {
-  false, false, 1762, descriptor_table_protodef_Protocol_2eproto, "Protocol.proto", 
+  false, false, 1800, descriptor_table_protodef_Protocol_2eproto, "Protocol.proto", 
   &descriptor_table_Protocol_2eproto_once, descriptor_table_Protocol_2eproto_deps, 2, 32,
   schemas, file_default_instances, TableStruct_Protocol_2eproto::offsets,
   file_level_metadata_Protocol_2eproto, file_level_enum_descriptors_Protocol_2eproto, file_level_service_descriptors_Protocol_2eproto,
@@ -7392,16 +7396,16 @@ C_RUDPACK::C_RUDPACK(const C_RUDPACK& from)
   : ::PROTOBUF_NAMESPACE_ID::Message() {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::memcpy(&bhascount_, &from.bhascount_,
-    static_cast<size_t>(reinterpret_cast<char*>(&playerid_) -
-    reinterpret_cast<char*>(&bhascount_)) + sizeof(playerid_));
+    static_cast<size_t>(reinterpret_cast<char*>(&rwindsize_) -
+    reinterpret_cast<char*>(&bhascount_)) + sizeof(rwindsize_));
   // @@protoc_insertion_point(copy_constructor:Protocol.C_RUDPACK)
 }
 
 void C_RUDPACK::SharedCtor() {
 ::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
     reinterpret_cast<char*>(&bhascount_) - reinterpret_cast<char*>(this)),
-    0, static_cast<size_t>(reinterpret_cast<char*>(&playerid_) -
-    reinterpret_cast<char*>(&bhascount_)) + sizeof(playerid_));
+    0, static_cast<size_t>(reinterpret_cast<char*>(&rwindsize_) -
+    reinterpret_cast<char*>(&bhascount_)) + sizeof(rwindsize_));
 }
 
 C_RUDPACK::~C_RUDPACK() {
@@ -7431,8 +7435,8 @@ void C_RUDPACK::Clear() {
   (void) cached_has_bits;
 
   ::memset(&bhascount_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&playerid_) -
-      reinterpret_cast<char*>(&bhascount_)) + sizeof(playerid_));
+      reinterpret_cast<char*>(&rwindsize_) -
+      reinterpret_cast<char*>(&bhascount_)) + sizeof(rwindsize_));
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
@@ -7467,6 +7471,13 @@ const char* C_RUDPACK::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
           playerid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // int32 rwindsize = 5;
+      case 5:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
+          rwindsize_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -7523,6 +7534,12 @@ failure:
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(4, this->_internal_playerid(), target);
   }
 
+  // int32 rwindsize = 5;
+  if (this->rwindsize() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(5, this->_internal_rwindsize(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -7565,6 +7582,13 @@ size_t C_RUDPACK::ByteSizeLong() const {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
         this->_internal_playerid());
+  }
+
+  // int32 rwindsize = 5;
+  if (this->rwindsize() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
+        this->_internal_rwindsize());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -7610,6 +7634,9 @@ void C_RUDPACK::MergeFrom(const C_RUDPACK& from) {
   if (from.playerid() != 0) {
     _internal_set_playerid(from._internal_playerid());
   }
+  if (from.rwindsize() != 0) {
+    _internal_set_rwindsize(from._internal_rwindsize());
+  }
 }
 
 void C_RUDPACK::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
@@ -7634,8 +7661,8 @@ void C_RUDPACK::InternalSwap(C_RUDPACK* other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(C_RUDPACK, playerid_)
-      + sizeof(C_RUDPACK::playerid_)
+      PROTOBUF_FIELD_OFFSET(C_RUDPACK, rwindsize_)
+      + sizeof(C_RUDPACK::rwindsize_)
       - PROTOBUF_FIELD_OFFSET(C_RUDPACK, bhascount_)>(
           reinterpret_cast<char*>(&bhascount_),
           reinterpret_cast<char*>(&other->bhascount_));
@@ -7663,16 +7690,16 @@ S_RUDPACK::S_RUDPACK(const S_RUDPACK& from)
   : ::PROTOBUF_NAMESPACE_ID::Message() {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::memcpy(&bhascount_, &from.bhascount_,
-    static_cast<size_t>(reinterpret_cast<char*>(&playerid_) -
-    reinterpret_cast<char*>(&bhascount_)) + sizeof(playerid_));
+    static_cast<size_t>(reinterpret_cast<char*>(&rwindsize_) -
+    reinterpret_cast<char*>(&bhascount_)) + sizeof(rwindsize_));
   // @@protoc_insertion_point(copy_constructor:Protocol.S_RUDPACK)
 }
 
 void S_RUDPACK::SharedCtor() {
 ::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
     reinterpret_cast<char*>(&bhascount_) - reinterpret_cast<char*>(this)),
-    0, static_cast<size_t>(reinterpret_cast<char*>(&playerid_) -
-    reinterpret_cast<char*>(&bhascount_)) + sizeof(playerid_));
+    0, static_cast<size_t>(reinterpret_cast<char*>(&rwindsize_) -
+    reinterpret_cast<char*>(&bhascount_)) + sizeof(rwindsize_));
 }
 
 S_RUDPACK::~S_RUDPACK() {
@@ -7702,8 +7729,8 @@ void S_RUDPACK::Clear() {
   (void) cached_has_bits;
 
   ::memset(&bhascount_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&playerid_) -
-      reinterpret_cast<char*>(&bhascount_)) + sizeof(playerid_));
+      reinterpret_cast<char*>(&rwindsize_) -
+      reinterpret_cast<char*>(&bhascount_)) + sizeof(rwindsize_));
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
@@ -7738,6 +7765,13 @@ const char* S_RUDPACK::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
           playerid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // int32 rwindsize = 5;
+      case 5:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
+          rwindsize_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -7794,6 +7828,12 @@ failure:
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(4, this->_internal_playerid(), target);
   }
 
+  // int32 rwindsize = 5;
+  if (this->rwindsize() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(5, this->_internal_rwindsize(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -7836,6 +7876,13 @@ size_t S_RUDPACK::ByteSizeLong() const {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
         this->_internal_playerid());
+  }
+
+  // int32 rwindsize = 5;
+  if (this->rwindsize() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
+        this->_internal_rwindsize());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -7881,6 +7928,9 @@ void S_RUDPACK::MergeFrom(const S_RUDPACK& from) {
   if (from.playerid() != 0) {
     _internal_set_playerid(from._internal_playerid());
   }
+  if (from.rwindsize() != 0) {
+    _internal_set_rwindsize(from._internal_rwindsize());
+  }
 }
 
 void S_RUDPACK::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
@@ -7905,8 +7955,8 @@ void S_RUDPACK::InternalSwap(S_RUDPACK* other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(S_RUDPACK, playerid_)
-      + sizeof(S_RUDPACK::playerid_)
+      PROTOBUF_FIELD_OFFSET(S_RUDPACK, rwindsize_)
+      + sizeof(S_RUDPACK::rwindsize_)
       - PROTOBUF_FIELD_OFFSET(S_RUDPACK, bhascount_)>(
           reinterpret_cast<char*>(&bhascount_),
           reinterpret_cast<char*>(&other->bhascount_));

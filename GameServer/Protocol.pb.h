@@ -4630,6 +4630,7 @@ class C_RUDPACK final :
     kStartFieldNumber = 2,
     kCountFieldNumber = 3,
     kPlayeridFieldNumber = 4,
+    kRwindsizeFieldNumber = 5,
   };
   // int32 bhascount = 1;
   void clear_bhascount();
@@ -4667,6 +4668,15 @@ class C_RUDPACK final :
   void _internal_set_playerid(::PROTOBUF_NAMESPACE_ID::int32 value);
   public:
 
+  // int32 rwindsize = 5;
+  void clear_rwindsize();
+  ::PROTOBUF_NAMESPACE_ID::int32 rwindsize() const;
+  void set_rwindsize(::PROTOBUF_NAMESPACE_ID::int32 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::int32 _internal_rwindsize() const;
+  void _internal_set_rwindsize(::PROTOBUF_NAMESPACE_ID::int32 value);
+  public:
+
   // @@protoc_insertion_point(class_scope:Protocol.C_RUDPACK)
  private:
   class _Internal;
@@ -4678,6 +4688,7 @@ class C_RUDPACK final :
   ::PROTOBUF_NAMESPACE_ID::int32 start_;
   ::PROTOBUF_NAMESPACE_ID::int32 count_;
   ::PROTOBUF_NAMESPACE_ID::int32 playerid_;
+  ::PROTOBUF_NAMESPACE_ID::int32 rwindsize_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_Protocol_2eproto;
 };
@@ -4795,6 +4806,7 @@ class S_RUDPACK final :
     kStartFieldNumber = 2,
     kCountFieldNumber = 3,
     kPlayeridFieldNumber = 4,
+    kRwindsizeFieldNumber = 5,
   };
   // int32 bhascount = 1;
   void clear_bhascount();
@@ -4832,6 +4844,15 @@ class S_RUDPACK final :
   void _internal_set_playerid(::PROTOBUF_NAMESPACE_ID::int32 value);
   public:
 
+  // int32 rwindsize = 5;
+  void clear_rwindsize();
+  ::PROTOBUF_NAMESPACE_ID::int32 rwindsize() const;
+  void set_rwindsize(::PROTOBUF_NAMESPACE_ID::int32 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::int32 _internal_rwindsize() const;
+  void _internal_set_rwindsize(::PROTOBUF_NAMESPACE_ID::int32 value);
+  public:
+
   // @@protoc_insertion_point(class_scope:Protocol.S_RUDPACK)
  private:
   class _Internal;
@@ -4843,6 +4864,7 @@ class S_RUDPACK final :
   ::PROTOBUF_NAMESPACE_ID::int32 start_;
   ::PROTOBUF_NAMESPACE_ID::int32 count_;
   ::PROTOBUF_NAMESPACE_ID::int32 playerid_;
+  ::PROTOBUF_NAMESPACE_ID::int32 rwindsize_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_Protocol_2eproto;
 };
@@ -6470,6 +6492,26 @@ inline void C_RUDPACK::set_playerid(::PROTOBUF_NAMESPACE_ID::int32 value) {
   // @@protoc_insertion_point(field_set:Protocol.C_RUDPACK.playerid)
 }
 
+// int32 rwindsize = 5;
+inline void C_RUDPACK::clear_rwindsize() {
+  rwindsize_ = 0;
+}
+inline ::PROTOBUF_NAMESPACE_ID::int32 C_RUDPACK::_internal_rwindsize() const {
+  return rwindsize_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::int32 C_RUDPACK::rwindsize() const {
+  // @@protoc_insertion_point(field_get:Protocol.C_RUDPACK.rwindsize)
+  return _internal_rwindsize();
+}
+inline void C_RUDPACK::_internal_set_rwindsize(::PROTOBUF_NAMESPACE_ID::int32 value) {
+  
+  rwindsize_ = value;
+}
+inline void C_RUDPACK::set_rwindsize(::PROTOBUF_NAMESPACE_ID::int32 value) {
+  _internal_set_rwindsize(value);
+  // @@protoc_insertion_point(field_set:Protocol.C_RUDPACK.rwindsize)
+}
+
 // -------------------------------------------------------------------
 
 // S_RUDPACK
@@ -6552,6 +6594,26 @@ inline void S_RUDPACK::_internal_set_playerid(::PROTOBUF_NAMESPACE_ID::int32 val
 inline void S_RUDPACK::set_playerid(::PROTOBUF_NAMESPACE_ID::int32 value) {
   _internal_set_playerid(value);
   // @@protoc_insertion_point(field_set:Protocol.S_RUDPACK.playerid)
+}
+
+// int32 rwindsize = 5;
+inline void S_RUDPACK::clear_rwindsize() {
+  rwindsize_ = 0;
+}
+inline ::PROTOBUF_NAMESPACE_ID::int32 S_RUDPACK::_internal_rwindsize() const {
+  return rwindsize_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::int32 S_RUDPACK::rwindsize() const {
+  // @@protoc_insertion_point(field_get:Protocol.S_RUDPACK.rwindsize)
+  return _internal_rwindsize();
+}
+inline void S_RUDPACK::_internal_set_rwindsize(::PROTOBUF_NAMESPACE_ID::int32 value) {
+  
+  rwindsize_ = value;
+}
+inline void S_RUDPACK::set_rwindsize(::PROTOBUF_NAMESPACE_ID::int32 value) {
+  _internal_set_rwindsize(value);
+  // @@protoc_insertion_point(field_set:Protocol.S_RUDPACK.rwindsize)
 }
 
 #ifdef __GNUC__

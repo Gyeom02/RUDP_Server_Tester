@@ -38,7 +38,7 @@ public:
 
 	//Public
 	// 
-	bool CheckPacketChannel(int16 channel, uint32 sn);
+	bool CheckPacketChannel(int16 channel, uint32 sn, int32 size);
 	//////
 	//송신
 	InFlightPacketPtr WriteSeqeuenceNumber(SOCKET object, NetAddress netAddr, SendBufferRef sendBuffer);
@@ -48,7 +48,7 @@ public:
 
 
 	//수신
-	bool ProcessSequenceNumber(PacketSequenceNumber SN);
+	bool ProcessSequenceNumber(PacketSequenceNumber SN, int32 size);
 	void AddPendingAck(PacketSequenceNumber SN);
 	bool WritePendingAcks(OUT uint32& start, OUT uint32& count, OUT bool& hasCount);
 
@@ -75,7 +75,13 @@ public:
 	/*--------------------------------------------*/
 	/*   _recvWindow의 함수   */
 	int32 GetExpectedSeqNum() { return _recvWindow.GetExpectedSqeNum(); }
+	int32 GetRWind() { return _recvWindow.GetRWind(); }
+	void MakeSpaceRWind(int32 doneSize) { _recvWindow.MakeSpaceRWind(doneSize); }
 
+	/*   _sendWindow의 함수   */
+	bool IsSpaceExistToSend(int32 sendSize) { return _sendWindow.IsSpaceExistToSend(sendSize); }
+	void SetReceiverRWind(int32 rwindSize) { _sendWindow.SetReceiverRWind(rwindSize); }
+	int32 GetReceiverRWind() { return _sendWindow.GetReceiverRWind(); }
 private:
 	/*   Reliable Ordered Packet의 변수   */
 	//송신

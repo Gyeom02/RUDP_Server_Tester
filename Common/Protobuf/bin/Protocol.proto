@@ -193,6 +193,7 @@ message C_RUDPACK
 	int32 start = 2;
 	int32 count = 3;
 	int32 playerid = 4;
+	int32 rwindsize = 5;
 }
 
 
@@ -202,4 +203,5 @@ message S_RUDPACK
 	int32 start = 2;
 	int32 count = 3;
 	int32 playerid = 4;
+	int32 rwindsize = 5;
 }

@@ -105,6 +105,7 @@ void QoSPlayer::PopSend()
 	shared_ptr<SavedSendPacket> savePacket = nullptr; //기아 현상 해결해야함
 	{
 		int coin = 5;
+		DeliveryManagerRef dm = _owner->GetDeliveryManager();
 		while (coin--)
 		{
 			
@@ -113,8 +114,23 @@ void QoSPlayer::PopSend()
 				SEND_WRITE_LOCK;
 				if (_sendQueues[QoSCore::RO].empty() || !_sendBucket.Consume())
 					break;
-				
+
 				savePacket = _sendQueues[QoSCore::RO].front();
+
+				if (!dm->IsSpaceExistToSend(savePacket->sendBuffer->WriteSize())) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
+				{
+#ifdef _DEBUG
+					HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+					CONSOLE_SCREEN_BUFFER_INFO info;
+					//GetConsoleScreenBufferInfo(h, &info);
+					COORD pos = { (SHORT)0, (SHORT)11};
+					SetConsoleCursorPosition(h, pos);
+
+					cout << "Out Of RWind : " << dm->GetReceiverRWind() << " < " << savePacket->sendBuffer->WriteSize() << endl;
+
+#endif
+					break;
+				}
 				_sendQueues[QoSCore::RO].pop();
 				
 				
@@ -307,7 +323,7 @@ void QoSPlayer::OnOrderedRecv(int32 SeqNum, BYTE* buffer, int32 size)
 {
 	
 	//int PacketNum = 0;
-	
+	DeliveryManagerRef dm = _owner->GetDeliveryManager();
 	if (_fragmentManager.OnOrderedRecv(SeqNum, buffer, size, _orderedPacketQueue))
 	{
 		while (!_orderedPacketQueue.empty())
@@ -315,6 +331,7 @@ void QoSPlayer::OnOrderedRecv(int32 SeqNum, BYTE* buffer, int32 size)
 			
 			vector<BYTE>& v = _orderedPacketQueue.front();
 			PushRecv(v.data(), v.size());
+			dm->MakeSpaceRWind(v.size()); // RecvBuffer에서 Logic 처리로 옮겨졌기때문에 RWind의 크기를 해당 패킷 사이즈 만큼 다시 넓혀줘야 받을 수 있음
 			_orderedPacketQueue.pop();
 		}
 	}

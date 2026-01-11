@@ -73,7 +73,7 @@ void UDPSocket::UDPWork()
 						processLen += header->size;
 						continue;
 					}
-					if (player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn) == false)
+					if (player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn, header->size) == false)
 					{
 						processLen += header->size;
 						continue;

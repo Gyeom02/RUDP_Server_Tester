@@ -107,6 +107,7 @@ struct PacketHeader
 	uint32 sn; // sequenceNumber (RUDP패킷 추적할때 사용)
 	int32 retransnum = 0;
 	int16 bFragment = 0; // 조각화 유무 알려주는 Flag
+	//int16 ControlFlag = 0;
 };
 
 struct FragmentHeader
@@ -118,6 +119,28 @@ struct FragmentHeader
 	int16 size = -1;  // 이 조각화된 패킷의 Payload 사이즈(Byte 단위)
 	int16 original_size = -1; // 원본 패킷의 Payload 사이즈(Byte 단위)
 };
+//struct Ack
+//{
+//	int32 bhascount;
+//	int32 start;
+//	int32 count;
+//};
+//struct RWind
+//{
+//	int32 bhascount;
+//	int32 start;
+//	int32 rwindsize;
+//};
+//struct ControlHeader
+//{
+//	int16 Flag; //Control Type Ack, RTT PingPong, Rwind ,, etc
+//	
+//	union ControlBox
+//	{
+//		Ack ack;
+//		RWind rwind;
+//	} ControlBox;
+//};
 #pragma pack(pop)
 
 class PacketSession : public Session

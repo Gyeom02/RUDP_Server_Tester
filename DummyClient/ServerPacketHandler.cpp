@@ -17,6 +17,7 @@ bool Handle_S_RUDPACK(UDPSocketPtr udpSocket, NetAddress netAddress, PacketHeade
 		return false;*/
 	PlayerRef player = GPlayerManager.GetPlayer(header->playerId);
 	//cout << "Handle_S_RUDPACK PlayerID : " << header->playerId << endl;
+	player->GetDeliveryManager()->SetReceiverRWind(pkt.rwindsize());
  	player->GetDeliveryManager()->ProcessAcks(start, count, bhascount);
 	return true;
 }

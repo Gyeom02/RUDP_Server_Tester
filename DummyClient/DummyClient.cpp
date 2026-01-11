@@ -354,6 +354,7 @@ int main()
 						pkt.set_count(count);
 						pkt.set_start(start);
 						pkt.set_playerid(player->playerId);
+						pkt.set_rwindsize(player->GetRWind());
 						SendBufferRef sendBufferR = ServerPacketHandler::MakeUnReliableBuffer(pkt);
 						player->Send(sendBufferR);
 						//cout << "Send RUDP ACK" << endl;
@@ -364,7 +365,7 @@ int main()
 			}
 			player->GetDeliveryManager()->ProcessTimeOutPackets();
 			//PacketLost();
-			PacketDeliverCondition(player);
+		//	PacketDeliverCondition(player);
 		}
 		
 	}
