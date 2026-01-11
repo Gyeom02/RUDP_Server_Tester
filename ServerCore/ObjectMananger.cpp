@@ -1,22 +1,22 @@
 #include "pch.h"
-#include "PlayerManager.h"
-#include "Player.h"
-PlayerManager GPlayerManager;
+#include "ObjectManager.h"
+//#include "O.h"
+ObjectManager GObjectManager;
 
-void PlayerManager::Add(int32 id, PlayerRef player)
+void ObjectManager::Add(int32 id, ObjectRef player)
 {
 	WRITE_LOCK;
 	_players[id] = player;
 	//_players.insert(make_pair(id, player));
 }
 
-void PlayerManager::Remove(int32 id)
+void ObjectManager::Remove(int32 id)
 {
 	WRITE_LOCK;
 	_players.erase(id);
 }
 
-void PlayerManager::BroadCast(SendBufferRef sendBuffer)
+void ObjectManager::BroadCast(SendBufferRef sendBuffer)
 {
 	WRITE_LOCK;
 	for (auto player : _players)
@@ -25,7 +25,7 @@ void PlayerManager::BroadCast(SendBufferRef sendBuffer)
 	}
 }
 
-PlayerRef PlayerManager::GetPlayer(int32 id)
+ObjectRef ObjectManager::GetPlayer(int32 id)
 {
 	WRITE_LOCK;
 
@@ -37,7 +37,7 @@ PlayerRef PlayerManager::GetPlayer(int32 id)
 }
 
 
-int32 PlayerManager::ReuseID()
+int32 ObjectManager::ReuseID()
 {
 	WRITE_LOCK;
 
@@ -50,7 +50,7 @@ int32 PlayerManager::ReuseID()
 	return id;
 }
 
-void PlayerManager::PushID(int32 id)
+void ObjectManager::PushID(int32 id)
 {
 	WRITE_LOCK;
 

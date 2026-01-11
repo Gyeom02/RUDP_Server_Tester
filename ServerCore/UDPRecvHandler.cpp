@@ -2,12 +2,13 @@
 #include "UDPRecvHandler.h"
 #include "ThreadManager.h"
 
-UDPRecvHandler::UDPRecvHandler(QoSShard* _ownerShard)
-	: _shard(_ownerShard)
+UDPRecvHandler::UDPRecvHandler(QoSShard* _ownerShard, PacketHandleFunc func)
+	: _shard(_ownerShard), _func(func)
 {
-	CreateAsyncWorkThread();
-}
 
+	CreateAsyncWorkThread();
+	
+}
 UDPRecvHandler::~UDPRecvHandler()
 
 {
@@ -48,7 +49,7 @@ void UDPRecvHandler::DOWork()
 				
 			}
 		}
-
+		
 		HandleRecvPacket(_player);
 	}
 }
@@ -61,7 +62,7 @@ void UDPRecvHandler::HandleRecvPacket(std::shared_ptr<QoSPlayer> _Player)
 
 	int coin = 32;
 
-	PlayerRef player = static_pointer_cast<Player>(_Player->GetOwner());
+	ObjectRef player = _Player->GetOwner();
 
 	do
 	{
@@ -71,8 +72,8 @@ void UDPRecvHandler::HandleRecvPacket(std::shared_ptr<QoSPlayer> _Player)
 			
 			break;
 		}
-		//cout << "ClientPacketHandler::HandlePacket" << endl;
-		ClientPacketHandler::HandlePacket(player->ownerSocket, player->netAddress, savePacket->_buffer, savePacket->_size);
+		_func(player->ownerSocket, player->netAddress, savePacket->_buffer, savePacket->_size);
+		//ServerPacketHandler::HandlePacket(player->ownerSocket, player->netAddress, savePacket->_buffer, savePacket->_size);
 				
 	} while (coin--);
 	//coin = 3;
@@ -86,7 +87,8 @@ void UDPRecvHandler::HandleRecvPacket(std::shared_ptr<QoSPlayer> _Player)
 			
 			break;
 		}
-		ClientPacketHandler::HandlePacket(player->ownerSocket, player->netAddress, savePacket->_buffer, savePacket->_size);
+		_func(player->ownerSocket, player->netAddress, savePacket->_buffer, savePacket->_size);
+		//ServerPacketHandler::HandlePacket(player->ownerSocket, player->netAddress, savePacket->_buffer, savePacket->_size);
 
 	} while (coin--);
 	//coin = 2;
@@ -94,7 +96,8 @@ void UDPRecvHandler::HandleRecvPacket(std::shared_ptr<QoSPlayer> _Player)
 	savePacket = _Player->PopRecv_RFCT();
 	if (savePacket) // RFCT Packet이 업데이트 됨
 	{
-		ClientPacketHandler::HandlePacket(player->ownerSocket, player->netAddress, savePacket->_buffer, savePacket->_size);
+		//ServerPacketHandler::HandlePacket(player->ownerSocket, player->netAddress, savePacket->_buffer, savePacket->_size);
+		_func(player->ownerSocket, player->netAddress, savePacket->_buffer, savePacket->_size);
 	}
 	
 	

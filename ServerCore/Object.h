@@ -8,10 +8,11 @@ private:
 		
 	};
 public:
-	Object() { deliveryManager = MakeShared<DeliveryNotificationManager>(); }
+	Object(int32 id) : client_Id(id) { deliveryManager = MakeShared<DeliveryNotificationManager>(); }
 	virtual ~Object() {}
 
-	virtual void PriortySend(SendBufferRef sendBuffer) { cout << "object Send" << endl; }
+	void Send(SendBufferRef sendBuffer);
+	void PriortySend(SendBufferRef sendBuffer);
 
 	bool CanRPCT();
 
@@ -23,12 +24,24 @@ public:
 	int32 GetFragmentPrimID() { int32 id = _giveFragmentID.fetch_add(1); return id; }
 
 	int32 GetRWind() { return GetDeliveryManager()->GetRWind(); }
+
+public:
+	NetAddress				netAddress;
+	//	GameSessionRef			ownerSession; // Cycle
+	shared_ptr<class UDPSocket>			ownerSocket; // Cycle
+	atomic<int32>					client_Id = 0;
+
+protected:
+	USE_LOCK;
 private:
+	
 	atomic<uint64> _RPCT_recv_Time;
 
 	DeliveryManagerRef deliveryManager;
 
 	atomic<int32> _giveFragmentID = 0;
+
+	
 };
 
 using ObjectRef = shared_ptr<Object>;

@@ -34,6 +34,9 @@
     <Filter Include="RUDP\QoS">
       <UniqueIdentifier>{73cfb9f9-ef84-4c56-80d1-b6d4cbb85ed5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RUDP\QoS\UDP">
+      <UniqueIdentifier>{a352ec17-bf5c-4dd9-b0db-33b3aa4e723a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorePch.h">
@@ -189,6 +192,18 @@
     <ClInclude Include="RUDPWindow.h">
       <Filter>RUDP</Filter>
     </ClInclude>
+    <ClInclude Include="UDP.h">
+      <Filter>RUDP\QoS\UDP</Filter>
+    </ClInclude>
+    <ClInclude Include="UDPRecvHandler.h">
+      <Filter>RUDP\QoS\UDP</Filter>
+    </ClInclude>
+    <ClInclude Include="UDPSocket.h">
+      <Filter>RUDP\QoS\UDP</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectManager.h">
+      <Filter>Network</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CorePch.cpp">
@@ -316,6 +331,18 @@
     </ClCompile>
     <ClCompile Include="RUDPWindow.cpp">
       <Filter>RUDP</Filter>
+    </ClCompile>
+    <ClCompile Include="UDP.cpp">
+      <Filter>RUDP\QoS\UDP</Filter>
+    </ClCompile>
+    <ClCompile Include="UDPRecvHandler.cpp">
+      <Filter>RUDP\QoS\UDP</Filter>
+    </ClCompile>
+    <ClCompile Include="UDPSocket.cpp">
+      <Filter>RUDP\QoS\UDP</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectMananger.cpp">
+      <Filter>Network</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

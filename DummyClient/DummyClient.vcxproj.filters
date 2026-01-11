@@ -39,18 +39,6 @@
     <ClCompile Include="ServerPacketHandler.cpp">
       <Filter>Content</Filter>
     </ClCompile>
-    <ClCompile Include="UDPSocket.cpp">
-      <Filter>UDP</Filter>
-    </ClCompile>
-    <ClCompile Include="UDP.cpp">
-      <Filter>UDP</Filter>
-    </ClCompile>
-    <ClCompile Include="UDPRecvHandler.cpp">
-      <Filter>UDP</Filter>
-    </ClCompile>
-    <ClCompile Include="PlayerManager.cpp">
-      <Filter>Content</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -70,18 +58,6 @@
     </ClInclude>
     <ClInclude Include="ServerPacketHandler.h">
       <Filter>Content</Filter>
-    </ClInclude>
-    <ClInclude Include="UDPRecvHandler.h">
-      <Filter>UDP</Filter>
-    </ClInclude>
-    <ClInclude Include="UDPSocket.h">
-      <Filter>UDP</Filter>
-    </ClInclude>
-    <ClInclude Include="PlayerManager.h">
-      <Filter>Content</Filter>
-    </ClInclude>
-    <ClInclude Include="UDP.h">
-      <Filter>UDP</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

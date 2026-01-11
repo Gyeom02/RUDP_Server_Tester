@@ -16,18 +16,23 @@ public:
 		//POPRECV_WORKER_NUM = 2,
 		MAX_WORKER_NUM = QOS_SHARD_COUNT + PLUS_WORKER_NUM,
 	};
+	enum Type
+	{
+		SERVER = 1,
+		CLIENT = 2,
+	};
 	UDP();
 	virtual ~UDP() { UDPClear(); }
 
 
-	bool UDPInit();
+	bool UDPInit(Type type);
 	void UDPClear();
 
 	//void CheckPacketChannel(UDPSocketPtr udpSocket, NetAddress clientAddress, BYTE* buffer, int32 len);
 	//void UDPPacketHandle(UDPSocketPtr udpSocket, NetAddress clientAddress, BYTE* buffer, int32 len);
 	void UDPDo_PopRecv_Work(int32 start_index, int32 end_index);
 
-	void InitRecvLogicWorkers(); //QoSCore의 Shard 수의 N /2 만큼 생성
+	void InitRecvLogicWorkers(PacketHandleFunc func); //QoSCore의 Shard 수의 N /2 만큼 생성
 	UDPSocketPtr GetUDPSocket(int32 index)
 	{
 		return _udpSockets[index];
@@ -40,13 +45,15 @@ public:
 	{
 		_IsUDPOn = is;
 	}
+
+	PacketHandleFunc _func; // 임시
 private:
 	bool UDPSocketReset(int32 index);
 private:
 	Array<UDPSocketPtr, SOCKNUM> _udpSockets = {};
 	Array<UDPRecvHandlerRef, MAX_WORKER_NUM> _udpRecvWorkers = {};
-	Array<queue<UDPRecvHandlerRef>, QOS_SHARD_COUNT> _sleepWorkers = {};
 	bool _IsUDPOn = false;
+	Type _type;
 };
 
 extern UDP GUDP;

@@ -26,7 +26,7 @@ public:
 	bool				CanStart() { return _sessionFactory != nullptr; }
 
 	virtual void		CloseService();
-	void				SetSessionFactory(SessionFactory func) { _sessionFactory = func; }
+	void				SetSessionFactory(SessionFactory _func) { _sessionFactory = _func; }
 
 	void				Broadcast(SendBufferRef sendBuffer);
 	SessionRef			CreateSession();

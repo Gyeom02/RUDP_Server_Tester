@@ -2,23 +2,12 @@
 #include "Player.h"
 
 Player::Player(int32 id) 
-	: playerId(id), roomId(-1), roomprimid(-1), teamNum(-1)
+	:  Object(id), roomId(-1), roomprimid(-1), teamNum(-1)
 { 
 	
 }
 
-void Player::Send(SendBufferRef sendBuffer)
-{
-	WRITE_LOCK;
-	
-	ownerSocket->Send(static_pointer_cast<Player>(shared_from_this()), sendBuffer);
-}
 
-void Player::PriortySend(SendBufferRef sendBuffer)
-{
-	WRITE_LOCK;
-	ownerSocket->PriortySend(static_pointer_cast<Player>(shared_from_this()), sendBuffer);
-}
 
 void Player::SetImport(Position _pos, Rotation _rot, Velocity _vel)
 {

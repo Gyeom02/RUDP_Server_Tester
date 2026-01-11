@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "ServerPacketHandler.h"
 #include "Player.h"
-#include "PlayerManager.h"
+//#include "PlayerManager.h"
 
 PacketHandlerFunc GPacketHandler[UINT16_MAX];
 
@@ -15,7 +15,7 @@ bool Handle_S_RUDPACK(UDPSocketPtr udpSocket, NetAddress netAddress, PacketHeade
 	int32 count = pkt.count();
 	/*if (pkt.playerid() == 0)
 		return false;*/
-	PlayerRef player = GPlayerManager.GetPlayer(header->playerId);
+	PlayerRef player = static_pointer_cast<Player>(GObjectManager.GetPlayer(header->client_Id));
 	//cout << "Handle_S_RUDPACK PlayerID : " << header->playerId << endl;
 	player->GetDeliveryManager()->SetReceiverRWind(pkt.rwindsize());
  	player->GetDeliveryManager()->ProcessAcks(start, count, bhascount);
@@ -37,14 +37,14 @@ bool Handle_S_INIT(UDPSocketPtr udpSocket, NetAddress netAddress, PacketHeader* 
 	PlayerRef _player = MakeShared<Player>(pkt.id());
 	_player->ownerSocket = GUDP.GetUDPSocket(0)->shared_from_this();
 	_player->netAddress = _player->ownerSocket->GetNetAddress();
-	GPlayerManager.Add(pkt.id(), _player);
+	GObjectManager.Add(pkt.id(), _player);
 	
 	GQoS->GetShard(pkt.id())->MakeQoSPlayer(_player, pkt.id());
 	
 	//PlayerRef player = GPlayerManager.GetPlayer();
 	
-	_player->playerId.store(int32(pkt.id()));
-	cout << "Handle_S_INIT : " << _player->playerId.load() << endl;
+	_player->client_Id.store(int32(pkt.id()));
+	cout << "Handle_S_INIT : " << _player->client_Id.load() << endl;
 	return true;
 }
 bool Handle_S_LOGIN(UDPSocketPtr udpSocket, NetAddress netAddress, PacketHeader* header, Protocol::S_LOGIN& pkt)

@@ -367,22 +367,22 @@ void QoSPlayer::ResetRecvReady()
 	}
 }
 
-void QoSShard::MakeQoSPlayer(ObjectRef object, int32 playerId, int32 rate, int32 burst)
+void QoSShard::MakeQoSPlayer(ObjectRef object, int32 client_Id, int32 rate, int32 burst)
 {
 	WRITE_LOCK;
 
 	//TODO 만약 같은 id를 사용하기 원하는 Player가 나왔을때 그냥 무시할 것인지 아님 emplace + check을 고려할 것인지 생각
-	_qosPlayers[playerId] = MakeShared<QoSPlayer>(object, this, rate, burst);
+	_qosPlayers[client_Id] = MakeShared<QoSPlayer>(object, this, rate, burst);
 }
 
-void QoSShard::ErasePlayer(int32 playerId)
+void QoSShard::ErasePlayer(int32 client_Id)
 {
 	WRITE_LOCK;
 	/*shared_ptr<QoSPlayer> player;
 	auto iterator = _qosPlayers.find(playerId);
 	if (iterator != _qosPlayers.end())
 		player = iterator->second;*/
-	_qosPlayers.erase(playerId);
+	_qosPlayers.erase(client_Id);
 	
 
 }
@@ -454,39 +454,39 @@ QoSCore::QoSCore()
 	}
 }
 
-void QoSCore::OnRecv(int32 SeqNum, int32 playerId, BYTE* buffer, int32 size)
+void QoSCore::OnRecv(int32 SeqNum, int32 client_Id, BYTE* buffer, int32 size)
 {
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
 	if (header->channel == QoSCore::Channel::RO) // Reliable Ordered
 	{
 		
-		OnOrderedRecv(SeqNum, playerId, buffer, size);
+		OnOrderedRecv(SeqNum, client_Id, buffer, size);
 	
 	}
 	else // UnReliable Ordered or RFCT
 	{
-		PushRecv(playerId, buffer, size);
+		PushRecv(client_Id, buffer, size);
 	}
 }
 
-void QoSCore::PushSend(int32 playerId, SendBufferRef packet)
+void QoSCore::PushSend(int32 client_Id, SendBufferRef packet)
 {
-	QoSShard* shard = GetShard(playerId);
-	shard->PushSend(playerId,  packet);
+	QoSShard* shard = GetShard(client_Id);
+	shard->PushSend(client_Id,  packet);
 	
 }
 
-void QoSCore::PushRecv(int32 playerId, BYTE* buffer, int32 size)
+void QoSCore::PushRecv(int32 client_Id, BYTE* buffer, int32 size)
 {
-	QoSShard* shard = GetShard(playerId);
-	shard->PushRecv(playerId, buffer, size);
+	QoSShard* shard = GetShard(client_Id);
+	shard->PushRecv(client_Id, buffer, size);
 
 }
 
-void QoSCore::OnOrderedRecv(int32 SeqNum, int32 playerId, BYTE* buffer, int32 size)
+void QoSCore::OnOrderedRecv(int32 SeqNum, int32 client_Id, BYTE* buffer, int32 size)
 {
-	QoSShard* shard = GetShard(playerId);
-	shard->OnOrderedRecv(SeqNum, playerId, buffer, size);
+	QoSShard* shard = GetShard(client_Id);
+	shard->OnOrderedRecv(SeqNum, client_Id, buffer, size);
 }
 
 void QoSCore::StopShards()

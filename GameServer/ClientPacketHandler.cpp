@@ -2,7 +2,7 @@
 #include "ClientPacketHandler.h"
 #include "Player.h"
 #include "Room.h"
-#include "PlayerManager.h"
+//#include "PlayerManager.h"
 #include "QoSCore.h"
 PacketHandlerFunc GPacketHandler[UINT16_MAX];
 
@@ -14,7 +14,7 @@ bool Handle_C_RUDPACK(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeade
 	int32 start = pkt.start();
 	int32 count = pkt.count();
 	
-	PlayerRef player = GPlayerManager.GetPlayer(pkt.playerid());
+	PlayerRef player = static_pointer_cast<Player>(GObjectManager.GetPlayer(pkt.playerid()));
 	if (player == nullptr)
 	{
 		//cout << "Handle_C_RUDPACK PlayerID : " << pkt.playerid() << " | SequenceStart : " << pkt.start() << endl;
@@ -33,9 +33,9 @@ bool Handle_C_DISCONNECT(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHe
 	int32 roomid = pkt.roomid();
 	int32 roomprimid = pkt.roomprimid();
 	//PlayerManager Release
-	GPlayerManager.Remove(id);
+	GObjectManager.Remove(id);
 	// ID Reuse Setting
-	GPlayerManager.PushID(id);
+	GObjectManager.PushID(id);
 	GQoS->ErasePlayer(id);
 	//Room Release
 	if (roomid == -1) // 방에 들어가있지 않음
@@ -73,7 +73,7 @@ bool Handle_INVALID(UDPSocketPtr udpSocket, NetAddress clientAddr, BYTE* buffer,
 bool Handle_C_INIT(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_INIT& pkt)
 {
 	static Atomic<int32> idGenerator = 0;
-	int32 reuse_id = GPlayerManager.ReuseID();
+	int32 reuse_id = GObjectManager.ReuseID();
 	int32 id = -1;
 	if (reuse_id == -1) // 재사용 가능한  ID가 없음 새로 발급
 		id = ++idGenerator;
@@ -90,11 +90,11 @@ bool Handle_C_INIT(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* 
 	playerRef->netAddress = clientAddr;
 	playerRef->ownerSocket = udpSocket;
 
-	GPlayerManager.Add(id, playerRef);
+	GObjectManager.Add(id, playerRef);
 
 	GQoS->GetShard(id)->MakeQoSPlayer(playerRef, id);
 
-	if (GPlayerManager.GetPlayer(id) == nullptr)
+	if (GObjectManager.GetPlayer(id) == nullptr)
 		cout << "NNULPTR" << endl;
 	else cout << id << endl;
 
@@ -185,7 +185,7 @@ bool Handle_C_ENTER_GAME(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHe
 
 bool Handle_C_MSG(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_MSG& pkt)
 {
-	//std::cout << pkt.msg() << "^^" << endl;
+	std::cout << pkt.msg() << "^^" << endl;
 
 	/*Protocol::S_MSG chatPkt;
 	chatPkt.set_msg(pkt.msg());
@@ -205,7 +205,7 @@ bool Handle_C_MAKEROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHead
 		return true;
 	}
 	RoomRef room = make_shared<Room>(pkt.id());
-	PlayerRef player = GPlayerManager.GetPlayer(pkt.id());
+	PlayerRef player = static_pointer_cast<Player>(GObjectManager.GetPlayer(pkt.id()));
 	player->roomprimid = room->GivePrimID();
 	int32 givenlistid = room->FirstGiveListID(player->roomprimid);
 	player->teamNum = room->GetTeamNum(givenlistid);
@@ -250,7 +250,7 @@ bool Handle_C_ENTERROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHea
 		cout << "Room : " << pkt.roomid() << " Fulled" << endl;
 		return true;
 	}
-	PlayerRef player = GPlayerManager.GetPlayer(pkt.id());
+	PlayerRef player = static_pointer_cast<Player>(GObjectManager.GetPlayer(pkt.id()));
 	if (player == nullptr)
 	{
 		//플레이어가 존재하지않음
@@ -283,9 +283,9 @@ bool Handle_C_ENTERROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHea
 	{
 		PlayerRef ps = p.second;
 		auto pktplayers = enterpkt.add_players();
-		pktplayers->set_id(ps->playerId);
+		pktplayers->set_id(ps->client_Id);
 		//닉네임 임시임
-		pktplayers->set_name(to_string(ps->playerId));
+		pktplayers->set_name(to_string(ps->client_Id));
 		pktplayers->set_roomid(ps->roomprimid);
 		pktplayers->set_roomlistid(room->GetPrimToList(ps->roomprimid));
 	}
@@ -361,7 +361,7 @@ bool Handle_C_LEAVEROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHea
 	if (player == nullptr)
 		return true;
 
-	if (player->playerId == room->GetRoomID()) //방에 주인인데 나가려고 함
+	if (player->client_Id == room->GetRoomID()) //방에 주인인데 나가려고 함
 	{
 	
 		if (room->PlayerNum() == 1)// 방에 나밖에 없다
@@ -379,7 +379,7 @@ bool Handle_C_LEAVEROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHea
 				if (newHostplayer != player) //Host Player가 아닌 다른 플레이어
 					break;
 			}
-			nextHostID = newHostplayer->playerId;
+			nextHostID = newHostplayer->client_Id;
 
 			//GRoom에서 방 Key Value 변경된 Host ID로 체인지
 			GRoom->Remove(room);

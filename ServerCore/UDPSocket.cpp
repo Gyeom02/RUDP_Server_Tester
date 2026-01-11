@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "UDPSocket.h"
 #include "UDP.h"
-#include "PlayerManager.h"
+//#include "ObjectManager.h"
 #include "QoSCore.h"
 
 UDPSocket::UDPSocket()
@@ -24,7 +24,7 @@ void UDPSocket::UDPWork()
 		if (index == WSA_WAIT_FAILED)
 			continue;
 		index -= WSA_WAIT_EVENT_0;
-
+		//cout << "Recv" << endl;
 		WSANETWORKEVENTS networkEvents;
 		if (::WSAEnumNetworkEvents(_socket, _wsaEvent, &networkEvents) == SOCKET_ERROR)
 			continue;
@@ -42,6 +42,7 @@ void UDPSocket::UDPWork()
 			int32 recvLen = ::recvfrom(_socket, buffer, udpRecvBuffer.FreeSize(), 0, (SOCKADDR*)&recvAddr, &addrLen);
 			if (recvLen == SOCKET_ERROR && ::WSAGetLastError() != WSAEWOULDBLOCK)
 			{
+				cout << "Recv Error : " << ::WSAGetLastError() << endl;
 				continue;
 			}
 			if (recvLen == 0)
@@ -65,20 +66,22 @@ void UDPSocket::UDPWork()
 
 				// TODO  다른 방식으로 숨겨야함
 				
-				if (header->id != PKT_C_INIT && header->id != PKT_S_INIT)
+				if (header->id != 1002 && header->id != 1003) // PKT_C_INIT, PKT_S_INIT 임시방편
 				{
-					PlayerRef player = GPlayerManager.GetPlayer(header->playerId);
+					ObjectRef player = GObjectManager.GetPlayer(header->client_Id);
 					if (!player)
 					{
+						//cout << "if (!player)" << endl;
 						processLen += header->size;
 						continue;
 					}
 					if (player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn, header->size) == false)
 					{
+						//cout << "(player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn) == false)" << endl;
 						processLen += header->size;
 						continue;
 					}
-					GQoS->OnRecv(player->GetExpectedSeqNum(), header->playerId, &udpRecvBuffer.ReadPos()[processLen], header->size);
+					GQoS->OnRecv(player->GetExpectedSeqNum(), header->client_Id, &udpRecvBuffer.ReadPos()[processLen], header->size);
 					processLen += header->size;
 				}
 				else //새로 연결한 클라이언트
@@ -86,7 +89,8 @@ void UDPSocket::UDPWork()
 					BYTE* cpybuffer = new BYTE[1000];
 					::memcpy(cpybuffer, &udpRecvBuffer.ReadPos()[processLen], header->size);
 
-					ServerPacketHandler::HandlePacket(shared_from_this(), NetAddress(recvAddr), cpybuffer, header->size);
+					GUDP._func(shared_from_this(), NetAddress(recvAddr), cpybuffer, header->size);
+					//ClientPacketHandler::HandlePacket();
 					processLen += header->size;
 				}
 				// TODO  다른 방식으로 숨겨야함
@@ -120,7 +124,7 @@ void UDPSocket::UDPWork()
 	}
 }
 
-int32 UDPSocket::Send(PlayerRef player, SendBufferRef sendBuffer)
+int32 UDPSocket::Send(ObjectRef player, SendBufferRef sendBuffer)
 {
 	if (CheckMSSover(sendBuffer))
 		SizeOverSend(player, sendBuffer);
@@ -130,7 +134,7 @@ int32 UDPSocket::Send(PlayerRef player, SendBufferRef sendBuffer)
 }
 
 
-int32 UDPSocket::PriortySend(PlayerRef player, SendBufferRef sendBuffer)
+int32 UDPSocket::PriortySend(ObjectRef player, SendBufferRef sendBuffer)
 {
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 	/*if (header->priority == QoSCore::FPC)
@@ -157,7 +161,7 @@ bool UDPSocket::CheckMSSover(SendBufferRef sendBuffer)
 	return false;
 }
 
-int32 UDPSocket::NormalSend(PlayerRef player, SendBufferRef sendBuffer)
+int32 UDPSocket::NormalSend(ObjectRef player, SendBufferRef sendBuffer)
 {
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 	if (header->channel == QoSCore::Channel::RPCT)
@@ -168,10 +172,10 @@ int32 UDPSocket::NormalSend(PlayerRef player, SendBufferRef sendBuffer)
 			return 0;
 		}
 	}
-	GQoS->PushSend(player->playerId, sendBuffer);
+	GQoS->PushSend(player->client_Id, sendBuffer);
 	return 0;
 }
-int32 UDPSocket::SizeOverSend(PlayerRef player, SendBufferRef sendBuffer)
+int32 UDPSocket::SizeOverSend(ObjectRef player, SendBufferRef sendBuffer)
 {
 	const PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 
@@ -249,7 +253,7 @@ SendBufferRef UDPSocket::MakeFragmentBuffer(int32 size)
 
 
 
-int UDPSocket::ReliableSend(PlayerRef player, SendBufferRef sendBuffer)
+int UDPSocket::ReliableSend(ObjectRef player, SendBufferRef sendBuffer)
 {
 	NetAddress netAddr = player->netAddress;
 	//PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
@@ -260,7 +264,7 @@ int UDPSocket::ReliableSend(PlayerRef player, SendBufferRef sendBuffer)
 	return FPCSend(player, sendBuffer);
 }
 
-int UDPSocket::UnReliable_Ordered_Send(PlayerRef player, SendBufferRef sendBuffer)
+int UDPSocket::UnReliable_Ordered_Send(ObjectRef player, SendBufferRef sendBuffer)
 {
 	
 	//PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
@@ -272,17 +276,17 @@ int UDPSocket::UnReliable_Ordered_Send(PlayerRef player, SendBufferRef sendBuffe
 }
 
 
-int UDPSocket::UnReliableSend(PlayerRef player, SendBufferRef sendBuffer)
+int UDPSocket::UnReliableSend(ObjectRef player, SendBufferRef sendBuffer)
 {
 	return FPCSend(player, sendBuffer);
 }
 
-int UDPSocket::FPCSend(PlayerRef player, SendBufferRef sendBuffer)
+int UDPSocket::FPCSend(ObjectRef player, SendBufferRef sendBuffer)
 {
 	//NetAddress netAddr = player->netAddress;
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 	//cout << "FPCSend : " << player->playerId << endl;
-	header->playerId = player->playerId;
+	header->client_Id = player->client_Id;
 	//cout << "FPCSend PlayerID : " << header->playerId << endl;
 	SOCKADDR_IN netaddr = player->netAddress.GetSockAddr();
 	//cout << netAddr.GetPort()<< endl;

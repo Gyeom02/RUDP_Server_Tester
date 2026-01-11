@@ -17,7 +17,7 @@
 #include "DBSynchronizer.h"
 #include "GenProcedures.h"
 #include "UDP.h"
-#include "PlayerManager.h"
+//#include "OManager.h"
 
 enum
 {
@@ -47,11 +47,11 @@ void PacketDeliverCondition(PlayerRef player)
 	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	//GetConsoleScreenBufferInfo(h, &info);
-	COORD pos = { (SHORT)0, (SHORT)player->playerId };
+	COORD pos = { (SHORT)0, (SHORT)player->client_Id };
 	SetConsoleCursorPosition(h, pos);
 
 	DeliveryManagerRef GDeliveryManager = player->GetDeliveryManager();
-	cout << "플레이어 ID : " << player->playerId << " 전체 보낸 패킷 수 : " << GDeliveryManager->GetDispatchedPacketCount() << " 성공패킷 : " << GDeliveryManager->GetDeliveredPacketCount()
+	cout << "플레이어 ID : " << player->client_Id << " 전체 보낸 패킷 수 : " << GDeliveryManager->GetDispatchedPacketCount() << " 성공패킷 : " << GDeliveryManager->GetDeliveredPacketCount()
 		<< " 실패패킷 : " << GDeliveryManager->GetDroppedPacketCount() - GDeliveryManager->GetSuccessReSendPacketNum() << " 성공 + 실패 : " << GDeliveryManager->GetDeliveredPacketCount() + (GDeliveryManager->GetDroppedPacketCount() - GDeliveryManager->GetSuccessReSendPacketNum()) << endl;
 }
 
@@ -119,7 +119,7 @@ int main()
 	//}
 
 	ClientPacketHandler::Init(); 
-
+	
 	//ServerServiceRef service = MakeShared<ServerService>(
 	//	NetAddress(L"127.0.0.1", 7777),
 	//	MakeShared<IocpCore>(),
@@ -138,7 +138,7 @@ int main()
 
 	//// Main Thread
 	//DoWorkerJob(service);
-	if (GUDP.UDPInit())
+	if (GUDP.UDPInit(UDP::SERVER))
 	{
 		cout << "UDP Init Succeed" << endl;
 		GUDP.SetIsOn(true);
@@ -162,7 +162,7 @@ int main()
 
 		}*/
 		//Thread
-		GUDP.InitRecvLogicWorkers();
+		GUDP.InitRecvLogicWorkers(&ClientPacketHandler::HandlePacket);
 	}
 	uint32 ackpreStart = 0;
 	uint32 ackStart = 1;
@@ -171,13 +171,13 @@ int main()
 	NetAddress netAddr;
 
 
-	system("cls");
+	//system("cls");
 
 	//Thread 최적화 필요
 	while (true)
 	{
 		
-		for (auto& p : GPlayerManager.GetPlayers())
+		for (auto& p : GObjectManager.GetPlayers())
 		{
 			//auto player = p.second;
 			memset(&netAddr, 0, sizeof(netAddr));
@@ -196,7 +196,7 @@ int main()
 					pkt.set_bhascount(hasCount);
 					pkt.set_count(ackCount);
 					pkt.set_start(ackStart);
-					pkt.set_playerid(p.second->playerId);
+					pkt.set_playerid(p.second->client_Id);
 					pkt.set_rwindsize(p.second->GetRWind());
 					SendBufferRef sendBuffer = ClientPacketHandler::MakeUnReliableBuffer(pkt);
 					p.second->Send(sendBuffer);
@@ -208,7 +208,7 @@ int main()
 					break;
 			}
 			p.second->GetDeliveryManager()->ProcessTimeOutPackets();
-			PacketDeliverCondition(p.second);
+			//PacketDeliverCondition(static_pointer_cast<Player>(p.second));
 		}
 	}
 	GThreadManager->Join();

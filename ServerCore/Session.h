@@ -103,7 +103,7 @@ struct PacketHeader
 	//uint16 priority;
 	uint16 channel = -1;
 	uint16 priority = -1;
-	int32 playerId; 
+	int32 client_Id; 
 	uint32 sn; // sequenceNumber (RUDP패킷 추적할때 사용)
 	int32 retransnum = 0;
 	int16 bFragment = 0; // 조각화 유무 알려주는 Flag

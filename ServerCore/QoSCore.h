@@ -123,8 +123,8 @@ public:
 	QoSShard();
 	~QoSShard();
 
-	void MakeQoSPlayer(ObjectRef object, int32 playerId, int32 rate = 60, int32 burst = 10);
-	void ErasePlayer(int32 playerId);
+	void MakeQoSPlayer(ObjectRef object, int32 client_Id, int32 rate = 60, int32 burst = 10);
+	void ErasePlayer(int32 client_Id);
 	void PushSend(int32 playerid, SendBufferRef packet);
 	void PushRecv(int32 playerid, BYTE* buffer, int32 size);
 	
@@ -177,12 +177,12 @@ public:
 	};
 	QoSCore();
 
-	void OnRecv(int32 SeqNum, int32 playerId, BYTE* buffer, int32 size);
+	void OnRecv(int32 SeqNum, int32 client_Id, BYTE* buffer, int32 size);
 
-	void PushSend(int32 playerId, SendBufferRef packet);
-	void PushRecv(int32 playerId, BYTE* buffer, int32 size);
+	void PushSend(int32 client_Id, SendBufferRef packet);
+	void PushRecv(int32 client_Id, BYTE* buffer, int32 size);
 
-	void OnOrderedRecv(int32 SeqNum, int32 playerId, BYTE* buffer, int32 size);
+	void OnOrderedRecv(int32 SeqNum, int32 client_Id, BYTE* buffer, int32 size);
 
 	void StopShards();
 	void ErasePlayer(int32 id);

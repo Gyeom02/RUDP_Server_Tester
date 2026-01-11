@@ -49,23 +49,19 @@ class Player : public Object
 {
 public:
 	Player(int32 id);
-	virtual ~Player() { cout << "Player ID : " << playerId << " Erased" << endl; } // 메모리 누수 확인
+	virtual ~Player() { cout << "Player ID : " << client_Id << " Erased" << endl; } // 메모리 누수 확인
 
-	 void Send(SendBufferRef sendBuffer);
-	virtual void PriortySend(SendBufferRef sendBuffer) override;
+	
 	void SetImport(Position _pos, Rotation _rot, Velocity _vel);
 	void SetNickName(string nickname);
 	string GetNickName();
 
-	atomic<int32>					playerId = 0;
+	
 	atomic<int32>					roomId	 = -1;
 	atomic<int32>					roomprimid = -1;
 	atomic<int32>					teamNum = -1;
 	
 	//Protocol::PlayerType	type = Protocol::PLAYER_TYPE_NONE;
-	NetAddress				netAddress;
-//	GameSessionRef			ownerSession; // Cycle
-	UDPSocketPtr			ownerSocket; // Cycle
 
 	Position pos;
 	Rotation rot;
@@ -75,7 +71,7 @@ public:
 
 
 private:
-	USE_LOCK;
+	
 	string	_nickname;
 
 };

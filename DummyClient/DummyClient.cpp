@@ -47,7 +47,7 @@ public:
 
 int32 Send(int32 id, UDPSocketPtr udpSocket, NetAddress netAddr, SendBufferRef sendBuffer)
 {
-	PlayerRef player = GPlayerManager.GetPlayer(id);
+	PlayerRef player = static_pointer_cast<Player>(GObjectManager.GetPlayer(id));
 	player->Send(sendBuffer);
 	//GPlayerManager._sendPacketNum++;
 	return sendBuffer->WriteSize();
@@ -121,11 +121,11 @@ void PacketDeliverCondition(PlayerRef player)
 	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	//GetConsoleScreenBufferInfo(h, &info);
-	COORD pos = { (SHORT)0, (SHORT)player->playerId };
+	COORD pos = { (SHORT)0, (SHORT)player->client_Id };
 	SetConsoleCursorPosition(h, pos);
 
 	DeliveryManagerRef GDeliveryManager = player->GetDeliveryManager();
-	cout << "플레이어 ID : " << player->playerId << " 전체 보낸 패킷 수 : " << GDeliveryManager->GetDispatchedPacketCount() << " 성공패킷 : " << GDeliveryManager->GetDeliveredPacketCount()
+	cout << "플레이어 ID : " << player->client_Id << " 전체 보낸 패킷 수 : " << GDeliveryManager->GetDispatchedPacketCount() << " 성공패킷 : " << GDeliveryManager->GetDeliveredPacketCount()
 	<< " 실패패킷 : " << GDeliveryManager->GetDroppedPacketCount() - GDeliveryManager->GetSuccessReSendPacketNum() << " 성공 + 실패 : " << GDeliveryManager->GetDeliveredPacketCount()+ (GDeliveryManager->GetDroppedPacketCount() - GDeliveryManager->GetSuccessReSendPacketNum()) << endl;
 	//cout << " 실패패킷 : " << GDeliveryManager->GetDroppedPacketCount() << " | 다시보낸 패킷 : " << GDeliveryManager->GetSuccessReSendPacketNum() << endl;
 }
@@ -137,10 +137,11 @@ void PacketLost(PlayerRef player)
 
 void CloseApp()
 {
-	for (auto& [id, player] : GPlayerManager.GetPlayers())
+	for (auto& [id, object] : GObjectManager.GetPlayers())
 	{
+		shared_ptr<Player> player = static_pointer_cast<Player>(object);
 		Protocol::C_DISCONNECT pkt;
-		pkt.set_id(player->playerId);
+		pkt.set_id(player->client_Id);
 		pkt.set_roomid(player->roomId);
 		pkt.set_roomprimid(player->roomprimid);
 		SendBufferRef sendBuffer = ServerPacketHandler::MakeReliableBuffer(pkt, QoSCore::HIGH);
@@ -172,7 +173,7 @@ int main()
 		cout << "SetConsoleCtrlHandler Succeed" << endl;
 	this_thread::sleep_for(2s);
 
-	if (GUDP.UDPInit())
+	if (GUDP.UDPInit(UDP::CLIENT))
 	{
 		cout << "UDP Init Succeed" << endl;
 		GUDP.SetIsOn(true);
@@ -272,7 +273,7 @@ int main()
 
 	//}
 
-	GUDP.InitRecvLogicWorkers(); //Recv된 패킷을 처리하는 Thread들을 생성하는것
+	GUDP.InitRecvLogicWorkers(&ServerPacketHandler::HandlePacket); //Recv된 패킷을 처리하는 Thread들을 생성하는것
 
 	/*Protocol::C_INIT chatPktt;
 	auto sendBufferr = ServerPacketHandler::MakeSendBuffer(chatPktt);
@@ -291,29 +292,29 @@ int main()
 				while (true)
 				{
 					this_thread::sleep_for(0.016ms);
-					if (GPlayerManager.GetPlayers().empty())
+					if (GObjectManager.GetPlayers().empty())
 						continue;
-					for (auto& p : GPlayerManager.GetPlayers())
+					for (auto& p : GObjectManager.GetPlayers())
 					{
-						if (p.second->playerId != 0)
+						if (p.second->client_Id != 0)
 						{
 							Protocol::C_MSG chatPktt;
 							chatPktt.set_msg("Hello Server");
 							auto sendBufferchatPkttt = ServerPacketHandler::MakeReliableBuffer(chatPktt, QoSCore::LOW);
-							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkttt);
+							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkttt);
 							//cout << "SENDING MSG ID : " << p.second->playerId << endl;
 							Protocol::C_MSG chatPkt;
 							chatPkt.set_msg(longtext);
 							
 							auto sendBufferchatPkt = ServerPacketHandler::MakeReliableBuffer(chatPkt, QoSCore::LOW);
-							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt);
+							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt);
 
 							/*auto sendBufferchatPktt = ServerPacketHandler::MakeUnReliableBuffer(chatPktt);
 							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPktt);
 							*/
 							
 							auto sendBufferchatPktttt = ServerPacketHandler::MakeReplicateBuffer(chatPktt);
-							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPktttt);
+							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPktttt);
 						}
 					}
 					//this_thread::sleep_for(50ms);
@@ -337,12 +338,12 @@ int main()
 	while (true)
 	{
 		//this_thread::sleep_for(100ms);
-		if (GPlayerManager.GetPlayers().empty())
+		if (GObjectManager.GetPlayers().empty())
 			continue;
-		for (auto& p : GPlayerManager.GetPlayers())
+		for (auto& p : GObjectManager.GetPlayers())
 		{
-			PlayerRef player = p.second;
-			if (player && player->playerId != 0)
+			PlayerRef player = static_pointer_cast<Player>(p.second);
+			if (player && player->client_Id != 0)
 			{
 				//this_thread::sleep_for(100ms);
 				while (true) //AckRange 비울때까지
@@ -353,7 +354,7 @@ int main()
 						pkt.set_bhascount(bhascount);
 						pkt.set_count(count);
 						pkt.set_start(start);
-						pkt.set_playerid(player->playerId);
+						pkt.set_playerid(player->client_Id);
 						pkt.set_rwindsize(player->GetRWind());
 						SendBufferRef sendBufferR = ServerPacketHandler::MakeUnReliableBuffer(pkt);
 						player->Send(sendBufferR);

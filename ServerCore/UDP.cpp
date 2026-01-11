@@ -2,7 +2,7 @@
 #include "UDP.h"
 #include "ThreadManager.h"
 
-
+//#define SERVERADDR L"192.168.219.106"
 
 UDP GUDP;
 bool UDP::UDPSocketReset(int32 index)
@@ -32,14 +32,16 @@ bool UDP::UDPSocketReset(int32 index)
 
 	//int optval = 1;
 	//setsockopt(_udpSocket, SOL_SOCKET, SO_REUSEADDR, (const char*)&optval, sizeof(optval));
-#ifdef _SERVER
-	if (::bind(_udpSocket, (SOCKADDR*)&udpAddr, sizeof(udpAddr)) == SOCKET_ERROR)
-	{
-		cout << "Server Socket Bind Failed " << endl;
-		return false;
-	}
-#else
-#endif
+	if(_type == Type::SERVER)
+		if (::bind(_udpSocket, (SOCKADDR*)&udpAddr, sizeof(udpAddr)) == SOCKET_ERROR)
+		{
+			cout << "Server Socket Bind Failed " << endl;
+			return false;
+		}
+	else {}
+
+	
+
 	object->GetNetAddress() = NetAddress(udpAddr);
 
 	u_long bflag = 1;
@@ -69,8 +71,9 @@ UDP::UDP()
 	}*/
 }
 
-bool UDP::UDPInit()
+bool UDP::UDPInit(Type type)
 {
+	_type = type;
 	for (int32 i = 0; i < SOCKNUM; i++)
 	{
 		if (!UDPSocketReset(i))
@@ -102,7 +105,7 @@ void UDP::UDPDo_PopRecv_Work(int32 start_index, int32 end_index)
 	}
 }
 
-void UDP::InitRecvLogicWorkers()
+void UDP::InitRecvLogicWorkers(PacketHandleFunc func)
 {
 	//for (int i = 0; i < POPRECV_WORKER_NUM; i++)
 	//{
@@ -115,9 +118,10 @@ void UDP::InitRecvLogicWorkers()
 	//		UDPDo_PopRecv_Work(start, end);
 	//		});
 	//}
+	_func = func;
 	for (int i = 0; i < MAX_WORKER_NUM; i++)
 	{
-		_udpRecvWorkers[i] = make_shared<UDPRecvHandler>(GQoS->GetShard_index(i % QOS_SHARD_COUNT));
+		_udpRecvWorkers[i] = make_shared<UDPRecvHandler>(GQoS->GetShard_index(i % QOS_SHARD_COUNT), func);
 	}
 	
 }

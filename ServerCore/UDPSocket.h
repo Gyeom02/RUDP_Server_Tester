@@ -1,7 +1,7 @@
 #pragma once
 #include "RecvBuffer.h"
 //#include "Player
-using PlayerRef = shared_ptr<class Player>;
+//using PlayerRef = shared_ptr<class Player>;
 
 class UDPSocket : public enable_shared_from_this<UDPSocket>
 {
@@ -36,22 +36,22 @@ public:
 	}
 
 public:
-	int32 Send(PlayerRef player, SendBufferRef sendBuffer);
-	int32 PriortySend(PlayerRef player, SendBufferRef sendBuffer);
+	int32 Send(ObjectRef player, SendBufferRef sendBuffer);
+	int32 PriortySend(ObjectRef player, SendBufferRef sendBuffer);
 
 protected:
 	bool CheckMSSover(SendBufferRef sendBuffer);
 
-	int32 NormalSend(PlayerRef player, SendBufferRef sendBuffer);
-	int32 SizeOverSend(PlayerRef player, SendBufferRef sendBuffer);
+	int32 NormalSend(ObjectRef player, SendBufferRef sendBuffer);
+	int32 SizeOverSend(ObjectRef player, SendBufferRef sendBuffer);
 
 	SendBufferRef MakeFragmentBuffer(int32 size);
 	
 private:
-	int ReliableSend(PlayerRef player, SendBufferRef sendBuffer);
-	int UnReliable_Ordered_Send(PlayerRef player, SendBufferRef sendBuffer);
-	int UnReliableSend(PlayerRef player, SendBufferRef sendBuffer);
-	int FPCSend(PlayerRef player, SendBufferRef sendBuffer); // Pure Straight Send Function
+	int ReliableSend(ObjectRef player, SendBufferRef sendBuffer);
+	int UnReliable_Ordered_Send(ObjectRef player, SendBufferRef sendBuffer);
+	int UnReliableSend(ObjectRef player, SendBufferRef sendBuffer);
+	int FPCSend(ObjectRef player, SendBufferRef sendBuffer); // Pure Straight Send Function
 	SOCKET _socket = INVALID_SOCKET;
 	WSAEVENT _wsaEvent;
 	int32 _clientNum = 0;

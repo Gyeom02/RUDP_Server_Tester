@@ -2,10 +2,12 @@
 
 using JobFunc = std::function<void()>;
 
+using PacketHandleFunc = bool (*)(shared_ptr<UDPSocket>, NetAddress, BYTE*, int32);
+ 
 class UDPRecvHandler 
 {
 public:
-	UDPRecvHandler(QoSShard* _ownerShard);
+	UDPRecvHandler(QoSShard* _ownerShard, PacketHandleFunc func);
 	~UDPRecvHandler();
 
 	//void PushSend(JobFunc job, int priority);
@@ -30,6 +32,7 @@ private:
 	//int32 _start;
 	//int32 _end;
 //	bool _shutdown = false;
+	PacketHandleFunc _func;
 };
 
 using UDPRecvHandlerRef = std::shared_ptr<UDPRecvHandler>;
