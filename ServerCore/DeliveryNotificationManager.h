@@ -42,6 +42,8 @@ public:
 	//////
 	//송신
 	InFlightPacketPtr WriteSeqeuenceNumber(SOCKET object, NetAddress netAddr, SendBufferRef sendBuffer);
+	InFlightPacketPtr WriteSeqeuenceNumber(SOCKET object, NetAddress netAddr, shared_ptr<vector<SendBufferRef>>sendBuffer);
+
 	void ProcessAcks(uint32 start, uint32 count, bool hasCount);
 	void HandlePacketDeliveryFailure(const InFlightPacketPtr& inFlightPacket);
 	void HandlePacketDeliverySuccess(const InFlightPacketPtr& inFlightPacket);
@@ -71,6 +73,7 @@ public:
 	bool ProcessSequenceNumber_URO(PacketSequenceNumber SN);
 
 	bool WriteSeqeuenceNumber_URO(SendBufferRef sendBuffer);
+	bool WriteSeqeuenceNumber_URO(shared_ptr<vector<SendBufferRef>> sendBuffer);
 
 	/*--------------------------------------------*/
 	/*   _recvWindow의 함수   */
@@ -80,7 +83,7 @@ public:
 
 	/*   _sendWindow의 함수   */
 	bool IsSpaceExistToSend(int32 sendSize) { return _sendWindow.IsSpaceExistToSend(sendSize); }
-	void SetReceiverRWind(int32 rwindSize) { _sendWindow.SetReceiverRWind(rwindSize); }
+	void AddReceiverRWind(int32 rwindSize) { _sendWindow.AddReceiverRWind(rwindSize); }
 	int32 GetReceiverRWind() { return _sendWindow.GetReceiverRWind(); }
 private:
 	/*   Reliable Ordered Packet의 변수   */

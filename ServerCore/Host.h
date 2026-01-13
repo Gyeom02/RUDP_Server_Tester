@@ -1,5 +1,5 @@
 #pragma once
-class Object : public enable_shared_from_this<Object>
+class Host : public enable_shared_from_this<Host>
 {
 private:
 	enum
@@ -8,11 +8,12 @@ private:
 		
 	};
 public:
-	Object(int32 id) : client_Id(id) { deliveryManager = MakeShared<DeliveryNotificationManager>(); }
-	virtual ~Object() {}
+	Host(int32 id) : client_Id(id) { deliveryManager = MakeShared<DeliveryNotificationManager>(); }
+	virtual ~Host() {}
 
 	void Send(SendBufferRef sendBuffer);
-	void PriortySend(SendBufferRef sendBuffer);
+	void PriortySend(shared_ptr<vector<SendBufferRef>> sendBuffer);
+	void NoWaitPriortySend(SendBufferRef sendBuffer);
 
 	bool CanRPCT();
 
@@ -31,8 +32,10 @@ public:
 	shared_ptr<class UDPSocket>			ownerSocket; // Cycle
 	atomic<int32>					client_Id = 0;
 
+	LONGLONG curRwindTimeStamp = 0;
+
 protected:
-	USE_LOCK;
+	//USE_LOCK;
 private:
 	
 	atomic<uint64> _RPCT_recv_Time;
@@ -44,4 +47,4 @@ private:
 	
 };
 
-using ObjectRef = shared_ptr<Object>;
+using HostRef = shared_ptr<Host>;

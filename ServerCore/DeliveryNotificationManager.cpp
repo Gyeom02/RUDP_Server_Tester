@@ -29,8 +29,24 @@ bool DeliveryNotificationManager::CheckPacketChannel(int16 channel, uint32 sn, i
 	return true;
 
 }
+//InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(SOCKET object, NetAddress netAddr, SendBufferRef sendBuffer)
+//{
+//	
+//	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
+//	PacketSequenceNumber sequenceNumber = mNextOutgoingSequenceNumber++;
+//	header->sn = sequenceNumber.GetSN(); // 패킷 헤더에 SequenceNumber 부착
+//
+//	++mDispatchedPacketCount;
+//
+//	WRITE_LOCK;
+//
+//	mInFlightPackets.emplace_back(MakeShared<InFlightPacket>(object, netAddr, sequenceNumber, sendBuffer));
+//	
+//	return mInFlightPackets.back();
+//}
 InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(SOCKET object, NetAddress netAddr, SendBufferRef sendBuffer)
 {
+	
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 	PacketSequenceNumber sequenceNumber = mNextOutgoingSequenceNumber++;
 	header->sn = sequenceNumber.GetSN(); // 패킷 헤더에 SequenceNumber 부착
@@ -40,6 +56,31 @@ InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(SOCKET objec
 	WRITE_LOCK;
 
 	mInFlightPackets.emplace_back(MakeShared<InFlightPacket>(object, netAddr, sequenceNumber, sendBuffer));
+	
+	return mInFlightPackets.back();
+}
+
+InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(SOCKET object, NetAddress netAddr, shared_ptr<vector<SendBufferRef>> sendBuffer)
+{
+	uint32 startSN;
+	int32 bufferNum = sendBuffer->size();
+	{
+		WRITE_LOCK;
+		startSN = mNextOutgoingSequenceNumber.load();
+		mNextOutgoingSequenceNumber.fetch_add(bufferNum);
+	}
+	for (int32 i = 0; i < sendBuffer->size(); i++)
+	{
+		PacketHeader* header = reinterpret_cast<PacketHeader*>((*sendBuffer)[i]->Buffer());
+		PacketSequenceNumber sequenceNumber = startSN++;
+		header->sn = sequenceNumber.GetSN(); // 패킷 헤더에 SequenceNumber 부착
+
+		++mDispatchedPacketCount;
+
+		WRITE_LOCK;
+
+		mInFlightPackets.emplace_back(MakeShared<InFlightPacket>(object, netAddr, sequenceNumber, (*sendBuffer)[i]));
+	}
 	return mInFlightPackets.back();
 }
 
@@ -133,18 +174,21 @@ bool DeliveryNotificationManager::ProcessSequenceNumber(PacketSequenceNumber SN,
 		
 		return false;
 	}
-
-	//
-	if (!_recvWindow.IsSpaceExistToRecv(size)) // rwind valid size check
-		return false;
-
 	if (!_recvWindow.CheckRecved(SN.GetSN())) // 중복 Seq
 		return false;
+	//
+	if (!_recvWindow.IsSpaceExistToRecv(size)) // rwind valid size check
+	{
+		cout << "ProcessSequenceNumber Out Of RWind : " << GetRWind() << " < " << size << endl;
+
+		return false;
+	}
+	
 	//cout << "  SN.GetSN() : " << SN.GetSN() << endl;
 	
 	if (SN.GetSN() > mNextExpectedSequenceNumber) //예상하던 수신 패킷 세퀀스넘버가 맞음
 	{
-		//cout << "TRUE1" << endl;
+		cout << "AddPendingAck(SN);" << endl;
 		AddPendingAck(SN);
 		return true;
 		
@@ -155,7 +199,7 @@ bool DeliveryNotificationManager::ProcessSequenceNumber(PacketSequenceNumber SN,
 		
 		AddPendingAck(SN);
 
-		//cout << "TRUE2" << endl;
+		cout << "AddPendingAck(SN);" << endl;
 		return true;
 	}
 	
@@ -225,6 +269,7 @@ bool DeliveryNotificationManager::ProcessSequenceNumber_URO(PacketSequenceNumber
 
 bool DeliveryNotificationManager::WriteSeqeuenceNumber_URO(SendBufferRef sendBuffer)
 {
+	
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 
 	if (header == nullptr)
@@ -233,6 +278,23 @@ bool DeliveryNotificationManager::WriteSeqeuenceNumber_URO(SendBufferRef sendBuf
 	header->sn = sequenceNumber.GetSN(); // 패킷 헤더에 SequenceNumber 부착
 
 	//++mDispatchedPacketCount;
+	
+	return true;
+}
+
+bool DeliveryNotificationManager::WriteSeqeuenceNumber_URO(shared_ptr<vector<SendBufferRef>> sendBuffer)
+{
+	for (int32 i = 0; i < (*sendBuffer).size(); i++)
+	{
+		PacketHeader* header = reinterpret_cast<PacketHeader*>((*sendBuffer)[i]->Buffer());
+
+		if (header == nullptr)
+			return false;
+		PacketSequenceNumber sequenceNumber = mNextOutgoingSequenceNumber_URO++;
+		header->sn = sequenceNumber.GetSN(); // 패킷 헤더에 SequenceNumber 부착
+
+		//++mDispatchedPacketCount;
+	}
 	return true;
 }
 

@@ -4,9 +4,9 @@ namespace RUDPWIND
 {
 	enum
 	{
-		SN_MAX_SIZE = 0xFFFF + 1,
+		SN_MAX_SIZE = 50,
 		SN_RANGE_HALF = SN_MAX_SIZE / 2,
-		RWIND_BASE_SIZE = 6400, // 64kb라는뜻 보통 FPS Server은 64~128, MMO Server은 128~256을 가진다
+		RWIND_BASE_SIZE = 64000, // 64kb라는뜻 보통 FPS Server은 64~128, MMO Server은 128~256을 가진다
 	};
 }
 
@@ -25,7 +25,7 @@ public:
 private:
 	uint32 _expctedSeqNum = 0;
 
-	uint32 windowSize = RUDPWIND::SN_RANGE_HALF;
+	//uint32 windowSize = RUDPWIND::SN_RANGE_HALF;
 
 	vector<uint8> _RecvedBitMap;
 
@@ -53,13 +53,15 @@ public:
 
 	bool IsSpaceExistToSend(int32 sendSize) {
 		if (sendSize <= 0) return false;
-		if (_receiverRWind >= sendSize) { _receiverRWind.fetch_sub(sendSize); return true; }
+		if (_receiverRWind.load() >= sendSize) { _receiverRWind.fetch_sub(sendSize); return true; }
 		else return false;
 	}
 
-	void SetReceiverRWind(int32 size) { _receiverRWind.store(size); }
+	void AddReceiverRWind(int32 size) { _receiverRWind.fetch_add(size); }
 	int32 GetReceiverRWind() { return _receiverRWind.load(); }
 private:
 	atomic<int32> _receiverRWind;
 	atomic<int32> _myCWind;
+
+	
 };

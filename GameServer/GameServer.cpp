@@ -164,6 +164,9 @@ int main()
 		//Thread
 		GUDP.InitRecvLogicWorkers(&ClientPacketHandler::HandlePacket);
 	}
+
+	GTransportControl.RunThread();
+
 	uint32 ackpreStart = 0;
 	uint32 ackStart = 1;
 	uint32 ackCount = 0;
@@ -176,14 +179,15 @@ int main()
 	//Thread 최적화 필요
 	while (true)
 	{
-		
-		for (auto& p : GObjectManager.GetPlayers())
+		for (auto& p : GHostManager.GetPlayers())
 		{
 			//auto player = p.second;
 			memset(&netAddr, 0, sizeof(netAddr));
 			//this_thread::sleep_for(300ms);
+		   // int32 token = 5;
 			while (true) //AckRange 비울때까지
 			{
+				//token--;
 
 				if (p.second->GetDeliveryManager()->WritePendingAcks(ackStart, ackCount, hasCount)) // 보낼 Ack이 쌓였다
 				{
@@ -192,17 +196,23 @@ int main()
 						cout << "ackpreStart : " << ackpreStart << endl;
 						CRASH("ackpreStart == ackStart");
 					}*/
-					Protocol::S_RUDPACK pkt;
-					pkt.set_bhascount(hasCount);
-					pkt.set_count(ackCount);
-					pkt.set_start(ackStart);
-					pkt.set_playerid(p.second->client_Id);
-					pkt.set_rwindsize(p.second->GetRWind());
-					SendBufferRef sendBuffer = ClientPacketHandler::MakeUnReliableBuffer(pkt);
-					p.second->Send(sendBuffer);
+					SendBufferRef sendBuffer = TransportControlPlane::MakeControlPacketBuffer(p.second->client_Id);
+					ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
+					//  Protocol::S_RUDPACK pkt;
+					contheader->ack.bexsist = true;
+					contheader->ack.bhascount = hasCount;
+					contheader->ack.count = ackCount;
+					contheader->ack.start = ackStart;
+
+					// pkt.set_playerid(p.second->client_Id);
+					//contheader->rwind.bexsist = true;
+					//contheader->rwind.rwindsize = p.second->GetRWind();
+					// pkt.set_rwindsize();
+
+					p.second->NoWaitPriortySend(sendBuffer);
 					//GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);
-					ackpreStart = ackStart;
-					//cout << "Send RUDP ACK player->playerId : " << p.second->playerId << endl;
+				  //  ackpreStart = ackStart;
+				    //cout << "Send RUDP ACK  " << endl;
 				}
 				else
 					break;

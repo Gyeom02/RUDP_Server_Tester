@@ -27,15 +27,6 @@
     <ClCompile Include="pch.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="GameSession.cpp">
-      <Filter>Main</Filter>
-    </ClCompile>
-    <ClCompile Include="GameSessionManager.cpp">
-      <Filter>Main</Filter>
-    </ClCompile>
-    <ClCompile Include="ClientPacketHandler.cpp">
-      <Filter>Main</Filter>
-    </ClCompile>
     <ClCompile Include="Protocol.pb.cc">
       <Filter>Protocol</Filter>
     </ClCompile>
@@ -51,19 +42,19 @@
     <ClCompile Include="Room.cpp">
       <Filter>GameContents</Filter>
     </ClCompile>
+    <ClCompile Include="ClientPacketHandler.cpp">
+      <Filter>GameContents</Filter>
+    </ClCompile>
+    <ClCompile Include="GameSession.cpp">
+      <Filter>GameContents</Filter>
+    </ClCompile>
+    <ClCompile Include="GameSessionManager.cpp">
+      <Filter>GameContents</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
       <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="GameSessionManager.h">
-      <Filter>Main</Filter>
-    </ClInclude>
-    <ClInclude Include="GameSession.h">
-      <Filter>Main</Filter>
-    </ClInclude>
-    <ClInclude Include="ClientPacketHandler.h">
-      <Filter>Main</Filter>
     </ClInclude>
     <ClInclude Include="Protocol.pb.h">
       <Filter>Protocol</Filter>
@@ -82,6 +73,15 @@
     </ClInclude>
     <ClInclude Include="GenProcedures.h">
       <Filter>DB</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientPacketHandler.h">
+      <Filter>GameContents</Filter>
+    </ClInclude>
+    <ClInclude Include="GameSession.h">
+      <Filter>GameContents</Filter>
+    </ClInclude>
+    <ClInclude Include="GameSessionManager.h">
+      <Filter>GameContents</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

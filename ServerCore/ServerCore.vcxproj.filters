@@ -183,7 +183,7 @@
     <ClInclude Include="QoSCore.h">
       <Filter>RUDP\QoS</Filter>
     </ClInclude>
-    <ClInclude Include="Object.h">
+    <ClInclude Include="Host.h">
       <Filter>Main</Filter>
     </ClInclude>
     <ClInclude Include="FragmentManager.h">
@@ -201,8 +201,11 @@
     <ClInclude Include="UDPSocket.h">
       <Filter>RUDP\QoS\UDP</Filter>
     </ClInclude>
-    <ClInclude Include="ObjectManager.h">
+    <ClInclude Include="HostManager.h">
       <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="TransportControlPlane.h">
+      <Filter>RUDP</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -323,7 +326,7 @@
     <ClCompile Include="QoSCore.cpp">
       <Filter>RUDP\QoS</Filter>
     </ClCompile>
-    <ClCompile Include="Object.cpp">
+    <ClCompile Include="Host.cpp">
       <Filter>Main</Filter>
     </ClCompile>
     <ClCompile Include="FragmentManager.cpp">
@@ -341,8 +344,11 @@
     <ClCompile Include="UDPSocket.cpp">
       <Filter>RUDP\QoS\UDP</Filter>
     </ClCompile>
-    <ClCompile Include="ObjectMananger.cpp">
+    <ClCompile Include="HostMananger.cpp">
       <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="TransportControlPlane.cpp">
+      <Filter>RUDP</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -1,22 +1,22 @@
 #include "pch.h"
-#include "ObjectManager.h"
+#include "HostManager.h"
 //#include "O.h"
-ObjectManager GObjectManager;
+HostManager GHostManager;
 
-void ObjectManager::Add(int32 id, ObjectRef player)
+void HostManager::Add(int32 id, HostRef player)
 {
 	WRITE_LOCK;
 	_players[id] = player;
 	//_players.insert(make_pair(id, player));
 }
 
-void ObjectManager::Remove(int32 id)
+void HostManager::Remove(int32 id)
 {
 	WRITE_LOCK;
 	_players.erase(id);
 }
 
-void ObjectManager::BroadCast(SendBufferRef sendBuffer)
+void HostManager::BroadCast(SendBufferRef sendBuffer)
 {
 	WRITE_LOCK;
 	for (auto player : _players)
@@ -25,7 +25,7 @@ void ObjectManager::BroadCast(SendBufferRef sendBuffer)
 	}
 }
 
-ObjectRef ObjectManager::GetPlayer(int32 id)
+HostRef HostManager::GetPlayer(int32 id)
 {
 	WRITE_LOCK;
 
@@ -37,7 +37,7 @@ ObjectRef ObjectManager::GetPlayer(int32 id)
 }
 
 
-int32 ObjectManager::ReuseID()
+int32 HostManager::ReuseID()
 {
 	WRITE_LOCK;
 
@@ -50,7 +50,7 @@ int32 ObjectManager::ReuseID()
 	return id;
 }
 
-void ObjectManager::PushID(int32 id)
+void HostManager::PushID(int32 id)
 {
 	WRITE_LOCK;
 

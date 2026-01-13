@@ -36,26 +36,35 @@ public:
 	}
 
 public:
-	int32 Send(ObjectRef player, SendBufferRef sendBuffer);
-	int32 PriortySend(ObjectRef player, SendBufferRef sendBuffer);
+	int32 Send(HostRef player, SendBufferRef sendBuffer);
+	int32 NoWaitPriortySend(HostRef player, SendBufferRef sendBuffer);
+	int32 PriortySend(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffer);
 
 protected:
 	bool CheckMSSover(SendBufferRef sendBuffer);
 
-	int32 NormalSend(ObjectRef player, SendBufferRef sendBuffer);
-	int32 SizeOverSend(ObjectRef player, SendBufferRef sendBuffer);
+	//int32 NormalSend(HostRef player, SendBufferRef sendBuffer);
+	int32 NormalSend(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffer);
+	int32 SizeOverSend(HostRef player, SendBufferRef sendBuffer);
 
 	SendBufferRef MakeFragmentBuffer(int32 size);
 	
 private:
-	int ReliableSend(ObjectRef player, SendBufferRef sendBuffer);
-	int UnReliable_Ordered_Send(ObjectRef player, SendBufferRef sendBuffer);
-	int UnReliableSend(ObjectRef player, SendBufferRef sendBuffer);
-	int FPCSend(ObjectRef player, SendBufferRef sendBuffer); // Pure Straight Send Function
+	int ReliableSend(HostRef player, SendBufferRef sendBuffer);
+	int UnReliable_Ordered_Send(HostRef player, SendBufferRef sendBuffer);
+	int UnReliableSend(HostRef player, SendBufferRef sendBuffer);
+	int FPCSend(HostRef player, SendBufferRef sendBuffer); // Pure Straight Send Function
+
+	int ReliableSend(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffer);
+	int UnReliable_Ordered_Send(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffer);
+	int UnReliableSend(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffer);
+	int FPCSend(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffer); // Pure Straight Send Function
 	SOCKET _socket = INVALID_SOCKET;
 	WSAEVENT _wsaEvent;
 	int32 _clientNum = 0;
 	RecvBuffer udpRecvBuffer;
 	NetAddress _serverAddress;
+
+	USE_LOCK;
 };
 

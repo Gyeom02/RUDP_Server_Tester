@@ -2,7 +2,7 @@
 //Class For Quality of Service
 #include "Nids.h"
 #include <map>
-#include "Object.h"
+#include "Host.h"
 #include "Lock.h"
 #include "FragmentManager.h"
 
@@ -39,10 +39,10 @@ public:
 
 struct SavedSendPacket
 {
-	SendBufferRef sendBuffer;
-	
-	SavedSendPacket(SendBufferRef buffer) : sendBuffer(buffer) {}
-
+	shared_ptr<vector<SendBufferRef>> sendBuffers;
+	int32 AllBuffersSize = 0;
+	SavedSendPacket(shared_ptr<vector<SendBufferRef>> buffers) :sendBuffers(buffers) { for (int32 i = 0; i < (*buffers).size(); i++) AllBuffersSize += (*buffers)[i]->WriteSize(); }
+	//SavedSendPacket(SendBufferRef buffer) { }
 	// TODO : Network 층에서의 조각화를 사전에 막기위해 Linked형태로 다음 또는 이전의 패킷의 ptr을 갖고있어야함
 };
 struct SavedRecvPacket
@@ -67,10 +67,12 @@ private:
 		QUEUE_MAX = 2,
 	};
 public:
-	QoSPlayer(ObjectRef& owner, QoSShard* _shard, int32 tokenper, int32 burst) : _owner(owner), _ownerShard(_shard), _sendBucket(tokenper, burst) { cout << "QoSPlayer Added " << endl; }
+	QoSPlayer(HostRef& owner, QoSShard* _shard, int32 tokenper, int32 burst) : _owner(owner), _ownerShard(_shard), _sendBucket(tokenper, burst) { cout << "QoSPlayer Added " << endl; }
 	~QoSPlayer() { cout << "QoSPlayer Erased " << endl; }
 	
-	void PushSend(SendBufferRef packet);
+	//void PushSend(SendBufferRef packet);
+	void PushSend(shared_ptr<vector<SendBufferRef>> packet);
+	
 	void PopSend();
 	
 	
@@ -88,7 +90,7 @@ public:
 	
 
 public:
-	ObjectRef& GetOwner() { return _owner; }
+	HostRef& GetOwner() { return _owner; }
 
 	array<queue<shared_ptr<SavedSendPacket>>, QUEUE_MAX> _sendQueues;
 	array<queue<shared_ptr<SavedRecvPacket>>, QUEUE_MAX> _recvQueues;
@@ -98,7 +100,7 @@ public:
 	
 private:
 	//TokenBucket _recvBucket;
-	ObjectRef _owner;
+	HostRef _owner;
 	QoSShard* _ownerShard;
 	TokenBucket _sendBucket; // For Send 
 	
@@ -123,9 +125,11 @@ public:
 	QoSShard();
 	~QoSShard();
 
-	void MakeQoSPlayer(ObjectRef object, int32 client_Id, int32 rate = 60, int32 burst = 10);
+	void MakeQoSPlayer(HostRef object, int32 client_Id, int32 rate = 60, int32 burst = 10);
 	void ErasePlayer(int32 client_Id);
-	void PushSend(int32 playerid, SendBufferRef packet);
+	//void PushSend(int32 playerid, SendBufferRef packet);
+	void PushSend(int32 client_Id, shared_ptr<vector<SendBufferRef>> packet);
+
 	void PushRecv(int32 playerid, BYTE* buffer, int32 size);
 	
 	void OnOrderedRecv(int32 SeqNum, int32 playerid, BYTE* buffer, int32 size);
@@ -179,7 +183,9 @@ public:
 
 	void OnRecv(int32 SeqNum, int32 client_Id, BYTE* buffer, int32 size);
 
-	void PushSend(int32 client_Id, SendBufferRef packet);
+	//void PushSend(int32 client_Id, SendBufferRef packet);
+	void PushSend(int32 client_Id, shared_ptr<vector<SendBufferRef>> packet);
+
 	void PushRecv(int32 client_Id, BYTE* buffer, int32 size);
 
 	void OnOrderedRecv(int32 SeqNum, int32 client_Id, BYTE* buffer, int32 size);

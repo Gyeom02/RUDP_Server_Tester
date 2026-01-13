@@ -1,6 +1,6 @@
 #pragma once
 #include "UDP.h"
-#include "Object.h"
+#include "Host.h"
 using PlayerRef = shared_ptr<class Player>;
 struct Position
 {
@@ -45,7 +45,7 @@ struct Velocity
 	atomic<float> vz;
 };
 
-class Player : public Object
+class Player : public Host
 {
 public:
 	Player(int32 id);
@@ -71,7 +71,7 @@ public:
 
 
 private:
-	
+	USE_LOCK;
 	string	_nickname;
 
 };

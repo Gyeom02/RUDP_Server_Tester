@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Player.h"
 Player::Player(int32 id) 
-	: Object(id), roomId(-1), roomprimid(-1), teamNum(-1)
+	: Host(id), roomId(-1), roomprimid(-1), teamNum(-1)
 {
 	
 }

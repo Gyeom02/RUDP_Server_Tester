@@ -74,14 +74,23 @@ UDP::UDP()
 bool UDP::UDPInit(Type type)
 {
 	_type = type;
-	for (int32 i = 0; i < SOCKNUM; i++)
-	{
-		if (!UDPSocketReset(i))
+#ifdef _DEBUG
+	if(type == Type::CLIENT)
+		for (int32 i = 0; i < SOCKNUM; i++)
+		{
+			if (!UDPSocketReset(i))
+			{
+				cout << "UDP Init Failed" << endl;
+				return false;
+			}
+		}
+	else
+		if (!UDPSocketReset(0))
 		{
 			cout << "UDP Init Failed" << endl;
 			return false;
 		}
-	}
+#endif
 	return true;
 }
 

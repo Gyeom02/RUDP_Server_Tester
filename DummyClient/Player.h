@@ -45,7 +45,7 @@ struct Velocity
 	atomic<float> vz;
 };
 
-class Player : public Object
+class Player : public Host
 {
 public:
 	Player(int32 id);

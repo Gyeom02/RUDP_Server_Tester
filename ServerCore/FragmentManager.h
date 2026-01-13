@@ -52,7 +52,7 @@ class Ordered_FG_Manager // RO 패킷의 Ordered와 패킷 조각화를 관리하는 클래스
 private:
 	enum
 	{
-		MAX = RUDPWIND::SN_MAX_SIZE,
+		//MAX = RUDPWIND::SN_MAX_SIZE,
 	};
 public: //API
 	bool OnOrderedRecv(uint32 seqNum, BYTE* buffer, int32 size, OUT queue<vector<BYTE>>& outReadyQueue);
@@ -70,9 +70,9 @@ public: //
 	Ordered_FG_Manager() :_fragmentPassSNs(RUDPWIND::SN_MAX_SIZE, false) {}
 
 protected:
-	bool CheckCanSNPass(uint32 sn) { if (_fragmentPassSNs[sn]) return true; else return false; }
-	bool TryPassSN(uint32 sn) { if (CheckCanSNPass(sn)) { _fragmentPassSNs[sn] = false; return true; } else  return false; }
-	void PushPassSN(uint32 sn) { _fragmentPassSNs[sn] = true; }
+	bool CheckCanSNPass(uint32 sn) { if (_fragmentPassSNs[sn % RUDPWIND::SN_MAX_SIZE]) return true; else return false; }
+	bool TryPassSN(uint32 sn) { if (CheckCanSNPass(sn)) { _fragmentPassSNs[sn % RUDPWIND::SN_MAX_SIZE] = false; return true; } else  return false; }
+	void PushPassSN(uint32 sn) { _fragmentPassSNs[sn % RUDPWIND::SN_MAX_SIZE] = true; }
 private:
 	std::map<uint32, shared_ptr<FragmentContext>> _orderedCtxs; // < sn,  shared_ptr<FragmentContext>> 을 pair로 갖는 map 
 	std::map<uint32, shared_ptr<FragmentContext>> _fragCtxs; // < Fragment::PrimID,  shared_ptr<FragmentContext>> 을 pair로 갖는 map / 조각화가 모두 모이면 _orderdCtxs로 옮겨짐

@@ -56,12 +56,53 @@ QoSShard* QoSCore::GetBusyShard_SEND()
 		return nullptr;
 	return GetShard_index(busy_index);
 }
+//
+//void QoSPlayer::PushSend(SendBufferRef packet)
+//{
+//	bool expected = false;
+//	
+//	PacketHeader* header = reinterpret_cast<PacketHeader*>(packet->Buffer());
+//
+//	uint16 channel = header->channel;
+//	if (channel == QoSCore::RO)
+//	{
+//		SEND_WRITE_LOCK;
+//		_sendQueues[QoSCore::RO].push(MakeShared<SavedSendPacket>(packet));
+//		_sendSumNum.fetch_add(1);
+//	}
+//	else if (channel == QoSCore::URO)
+//	{
+//		SEND_WRITE_LOCK;
+//		_sendQueues[QoSCore::URO].push(MakeShared<SavedSendPacket>(packet));
+//		_sendSumNum.fetch_add(1);
+//	}
+//	else if (channel == QoSCore::RPCT)
+//	{
+//		SEND_WRITE_LOCK;
+//		if(_sendRPCTPacket_ptr == nullptr)
+//			_sendSumNum.fetch_add(1);
+//		_sendRPCTPacket_ptr = MakeShared<SavedSendPacket>(packet);
+//		
+//	}
+//	else
+//		return;
+//
+//	
+//
+//	
+//
+//	if (_bSendReady.compare_exchange_strong(expected, true))
+//	{
+//	//	cout << "PushSendReadyQueue 1" << endl;
+//		_ownerShard->PushSendReadyQueue(shared_from_this());
+//	}
+//}
 
-void QoSPlayer::PushSend(SendBufferRef packet)
+void QoSPlayer::PushSend(shared_ptr<vector<SendBufferRef>> packet)
 {
 	bool expected = false;
-	
-	PacketHeader* header = reinterpret_cast<PacketHeader*>(packet->Buffer());
+
+	PacketHeader* header = reinterpret_cast<PacketHeader*>(packet->front()->Buffer());
 
 	uint16 channel = header->channel;
 	if (channel == QoSCore::RO)
@@ -79,26 +120,24 @@ void QoSPlayer::PushSend(SendBufferRef packet)
 	else if (channel == QoSCore::RPCT)
 	{
 		SEND_WRITE_LOCK;
-		if(_sendRPCTPacket_ptr == nullptr)
+		if (_sendRPCTPacket_ptr == nullptr)
 			_sendSumNum.fetch_add(1);
 		_sendRPCTPacket_ptr = MakeShared<SavedSendPacket>(packet);
-		
+
 	}
 	else
 		return;
 
-	
 
-	
+
+
 
 	if (_bSendReady.compare_exchange_strong(expected, true))
 	{
-	//	cout << "PushSendReadyQueue 1" << endl;
+		//	cout << "PushSendReadyQueue 1" << endl;
 		_ownerShard->PushSendReadyQueue(shared_from_this());
 	}
 }
-
-
 
 void QoSPlayer::PopSend()
 {
@@ -117,16 +156,16 @@ void QoSPlayer::PopSend()
 
 				savePacket = _sendQueues[QoSCore::RO].front();
 
-				if (!dm->IsSpaceExistToSend(savePacket->sendBuffer->WriteSize())) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
+				if (!dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
 				{
 #ifdef _DEBUG
-					HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-					CONSOLE_SCREEN_BUFFER_INFO info;
-					//GetConsoleScreenBufferInfo(h, &info);
-					COORD pos = { (SHORT)0, (SHORT)11};
-					SetConsoleCursorPosition(h, pos);
+					//HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+					//CONSOLE_SCREEN_BUFFER_INFO info;
+					////GetConsoleScreenBufferInfo(h, &info);
+					//COORD pos = { (SHORT)0, (SHORT)11};
+					//SetConsoleCursorPosition(h, pos);
 
-					cout << "Out Of RWind : " << dm->GetReceiverRWind() << " < " << savePacket->sendBuffer->WriteSize() << endl;
+					//cout << "Player ID : " << _owner->client_Id << " | Out Of RWind : " << dm->GetReceiverRWind() << " < " << savePacket->AllBuffersSize << endl;
 
 #endif
 					break;
@@ -138,7 +177,8 @@ void QoSPlayer::PopSend()
 				
 			//PacketHeader* header = reinterpret_cast<PacketHeader*>(savePacket->sendBuffer->Buffer());
 			_sendSumNum.fetch_sub(1);
-			_owner->PriortySend(savePacket->sendBuffer);
+			for(int32 i = 0; i < savePacket->sendBuffers->size(); i++)
+				_owner->PriortySend(savePacket->sendBuffers);
 			
 		}
 		 coin = 3;
@@ -152,6 +192,10 @@ void QoSPlayer::PopSend()
 					break;
 				
 				savePacket = _sendQueues[QoSCore::URO].front();
+				if (!dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
+				{
+					break;
+				}
 				_sendQueues[QoSCore::URO].pop();
 				
 			
@@ -159,13 +203,15 @@ void QoSPlayer::PopSend()
 				
 			//PacketHeader* header = reinterpret_cast<PacketHeader*>(savePacket->sendBuffer->Buffer());
 			_sendSumNum.fetch_sub(1);
-			_owner->PriortySend(savePacket->sendBuffer);
+			for (int32 i = 0; i < savePacket->sendBuffers->size(); i++)
+				_owner->PriortySend(savePacket->sendBuffers);
 			
 		}
 		
-		
+		bool cansend = false;
 		{
 			SEND_WRITE_LOCK;
+			
 			if (_sendRPCTPacket_ptr == nullptr || !_sendBucket.Consume())
 			{
 				//_sendRPCTPending.store(false);
@@ -174,13 +220,20 @@ void QoSPlayer::PopSend()
 			}//PacketHeader* header = reinterpret_cast<PacketHeader*>(savePacket->sendBuffer->Buffer());
 			
 			savePacket = _sendRPCTPacket_ptr;
-			_sendRPCTPacket_ptr = nullptr;
+			if (dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
+			{
+				_sendRPCTPacket_ptr = nullptr;
+
+				_sendSumNum.fetch_sub(1);
+				cansend = true;
+			}
 			
-			_sendSumNum.fetch_sub(1);
 
 			
 		}
-		_owner->PriortySend(savePacket->sendBuffer);
+		if(cansend)
+			for (int32 i = 0; i < savePacket->sendBuffers->size(); i++)
+				_owner->PriortySend(savePacket->sendBuffers);
 		//_sendSumNum.fetch_add(-1);
 		
 				
@@ -326,14 +379,20 @@ void QoSPlayer::OnOrderedRecv(int32 SeqNum, BYTE* buffer, int32 size)
 	DeliveryManagerRef dm = _owner->GetDeliveryManager();
 	if (_fragmentManager.OnOrderedRecv(SeqNum, buffer, size, _orderedPacketQueue))
 	{
+		int32 allSize = 0;
 		while (!_orderedPacketQueue.empty())
 		{
 			
 			vector<BYTE>& v = _orderedPacketQueue.front();
 			PushRecv(v.data(), v.size());
-			dm->MakeSpaceRWind(v.size()); // RecvBuffer에서 Logic 처리로 옮겨졌기때문에 RWind의 크기를 해당 패킷 사이즈 만큼 다시 넓혀줘야 받을 수 있음
+			allSize += v.size();
+			cout << "doneSize : " << v.size() << endl;
 			_orderedPacketQueue.pop();
 		}
+		cout << "doneSize : " << allSize << " | Befroe RWind : " << dm->GetRWind();
+		dm->MakeSpaceRWind(allSize); // RecvBuffer에서 Logic 처리로 옮겨졌기때문에 RWind의 크기를 해당 패킷 사이즈 만큼 다시 넓혀줘야 받을 수 있음
+		cout <<" | " << "After RWind : " << dm->GetRWind() << endl;
+		GTransportControl.OnPushRWind(_owner->client_Id, allSize);
 	}
 
 }
@@ -367,7 +426,7 @@ void QoSPlayer::ResetRecvReady()
 	}
 }
 
-void QoSShard::MakeQoSPlayer(ObjectRef object, int32 client_Id, int32 rate, int32 burst)
+void QoSShard::MakeQoSPlayer(HostRef object, int32 client_Id, int32 rate, int32 burst)
 {
 	WRITE_LOCK;
 
@@ -387,26 +446,45 @@ void QoSShard::ErasePlayer(int32 client_Id)
 
 }
 
-void QoSShard::PushSend(int32 playerid, SendBufferRef packet)
+//void QoSShard::PushSend(int32 playerid, SendBufferRef packet)
+//{
+//	shared_ptr<QoSPlayer> qosplaayer;
+//	
+//	{
+//		READ_LOCK;
+//		auto iter  = _qosPlayers.find(playerid);
+//
+//
+//		if (iter == _qosPlayers.end())
+//			return;
+//
+//		
+//		qosplaayer = iter->second;
+//	}
+//
+//	
+//	qosplaayer->PushSend(packet);
+//}
+
+void QoSShard::PushSend(int32 playerid, shared_ptr<vector<SendBufferRef>> packet)
 {
 	shared_ptr<QoSPlayer> qosplaayer;
-	
+
 	{
 		READ_LOCK;
-		auto iter  = _qosPlayers.find(playerid);
+		auto iter = _qosPlayers.find(playerid);
 
 
 		if (iter == _qosPlayers.end())
 			return;
 
-		
+
 		qosplaayer = iter->second;
 	}
 
-	
+
 	qosplaayer->PushSend(packet);
 }
-
 void QoSShard::PushRecv(int32 playerid, BYTE* buffer, int32 size)
 {
 
@@ -469,11 +547,20 @@ void QoSCore::OnRecv(int32 SeqNum, int32 client_Id, BYTE* buffer, int32 size)
 	}
 }
 
-void QoSCore::PushSend(int32 client_Id, SendBufferRef packet)
+//void QoSCore::PushSend(int32 client_Id, SendBufferRef packet)
+//{
+//	QoSShard* shard = GetShard(client_Id);
+//	shard->PushSend(client_Id,  packet);
+//	
+//}
+
+void QoSCore::PushSend(int32 client_Id, shared_ptr<vector<SendBufferRef>> packet)
 {
-	QoSShard* shard = GetShard(client_Id);
-	shard->PushSend(client_Id,  packet);
-	
+	for (int32 i = 0; i < (*packet).size(); i++)
+	{
+		QoSShard* shard = GetShard(client_Id);
+		shard->PushSend(client_Id, packet);
+	}
 }
 
 void QoSCore::PushRecv(int32 client_Id, BYTE* buffer, int32 size)

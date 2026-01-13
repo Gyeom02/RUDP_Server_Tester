@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "ClientPacketHandler.h"
 #include "Player.h"
 #include "Room.h"
@@ -6,7 +6,7 @@
 #include "QoSCore.h"
 PacketHandlerFunc GPacketHandler[UINT16_MAX];
 
-// Á÷Á¢ ÄÁÅÙÃ÷ ÀÛ¾÷ÀÚ
+// ì§ì ‘ ì»¨í…ì¸  ì‘ì—…ì
 
 bool Handle_C_RUDPACK(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_RUDPACK& pkt)
 {
@@ -14,13 +14,13 @@ bool Handle_C_RUDPACK(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeade
 	int32 start = pkt.start();
 	int32 count = pkt.count();
 	
-	PlayerRef player = static_pointer_cast<Player>(GObjectManager.GetPlayer(pkt.playerid()));
+	PlayerRef player = static_pointer_cast<Player>(GHostManager.GetPlayer(pkt.playerid()));
 	if (player == nullptr)
 	{
 		//cout << "Handle_C_RUDPACK PlayerID : " << pkt.playerid() << " | SequenceStart : " << pkt.start() << endl;
 		return false;
 	}
-	player->GetDeliveryManager()->SetReceiverRWind(pkt.rwindsize());
+	player->GetDeliveryManager()->AddReceiverRWind(pkt.rwindsize());
 	player->GetDeliveryManager()->ProcessAcks(start, count, bhascount);
 	//cout << "Handle_C_RUDPACK PlayerID : " << pkt.playerid() << " | SequenceStart : " << pkt.start() << endl;
 	return true;
@@ -33,27 +33,27 @@ bool Handle_C_DISCONNECT(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHe
 	int32 roomid = pkt.roomid();
 	int32 roomprimid = pkt.roomprimid();
 	//PlayerManager Release
-	GObjectManager.Remove(id);
+	GHostManager.Remove(id);
 	// ID Reuse Setting
-	GObjectManager.PushID(id);
+	GHostManager.PushID(id);
 	GQoS->ErasePlayer(id);
 	//Room Release
-	if (roomid == -1) // ¹æ¿¡ µé¾î°¡ÀÖÁö ¾ÊÀ½
+	if (roomid == -1) // ë°©ì— ë“¤ì–´ê°€ìˆì§€ ì•ŠìŒ
 	{
 
 	}
 	else 
 	{ 
-		//¹æ¿¡ µé¾î°¡ ÀÖÀ½ (È£½ºÆ®ÀÎÁö ¾Æ´ÑÁö, ÀÎ°ÔÀÓ ÁßÀÎÁö ¾Æ´ÑÁö¿¡ µû¶ó ´Ş¶óÁü(?)
+		//ë°©ì— ë“¤ì–´ê°€ ìˆìŒ (í˜¸ìŠ¤íŠ¸ì¸ì§€ ì•„ë‹Œì§€, ì¸ê²Œì„ ì¤‘ì¸ì§€ ì•„ë‹Œì§€ì— ë”°ë¼ ë‹¬ë¼ì§(?)
 		
 		/*---------------------------------------------------------------------[*/
 		
 		
 		RoomRef room = GRoom->GetRoom(roomid);
 		PlayerRef player = room->GetPlayer(id);
-		if (!room) // ¹æÀÌ Á¸ÀçÇÏÁö ¾ÊÀ½
+		if (!room) // ë°©ì´ ì¡´ì¬í•˜ì§€ ì•ŠìŒ
 			return true;
-		if (!player) //¹æ¿¡ ÇØ´ç ¾ÆÀÌµğ¸¦ °¡Áø ÇÃ·¹ÀÌ¾î°¡ ¾øÀ½
+		if (!player) //ë°©ì— í•´ë‹¹ ì•„ì´ë””ë¥¼ ê°€ì§„ í”Œë ˆì´ì–´ê°€ ì—†ìŒ
 		{
 			cout << "Room " << roomid << " : Player ID : " << id << " Dose Not Entered" << endl;
 			return true;
@@ -73,28 +73,28 @@ bool Handle_INVALID(UDPSocketPtr udpSocket, NetAddress clientAddr, BYTE* buffer,
 bool Handle_C_INIT(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_INIT& pkt)
 {
 	static Atomic<int32> idGenerator = 0;
-	int32 reuse_id = GObjectManager.ReuseID();
+	int32 reuse_id = GHostManager.ReuseID();
 	int32 id = -1;
-	if (reuse_id == -1) // Àç»ç¿ë °¡´ÉÇÑ  ID°¡ ¾øÀ½ »õ·Î ¹ß±Ş
+	if (reuse_id == -1) // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½  IDï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ß±ï¿½
 		id = ++idGenerator;
-	else //Àç»ç¿ë
+	else //ï¿½ï¿½ï¿½ï¿½
 	{
 		id = reuse_id;
 	}
-	
-	
+
+
 	PlayerRef playerRef = MakeShared<Player>(id);
-	//nickname ÀÓ½ÃÀÓ
+	//nickname ï¿½Ó½ï¿½ï¿½ï¿½
 	playerRef->SetNickName(to_string(id));
-	//nickname ÀÓ½ÃÀÓ
+	//nickname ï¿½Ó½ï¿½ï¿½ï¿½
 	playerRef->netAddress = clientAddr;
 	playerRef->ownerSocket = udpSocket;
 
-	GObjectManager.Add(id, playerRef);
+	GHostManager.Add(id, playerRef);
 
 	GQoS->GetShard(id)->MakeQoSPlayer(playerRef, id);
 
-	if (GObjectManager.GetPlayer(id) == nullptr)
+	if (GHostManager.GetPlayer(id) == nullptr)
 		cout << "NNULPTR" << endl;
 	else cout << id << endl;
 
@@ -108,7 +108,7 @@ bool Handle_C_INIT(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* 
 	udpSocket->Send(playerRef, sendBuffer);
 
 
-	//ÁøÂ¥ ÀÓ½Ã °³¾²·¹±â ÄÚµåÀÓ
+	//Need to change this code is so suck
 	delete[] reinterpret_cast<BYTE*>(header);
 	header = nullptr;
 	///////////////////////
@@ -118,20 +118,20 @@ bool Handle_C_LOGIN(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader*
 {
 	//GameSessionRef gameSession = static_pointer_cast<GameSession>(session);
 
-	//// TODO : Validation Ã¼Å©
+	//// TODO : Validation ì²´í¬
 
 	//Protocol::S_LOGIN loginPkt;
 	//loginPkt.set_bsuccess(1);
 
-	//// DB¿¡¼­ ÇÃ·¹ÀÌ Á¤º¸¸¦ ±Ü¾î¿Â´Ù
-	//// GameSession¿¡ ÇÃ·¹ÀÌ Á¤º¸¸¦ ÀúÀå (¸Ş¸ğ¸®)
+	//// DBì—ì„œ í”Œë ˆì´ ì •ë³´ë¥¼ ê¸ì–´ì˜¨ë‹¤
+	//// GameSessionì— í”Œë ˆì´ ì •ë³´ë¥¼ ì €ì¥ (ë©”ëª¨ë¦¬)
 
-	//// ID ¹ß±Ş (DB ¾ÆÀÌµğ°¡ ¾Æ´Ï°í, ÀÎ°ÔÀÓ ¾ÆÀÌµğ)
+	//// ID ë°œê¸‰ (DB ì•„ì´ë””ê°€ ì•„ë‹ˆê³ , ì¸ê²Œì„ ì•„ì´ë””)
 	
 
 	//{
 	//	auto player = loginPkt.add_players();
-	//	player->set_name(u8"DB¿¡¼­±Ü¾î¿ÂÀÌ¸§1");
+	//	player->set_name(u8"DBì—ì„œê¸ì–´ì˜¨ì´ë¦„1");
 	//	player->set_playertype(Protocol::PLAYER_TYPE_KNIGHT);
 
 	//	PlayerRef playerRef = MakeShared<Player>();
@@ -145,7 +145,7 @@ bool Handle_C_LOGIN(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader*
 
 	//{
 	//	auto player = loginPkt.add_players();
-	//	player->set_name(u8"DB¿¡¼­±Ü¾î¿ÂÀÌ¸§2");
+	//	player->set_name(u8"DBì—ì„œê¸ì–´ì˜¨ì´ë¦„2");
 	//	player->set_playertype(Protocol::PLAYER_TYPE_MAGE);
 
 	//	PlayerRef playerRef = MakeShared<Player>();
@@ -185,7 +185,7 @@ bool Handle_C_ENTER_GAME(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHe
 
 bool Handle_C_MSG(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_MSG& pkt)
 {
-	std::cout << pkt.msg() << "^^" << endl;
+	//std::cout << pkt.msg() << "^^" << endl;
 
 	/*Protocol::S_MSG chatPkt;
 	chatPkt.set_msg(pkt.msg());
@@ -199,13 +199,13 @@ bool Handle_C_MSG(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* h
 }
 bool Handle_C_MAKEROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_MAKEROOM& pkt)
 {
-	if (GRoom->GetRoom(pkt.id()) != nullptr) //¹æÀÌ Á¸ÀçÇÑ´Ù
+	if (GRoom->GetRoom(pkt.id()) != nullptr) //ë°©ì´ ì¡´ì¬í•œë‹¤
 	{
 		cout << "Room " << pkt.id() << " Already Exist" << endl; 
 		return true;
 	}
 	RoomRef room = make_shared<Room>(pkt.id());
-	PlayerRef player = static_pointer_cast<Player>(GObjectManager.GetPlayer(pkt.id()));
+	PlayerRef player = static_pointer_cast<Player>(GHostManager.GetPlayer(pkt.id()));
 	player->roomprimid = room->GivePrimID();
 	int32 givenlistid = room->FirstGiveListID(player->roomprimid);
 	player->teamNum = room->GetTeamNum(givenlistid);
@@ -234,26 +234,26 @@ bool Handle_C_MAKEROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHead
 
 bool Handle_C_ENTERROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_ENTERROOM& pkt)
 {
-	/* ¹æÀÇ Á¸Àç, ¹æÀÇ ÇÃ·¹ÀÌ¾îµé ¼ö¸¦ È®ÀÎÇÏ°í Å¬¶óÀÌ¾ğÆ®¸¦ Ãß°¡ÇÏ´Â ÄÚµå*/
+	/* ë°©ì˜ ì¡´ì¬, ë°©ì˜ í”Œë ˆì´ì–´ë“¤ ìˆ˜ë¥¼ í™•ì¸í•˜ê³  í´ë¼ì´ì–¸íŠ¸ë¥¼ ì¶”ê°€í•˜ëŠ” ì½”ë“œ*/
 
 	RoomRef room = GRoom->GetRoom(pkt.roomid());
 	if (room == nullptr)
 	{
-		//¹æÀÌ Á¸ÀçÇÏÁö¾ÊÀ½
+		//ë°©ì´ ì¡´ì¬í•˜ì§€ì•ŠìŒ
 		cout << "Room : " << pkt.roomid() << " Does Not Exist" << endl;
 		return true;
 	}
 	int32 givenroomid = room->GivePrimID();
 		
-	if (givenroomid == -1) // ¹æ¿¡ ÇÃ·¹ÀÌ¾î ¼ö°¡ 8¸í ²ËÂü
+	if (givenroomid == -1) // ë°©ì— í”Œë ˆì´ì–´ ìˆ˜ê°€ 8ëª… ê½‰ì°¸
 	{
 		cout << "Room : " << pkt.roomid() << " Fulled" << endl;
 		return true;
 	}
-	PlayerRef player = static_pointer_cast<Player>(GObjectManager.GetPlayer(pkt.id()));
+	PlayerRef player = static_pointer_cast<Player>(GHostManager.GetPlayer(pkt.id()));
 	if (player == nullptr)
 	{
-		//ÇÃ·¹ÀÌ¾î°¡ Á¸ÀçÇÏÁö¾ÊÀ½
+		//í”Œë ˆì´ì–´ê°€ ì¡´ì¬í•˜ì§€ì•ŠìŒ
 		cout << pkt.id() << " : Player Not Existed" << endl;
 		return true;
 	}
@@ -262,17 +262,17 @@ bool Handle_C_ENTERROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHea
 	player->teamNum = room->GetTeamNum(givenlistid);
 	//room->SetListID(-1, givenlistid, givenroomid);
 
-	/* ±âÁ¸ Á¸ÀçÇÏ´ø ÇÃ·¹ÀÌ¾îµé¿¡°Ô Áö±İ µé¾î°¡´Â ÇÃ·¹ÀÌ¾îÀÇ Á¤º¸ÀÇ ÆĞÅ¶À» º¸³»´Â ÄÚµå*/
+	/* ê¸°ì¡´ ì¡´ì¬í•˜ë˜ í”Œë ˆì´ì–´ë“¤ì—ê²Œ ì§€ê¸ˆ ë“¤ì–´ê°€ëŠ” í”Œë ˆì´ì–´ì˜ ì •ë³´ì˜ íŒ¨í‚·ì„ ë³´ë‚´ëŠ” ì½”ë“œ*/
 	Protocol::S_NEWPLAYER newplayerpkt;
 	auto pktplayer = newplayerpkt.mutable_players();
 	pktplayer->set_id(pkt.id());
-	//´Ğ³×ÀÓ ÀÓ½ÃÀÓ
+	//ë‹‰ë„¤ì„ ì„ì‹œì„
 	pktplayer->set_name(to_string(pkt.id()));
-	pktplayer->set_roomid(givenroomid); // roomprimid¸¦ ÀÇ¹ÌÇÔ
-	pktplayer->set_roomlistid(givenlistid); // roomlistid¸¦ ÀÇ¹ÌÇÔ
+	pktplayer->set_roomid(givenroomid); // roomprimidë¥¼ ì˜ë¯¸í•¨
+	pktplayer->set_roomlistid(givenlistid); // roomlistidë¥¼ ì˜ë¯¸í•¨
 	SendBufferRef newplayersb = ClientPacketHandler::MakeReliableBuffer(newplayerpkt, QoSCore::HIGH);
 	room->Broadcast(newplayersb);
-	/* Áö±İ µé¾î°¡´Â ÇÃ·¹ÀÌ¾î¿¡°Ô ±âÁ¸ Á¸ÀçÇÏ´ø ÇÃ·¹ÀÌ¾îµéÀÇ Á¤º¸¸¦ µ¿±âÈ­ ¹× ¹æ¿¡ ÁøÀÔÇÏ°Ô ÇÏ´Â ÆĞÅ¶À» º¸³»´Â ÄÚµå*/
+	/* ì§€ê¸ˆ ë“¤ì–´ê°€ëŠ” í”Œë ˆì´ì–´ì—ê²Œ ê¸°ì¡´ ì¡´ì¬í•˜ë˜ í”Œë ˆì´ì–´ë“¤ì˜ ì •ë³´ë¥¼ ë™ê¸°í™” ë° ë°©ì— ì§„ì…í•˜ê²Œ í•˜ëŠ” íŒ¨í‚·ì„ ë³´ë‚´ëŠ” ì½”ë“œ*/
 	Protocol::S_ENTERROOM enterpkt;
 		
 	enterpkt.set_roomid(pkt.roomid());
@@ -284,7 +284,7 @@ bool Handle_C_ENTERROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHea
 		PlayerRef ps = p.second;
 		auto pktplayers = enterpkt.add_players();
 		pktplayers->set_id(ps->client_Id);
-		//´Ğ³×ÀÓ ÀÓ½ÃÀÓ
+		//ë‹‰ë„¤ì„ ì„ì‹œì„
 		pktplayers->set_name(to_string(ps->client_Id));
 		pktplayers->set_roomid(ps->roomprimid);
 		pktplayers->set_roomlistid(room->GetPrimToList(ps->roomprimid));
@@ -316,9 +316,9 @@ bool Handle_C_MOVETEAM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHead
 			return true;
 		}
 		bool bWhoTaken = room->SetListID(pkt.roomlistid(), pkt.movetolistid(), pkt.roomprimeid());
-		if (!bWhoTaken) //´©±º°¡ ÀÌ¹Ì °®°íÀÖÀ½
+		if (!bWhoTaken) //ëˆ„êµ°ê°€ ì´ë¯¸ ê°–ê³ ìˆìŒ
 		{
-			cout << "´©±º°¡ ÀÌ¹Ì °®°íÀÖÀ½" << endl;
+			cout << "ëˆ„êµ°ê°€ ì´ë¯¸ ê°–ê³ ìˆìŒ" << endl;
 			return true;
 		}
 			
@@ -348,7 +348,7 @@ int32 movetolistid = 3;*/
 	return true;
 }
 
-bool Handle_C_LEAVEROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_LEAVEROOM& pkt) // »ìÆìºÁ¾ßÇÔ
+bool Handle_C_LEAVEROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_LEAVEROOM& pkt) // ì‚´í´ë´ì•¼í•¨
 {
 
 	
@@ -361,27 +361,27 @@ bool Handle_C_LEAVEROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHea
 	if (player == nullptr)
 		return true;
 
-	if (player->client_Id == room->GetRoomID()) //¹æ¿¡ ÁÖÀÎÀÎµ¥ ³ª°¡·Á°í ÇÔ
+	if (player->client_Id == room->GetRoomID()) //ë°©ì— ì£¼ì¸ì¸ë° ë‚˜ê°€ë ¤ê³  í•¨
 	{
 	
-		if (room->PlayerNum() == 1)// ¹æ¿¡ ³ª¹Û¿¡ ¾ø´Ù
+		if (room->PlayerNum() == 1)// ë°©ì— ë‚˜ë°–ì— ì—†ë‹¤
 		{
 			
 			bEraseRoom = true;
 		}
 		else
-		{   //¹æ ¾çµµ ÇÏ´Â ÄÚµå
-			//Host Ã¼ÀÎÁö
+		{   //ë°© ì–‘ë„ í•˜ëŠ” ì½”ë“œ
+			//Host ì²´ì¸ì§€
 			PlayerRef newHostplayer = nullptr;
 			for (auto players : room->GetPlayers())
 			{
 				newHostplayer = players.second;
-				if (newHostplayer != player) //Host Player°¡ ¾Æ´Ñ ´Ù¸¥ ÇÃ·¹ÀÌ¾î
+				if (newHostplayer != player) //Host Playerê°€ ì•„ë‹Œ ë‹¤ë¥¸ í”Œë ˆì´ì–´
 					break;
 			}
 			nextHostID = newHostplayer->client_Id;
 
-			//GRoom¿¡¼­ ¹æ Key Value º¯°æµÈ Host ID·Î Ã¼ÀÎÁö
+			//GRoomì—ì„œ ë°© Key Value ë³€ê²½ëœ Host IDë¡œ ì²´ì¸ì§€
 			GRoom->Remove(room);
 			room->SetRoomID(nextHostID);
 			GRoom->Make(room);
@@ -390,7 +390,7 @@ bool Handle_C_LEAVEROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHea
 				PlayerRef pp = p.second;
 				pp->roomId = nextHostID;
 			}
-			//¹æ¿¡ ÀÖ´Â ÇÃ·¹ÀÌ¾îÀÇ RoomID ´Ù Ã¼ÀÎÁö
+			//ë°©ì— ìˆëŠ” í”Œë ˆì´ì–´ì˜ RoomID ë‹¤ ì²´ì¸ì§€
 		}
 
 	}
@@ -424,7 +424,7 @@ bool Handle_C_CHANGETEAMMODE(UDPSocketPtr udpSocket, NetAddress clientAddr, Pack
 	RoomRef room = GRoom->GetRoom(pkt.roomid());
 	if (room)
 	{
-		if (room->GetRoomID() == pkt.id()) // º¸³½ Å¬¶óÀÌ¾ğÆ®°¡ ¹æÀÇ Host°¡ ¸ÂÀ½
+		if (room->GetRoomID() == pkt.id()) // ë³´ë‚¸ í´ë¼ì´ì–¸íŠ¸ê°€ ë°©ì˜ Hostê°€ ë§ìŒ
 		{
 			room->SetTeamMode(pkt.teammode());
 
@@ -448,7 +448,7 @@ bool Handle_C_CHANGETEAMMODE(UDPSocketPtr udpSocket, NetAddress clientAddr, Pack
 
 bool Handle_C_MOVESELECTROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_MOVESELECTROOM& pkt)
 {
-	if (pkt.id() == pkt.roomid()) // ¹æÀÇ È£½ºÆ®ÀÌ´Ù
+	if (pkt.id() == pkt.roomid()) // ë°©ì˜ í˜¸ìŠ¤íŠ¸ì´ë‹¤
 	{
 		
 		RoomRef room = GRoom->GetRoom(pkt.roomid());
@@ -494,7 +494,7 @@ bool Handle_C_READY(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader*
 			PlayerRef player = room->GetPlayer(pkt.primid());
 			if (!player)
 				return true;
-			if (player->bready) // ÀÌ¹Ì ·¹µğ¸¦ ¹ÚÀº »óÅÂÀÌ´Ù -> ·¹µğ¸¦ Ç®°í½Í´Ù
+			if (player->bready) // ì´ë¯¸ ë ˆë””ë¥¼ ë°•ì€ ìƒíƒœì´ë‹¤ -> ë ˆë””ë¥¼ í’€ê³ ì‹¶ë‹¤
 			{
 				player->bready = false;
 				room->MinusReady();
@@ -504,7 +504,7 @@ bool Handle_C_READY(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader*
 				player->bready = true;
 				room->AddReady();
 
-				if (room->GetReady() == room->PlayerNum())// ¸ğµÎ ·¹µğ¸¦ ´­·¶´Ù
+				if (room->GetReady() == room->PlayerNum())// ëª¨ë‘ ë ˆë””ë¥¼ ëˆŒë €ë‹¤
 				{
 					room->SetRoomFlow(Room::INGAME);
 					room->ResetReady();

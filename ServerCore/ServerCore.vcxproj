@@ -191,10 +191,10 @@
     <ClInclude Include="MemoryPool.h" />
     <ClInclude Include="NetAddress.h" />
     <ClInclude Include="Nids.h" />
-    <ClInclude Include="Object.h" />
+    <ClInclude Include="Host.h" />
     <ClInclude Include="ObjectPool.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="ObjectManager.h" />
+    <ClInclude Include="HostManager.h" />
     <ClInclude Include="QoSCore.h" />
     <ClInclude Include="rapidxml.hpp" />
     <ClInclude Include="rapidxml_iterators.hpp" />
@@ -208,6 +208,7 @@
     <ClInclude Include="Session.h" />
     <ClInclude Include="SocketUtils.h" />
     <ClInclude Include="ThreadManager.h" />
+    <ClInclude Include="TransportControlPlane.h" />
     <ClInclude Include="TypeCast.h" />
     <ClInclude Include="Types.h" />
     <ClInclude Include="UDP.h" />
@@ -246,14 +247,14 @@
     <ClCompile Include="MemoryPool.cpp" />
     <ClCompile Include="NetAddress.cpp" />
     <ClCompile Include="Nids.cpp" />
-    <ClCompile Include="Object.cpp" />
+    <ClCompile Include="Host.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="ObjectMananger.cpp" />
+    <ClCompile Include="HostMananger.cpp" />
     <ClCompile Include="QoSCore.cpp" />
     <ClCompile Include="RecvBuffer.cpp" />
     <ClCompile Include="RefCounting.cpp" />
@@ -263,6 +264,7 @@
     <ClCompile Include="Session.cpp" />
     <ClCompile Include="SocketUtils.cpp" />
     <ClCompile Include="ThreadManager.cpp" />
+    <ClCompile Include="TransportControlPlane.cpp" />
     <ClCompile Include="UDP.cpp" />
     <ClCompile Include="UDPRecvHandler.cpp" />
     <ClCompile Include="UDPSocket.cpp" />

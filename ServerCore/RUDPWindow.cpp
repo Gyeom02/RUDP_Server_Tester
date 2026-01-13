@@ -14,10 +14,13 @@ RUDPRecvWindow::RUDPRecvWindow(uint32 _expctedSeqNum)
 bool RUDPRecvWindow::CheckRecved(uint32 SeqNum)
 {
 	//int32 index = (SeqNum - _expctedSeqNum) % WINDOW_SIZE;
-	int32 index = SeqNum % RUDPWIND::SN_MAX_SIZE;
-	if (index < 0)
+	if (SeqNum < 0)
+		return false;
+	if (SeqNum >= _expctedSeqNum + RUDPWIND::SN_RANGE_HALF)
 		return false;
 
+	int32 index = SeqNum % RUDPWIND::SN_MAX_SIZE;
+	
 	if (_RecvedBitMap[index] == 1)
 		return false;
 
@@ -31,8 +34,9 @@ bool RUDPRecvWindow::CheckRecved(uint32 SeqNum)
 
 void RUDPRecvWindow::DetachExpectedSeq() // 예상하던 Seq의 패킷이 들어옴
 {
-	
+	int32 expectSNIndex = _expctedSeqNum % RUDPWIND::SN_MAX_SIZE;
+	_RecvedBitMap[(expectSNIndex + RUDPWIND::SN_RANGE_HALF) % RUDPWIND::SN_MAX_SIZE] = 0;
+	_RecvedBitMap[expectSNIndex] = 0;
 	_expctedSeqNum++;
-	_RecvedBitMap[_expctedSeqNum % RUDPWIND::SN_MAX_SIZE] = 0;
-	_RecvedBitMap[RUDPWIND::SN_RANGE_HALF - 1] = 0;
+
 }

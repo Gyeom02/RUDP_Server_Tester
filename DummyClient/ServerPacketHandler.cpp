@@ -15,9 +15,9 @@ bool Handle_S_RUDPACK(UDPSocketPtr udpSocket, NetAddress netAddress, PacketHeade
 	int32 count = pkt.count();
 	/*if (pkt.playerid() == 0)
 		return false;*/
-	PlayerRef player = static_pointer_cast<Player>(GObjectManager.GetPlayer(header->client_Id));
+	PlayerRef player = static_pointer_cast<Player>(GHostManager.GetPlayer(header->client_Id));
 	//cout << "Handle_S_RUDPACK PlayerID : " << header->playerId << endl;
-	player->GetDeliveryManager()->SetReceiverRWind(pkt.rwindsize());
+	player->GetDeliveryManager()->AddReceiverRWind(pkt.rwindsize());
  	player->GetDeliveryManager()->ProcessAcks(start, count, bhascount);
 	return true;
 }
@@ -37,7 +37,7 @@ bool Handle_S_INIT(UDPSocketPtr udpSocket, NetAddress netAddress, PacketHeader* 
 	PlayerRef _player = MakeShared<Player>(pkt.id());
 	_player->ownerSocket = GUDP.GetUDPSocket(0)->shared_from_this();
 	_player->netAddress = _player->ownerSocket->GetNetAddress();
-	GObjectManager.Add(pkt.id(), _player);
+	GHostManager.Add(pkt.id(), _player);
 	
 	GQoS->GetShard(pkt.id())->MakeQoSPlayer(_player, pkt.id());
 	

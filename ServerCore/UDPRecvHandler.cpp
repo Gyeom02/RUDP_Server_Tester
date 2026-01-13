@@ -62,7 +62,7 @@ void UDPRecvHandler::HandleRecvPacket(std::shared_ptr<QoSPlayer> _Player)
 
 	int coin = 32;
 
-	ObjectRef player = _Player->GetOwner();
+	HostRef player = _Player->GetOwner();
 
 	do
 	{
