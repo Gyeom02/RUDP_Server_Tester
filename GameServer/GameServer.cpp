@@ -145,7 +145,7 @@ int main()
 	}
 	if (GUDP.IsUDPOn())
 	{
-		for (int32 i = 0; i < UDP::SOCKNUM; i++)
+		for (int32 i = 0; i < 1; i++)
 		{
 			GThreadManager->Launch([=]()
 				{

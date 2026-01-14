@@ -21,12 +21,12 @@ struct Ack
 	int32 start = -1;
 	int32 count = -1;
 };
-struct UsedRWind //Recv를 통해 사용한 Rwind의 버퍼 사이즈 값을 QoS에서 Logic Layer로 올리기전 상대방에게 처리된 패킷의 사이즈 값을 다시보내 RWind 회복에 도움
+struct RecoverRWind //Recv를 통해 사용한 Rwind의 버퍼 사이즈 값을 QoS에서 Logic Layer로 올리기전 상대방에게 처리된 패킷의 사이즈 값을 다시보내 RWind 회복에 도움
 {
 	uint8 bexsist = 0;
 	int32 rwindsize = -1;
 };
-struct AdRWind //UsedRWind와 개별적으로 현재 RWind의 전체 사이즈를 보냄, 패킷 진행도(패킷을 보낸 수와 받은 수를 매치하여 상대방은 해당 패킷을 무시하거나 ReceiverWind를 업데이트함
+struct ADRWind //UsedRWind와 개별적으로 현재 RWind의 전체 사이즈를 보냄, 패킷 진행도(패킷을 보낸 수와 받은 수를 매치하여 상대방은 해당 패킷을 무시하거나 ReceiverWind를 업데이트함
 {
 	uint8 bexsist = 0;
 	int32 rwindsize = -1;
@@ -42,11 +42,11 @@ struct ControlHeader
 	int16 Type; // Server Or Client
 
 	Ack ack;
-	UsedRWind rwind;
+	RecoverRWind rwind;
 	Rtt rtt;
 };
 
-class TransportControlPlane
+class TransportControl
 {
 private:
 	enum
@@ -63,8 +63,8 @@ public:
 	};*/
 public:
 
-	TransportControlPlane(uint32 tickms = TICKMS);
-	~TransportControlPlane();
+	TransportControl(uint32 tickms = TICKMS);
+	~TransportControl();
 	bool CheckValidControl(PacketHeader* header);
 
 	void PushJob(CallbackType&& callback) { _jobWorker.PushJob(std::move(callback)); _lazyAssist._jobCv.notify_one(); }
@@ -82,14 +82,18 @@ private:
 	void DoWork();
 //	void DoJobWork();
 public:
-	static SendBufferRef MakeControlPacketBuffer(int32 client_id);
+	static SendBufferRef MakeAckControlPacket(int32 client_id, int32 bhascount,int32 start,int32 count);
+	static SendBufferRef MakeRecoverRwindControlPacket(int32 client_id, int32 rwindsize);
+	static SendBufferRef MakeADRwindControlPacket(int32 client_id, int32 rwindsize, uint32 packetHandleCount);
+	
 private:
 	atomic<bool> brunning = false;
 	ControlJobWorker _jobWorker;
 	//LazyWorkAssist& GetLazyAssist() { return _lazyAssist; }
 	LazyWorkAssist _lazyAssist;
+	static SendBufferRef MakeControlPacketBuffer(int32 client_id);
 	
 };
 
-extern TransportControlPlane GTransportControl;
+extern TransportControl GTransportControl;
 

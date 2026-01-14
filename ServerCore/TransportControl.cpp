@@ -1,8 +1,8 @@
 #include "pch.h"
-#include "TransportControlPlane.h"
+#include "TransportControl.h"
 #include "ThreadManager.h"
 
-TransportControlPlane GTransportControl;
+TransportControl GTransportControl;
 
 
 void ControlJobWorker::PushJob(CallbackType&& callback)
@@ -29,19 +29,19 @@ bool ControlJobWorker::Execute()
 }
 
 
-TransportControlPlane::TransportControlPlane(uint32 tickms)
+TransportControl::TransportControl(uint32 tickms)
     : _lazyAssist(tickms)
 
 {
     
 }
 
-TransportControlPlane::~TransportControlPlane()
+TransportControl::~TransportControl()
 {
     StopThread();
 }
 
-bool TransportControlPlane::CheckValidControl(PacketHeader* header)
+bool TransportControl::CheckValidControl(PacketHeader* header)
 {
     if (!IsControlPacket(header->ControlFlag))
         return false;
@@ -53,7 +53,7 @@ bool TransportControlPlane::CheckValidControl(PacketHeader* header)
     return true;
 }
 
-void TransportControlPlane::RunThread()
+void TransportControl::RunThread()
 {
     GThreadManager->Launch([this]() {
         brunning.store(true);
@@ -62,12 +62,12 @@ void TransportControlPlane::RunThread()
         });
 }
 
-void TransportControlPlane::StopThread()
+void TransportControl::StopThread()
 {
     brunning.store(false);
 }
 
-void TransportControlPlane::OnPushRWind(int32 client_id, int32 add_size)
+void TransportControl::OnPushRWind(int32 client_id, int32 add_size)
 {
   //  cout << "OnPushRWind 1" << endl;
     HostRef host = GHostManager.GetPlayer(client_id);
@@ -76,21 +76,15 @@ void TransportControlPlane::OnPushRWind(int32 client_id, int32 add_size)
   //  cout << "OnPushRWind 2" << endl;
     _jobWorker.PushJob([this, client_id, host, add_size]() {
      //   cout << "jobworker.PushJob OnPushRWind" << endl;
-        SendBufferRef sendBuffer = MakeControlPacketBuffer(client_id);
-        ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
-        //  Protocol::S_RUDPACK pkt;
-        
-
-        // pkt.set_playerid(p.second->client_Id);
-        contheader->rwind.bexsist = true;
-        contheader->rwind.rwindsize = add_size;
+        SendBufferRef sendBuffer = MakeRecoverRwindControlPacket(client_id, add_size);
+       
         // pkt.set_rwindsize();
 
         host->NoWaitPriortySend(sendBuffer);
         });
 }
 
-void TransportControlPlane::HandleControlPacket(PacketHeader* header)
+void TransportControl::HandleControlPacket(PacketHeader* header)
 {
     if (header->size != ControlPacketSize)
         return;
@@ -133,7 +127,7 @@ void TransportControlPlane::HandleControlPacket(PacketHeader* header)
 
 }
 
-void TransportControlPlane::DoWork()
+void TransportControl::DoWork()
 {
     
     while (brunning.load())
@@ -185,19 +179,8 @@ void TransportControlPlane::DoWork()
                         cout << "ackpreStart : " << ackpreStart << endl;
                         CRASH("ackpreStart == ackStart");
                     }*/
-                    SendBufferRef sendBuffer = MakeControlPacketBuffer(p.second->client_Id);
-                    ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
-                  //  Protocol::S_RUDPACK pkt;
-                    contheader->ack.bexsist = true;
-                    contheader->ack.bhascount = hasCount;
-                    contheader->ack.count = ackCount;
-                    contheader->ack.start = ackStart;
-                    
-                   // pkt.set_playerid(p.second->client_Id);
-                  //  contheader->rwind.bexsist = true;
-                  //  contheader->rwind.rwindsize = p.second->GetRWind();
-                   // pkt.set_rwindsize();
-                    
+                    SendBufferRef sendBuffer = MakeAckControlPacket(p.second->client_Id, hasCount, ackStart, ackCount);
+
                     p.second->NoWaitPriortySend(sendBuffer);
                     //GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);
                   //  ackpreStart = ackStart;
@@ -236,9 +219,41 @@ void TransportControlPlane::DoWork()
     }
 }
 
+SendBufferRef TransportControl::MakeAckControlPacket(int32 client_id,  int32 bhascount, int32 start, int32 count)
+{
+    SendBufferRef sendBuffer = MakeControlPacketBuffer(client_id);
+    ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
+    //  Protocol::S_RUDPACK pkt;
+    contheader->ack.bexsist = true;
+    contheader->ack.bhascount = bhascount;
+    contheader->ack.start = start;
+    contheader->ack.count = count;
+    
+
+    return sendBuffer;
+}
+
+SendBufferRef TransportControl::MakeRecoverRwindControlPacket(int32 client_id, int32 rwindsize)
+{
+    SendBufferRef sendBuffer = MakeControlPacketBuffer(client_id);
+    ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
+    //  Protocol::S_RUDPACK pkt;
 
 
-SendBufferRef TransportControlPlane::MakeControlPacketBuffer(int32 client_id)
+    // pkt.set_playerid(p.second->client_Id);
+    contheader->rwind.bexsist = true;
+    contheader->rwind.rwindsize = rwindsize;
+    return sendBuffer;
+}
+
+SendBufferRef TransportControl::MakeADRwindControlPacket(int32 client_id, int32 rwindsize, uint32 packetHandleCount)
+{
+    return SendBufferRef();
+}
+
+
+
+SendBufferRef TransportControl::MakeControlPacketBuffer(int32 client_id)
 {
     SendBufferRef sendBuffer = GSendBufferManager->Open(ControlPacketSize);
     PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());

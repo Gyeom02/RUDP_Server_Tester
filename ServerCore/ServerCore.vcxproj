@@ -209,7 +209,7 @@
     <ClInclude Include="Session.h" />
     <ClInclude Include="SocketUtils.h" />
     <ClInclude Include="ThreadManager.h" />
-    <ClInclude Include="TransportControlPlane.h" />
+    <ClInclude Include="TransportControl.h" />
     <ClInclude Include="TypeCast.h" />
     <ClInclude Include="Types.h" />
     <ClInclude Include="UDP.h" />
@@ -266,7 +266,7 @@
     <ClCompile Include="Session.cpp" />
     <ClCompile Include="SocketUtils.cpp" />
     <ClCompile Include="ThreadManager.cpp" />
-    <ClCompile Include="TransportControlPlane.cpp" />
+    <ClCompile Include="TransportControl.cpp" />
     <ClCompile Include="UDP.cpp" />
     <ClCompile Include="UDPRecvHandler.cpp" />
     <ClCompile Include="UDPSocket.cpp" />

@@ -207,7 +207,7 @@
     <ClInclude Include="HostManager.h">
       <Filter>Network</Filter>
     </ClInclude>
-    <ClInclude Include="TransportControlPlane.h">
+    <ClInclude Include="TransportControl.h">
       <Filter>RUDP</Filter>
     </ClInclude>
     <ClInclude Include="RUDPUtils.h">
@@ -353,7 +353,7 @@
     <ClCompile Include="HostMananger.cpp">
       <Filter>Network</Filter>
     </ClCompile>
-    <ClCompile Include="TransportControlPlane.cpp">
+    <ClCompile Include="TransportControl.cpp">
       <Filter>RUDP</Filter>
     </ClCompile>
     <ClCompile Include="RUDPUtils.cpp">
