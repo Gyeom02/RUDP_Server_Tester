@@ -1,5 +1,5 @@
 #pragma once
-
+#include "RUDPUtils.h"
 using JobFunc = std::function<void()>;
 
 using PacketHandleFunc = bool (*)(shared_ptr<UDPSocket>, NetAddress, BYTE*, int32);
@@ -23,7 +23,7 @@ public:
 private:
 	USE_LOCK;
 //	Queue<JobFunc> JobQueue;
-	bool _continue = false;
+	atomic<bool> _continue = false;
 
 	QoSShard* _shard;
 
@@ -33,6 +33,8 @@ private:
 	//int32 _end;
 //	bool _shutdown = false;
 	PacketHandleFunc _func;
+
+	//LazyWorkAssist _lazyAssist;
 };
 
 using UDPRecvHandlerRef = std::shared_ptr<UDPRecvHandler>;

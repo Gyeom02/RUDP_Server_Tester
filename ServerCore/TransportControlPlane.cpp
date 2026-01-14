@@ -10,6 +10,7 @@ void ControlJobWorker::PushJob(CallbackType&& callback)
     WRITE_LOCK;
     //cout << "ControlJobWorker::PushJob()" << endl;
     _jobs.push(MakeShared<Job>(std::move(callback)));
+    
 }
 
 bool ControlJobWorker::Execute()
@@ -28,7 +29,9 @@ bool ControlJobWorker::Execute()
 }
 
 
-TransportControlPlane::TransportControlPlane()
+TransportControlPlane::TransportControlPlane(uint32 tickms)
+    : _lazyAssist(tickms)
+
 {
     
 }
@@ -53,14 +56,15 @@ bool TransportControlPlane::CheckValidControl(PacketHeader* header)
 void TransportControlPlane::RunThread()
 {
     GThreadManager->Launch([this]() {
-        brunning = true;
+        brunning.store(true);
+        _lazyAssist._nextTick = std::chrono::steady_clock::now() + std::chrono::microseconds(_lazyAssist._tickMs);
         DoWork();
         });
 }
 
 void TransportControlPlane::StopThread()
 {
-    brunning = false;
+    brunning.store(false);
 }
 
 void TransportControlPlane::OnPushRWind(int32 client_id, int32 add_size)
@@ -70,7 +74,7 @@ void TransportControlPlane::OnPushRWind(int32 client_id, int32 add_size)
     if (!host)
         return;
   //  cout << "OnPushRWind 2" << endl;
-    jobworker.PushJob([this, client_id, host, add_size]() {
+    _jobWorker.PushJob([this, client_id, host, add_size]() {
      //   cout << "jobworker.PushJob OnPushRWind" << endl;
         SendBufferRef sendBuffer = MakeControlPacketBuffer(client_id);
         ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
@@ -101,7 +105,7 @@ void TransportControlPlane::HandleControlPacket(PacketHeader* header)
         int32 start = contHeader->ack.start;
         int32 count = contHeader->ack.count;
 
-        jobworker.PushJob([player, bhascount, start, count]() {
+        _jobWorker.PushJob([player, bhascount, start, count]() {
             
             //cout << "jobworker.PushJob ProcessAcks" << endl;
             if (player == nullptr)
@@ -131,88 +135,102 @@ void TransportControlPlane::HandleControlPacket(PacketHeader* header)
 
 void TransportControlPlane::DoWork()
 {
-    while (brunning)
+    
+    while (brunning.load())
     {
+        
+       /* auto now = chrono::steady_clock::now();
+        if (now >= _nextTick)
+        {
+
+        }*/
         //TODO DO TImer Stuff 
         //uint32 ackpreStart = 0;
-        uint32 ackStart = 1;
-        uint32 ackCount = 0;
-        bool hasCount = false;
-        NetAddress netAddr;
+       
+        _lazyAssist.SetNextTickFromNow();
 
+        unique_lock<mutex> _lock(_lazyAssist._jobMutex);
+        _lazyAssist._jobCv.wait_until(_lock, _lazyAssist._nextTick, [&]() { return !_jobWorker.IsEmpty() || !brunning.load(); });
         //Lastly Do JobQueue
-        if (!jobworker.Execute())
+        if (brunning.load() == false)
+            return;
+        if (!_jobWorker.IsEmpty())
         {
-            //TODO Sleep 
+            _jobWorker.Execute();
         }
+      //  cout << "lazyAssist._jobCv.wait_until" << endl;
         //system("cls");
 
         //Thread 최적화 필요
         
+         uint32 ackStart = 1;
+        uint32 ackCount = 0;
+        bool hasCount = false;
+        NetAddress netAddr;
 
-        //for (auto& p : GHostManager.GetPlayers())
-        //{
-        //    //auto player = p.second;
-        //    memset(&netAddr, 0, sizeof(netAddr));
-        //    //this_thread::sleep_for(300ms);
-        //   // int32 token = 5;
-        //    while (true) //AckRange 비울때까지
-        //    {
-        //        //token--;
+        for (auto& p : GHostManager.GetPlayers())
+        {
+            //auto player = p.second;
+            memset(&netAddr, 0, sizeof(netAddr));
+            //this_thread::sleep_for(300ms);
+           // int32 token = 5;
+            while (true) //AckRange 비울때까지
+            {
+                //token--;
 
-        //        if (p.second->GetDeliveryManager()->WritePendingAcks(ackStart, ackCount, hasCount)) // 보낼 Ack이 쌓였다
-        //        {
-        //            /*if (ackpreStart == ackStart && ackpreStart > 1)
-        //            {
-        //                cout << "ackpreStart : " << ackpreStart << endl;
-        //                CRASH("ackpreStart == ackStart");
-        //            }*/
-        //            SendBufferRef sendBuffer = MakeControlPacketBuffer(p.second->client_Id);
-        //            ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
-        //          //  Protocol::S_RUDPACK pkt;
-        //            contheader->ack.bexsist = true;
-        //            contheader->ack.bhascount = hasCount;
-        //            contheader->ack.count = ackCount;
-        //            contheader->ack.start = ackStart;
-        //            
-        //           // pkt.set_playerid(p.second->client_Id);
-        //            contheader->rwind.bexsist = true;
-        //            contheader->rwind.rwindsize = p.second->GetRWind();
-        //           // pkt.set_rwindsize();
-        //            
-        //            p.second->NoWaitPriortySend(sendBuffer);
-        //            //GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);
-        //          //  ackpreStart = ackStart;
-        //          //  cout << "Send RUDP ACK  " << endl;
-        //        }
-        //        else
-        //            break;
-        //    }
-        //    p.second->GetDeliveryManager()->ProcessTimeOutPackets();
-        //    //LONGLONG curTick = GetTickCount64();
-        //    //if (p.second->curRwindTimeStamp == 0)
-        //    //    p.second->curRwindTimeStamp = curTick;
-        //    //else
-        //    //{
-        //    //    if (curTick - p.second->curRwindTimeStamp > 100)
-        //    //    {
-        //    //        SendBufferRef sendBuffer = MakeControlPacketBuffer(p.second->client_Id);
-        //    //        ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
-        //    //        //  Protocol::S_RUDPACK pkt;
+                if (p.second->GetDeliveryManager()->WritePendingAcks(ackStart, ackCount, hasCount)) // 보낼 Ack이 쌓였다
+                {
+                    /*if (ackpreStart == ackStart && ackpreStart > 1)
+                    {
+                        cout << "ackpreStart : " << ackpreStart << endl;
+                        CRASH("ackpreStart == ackStart");
+                    }*/
+                    SendBufferRef sendBuffer = MakeControlPacketBuffer(p.second->client_Id);
+                    ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
+                  //  Protocol::S_RUDPACK pkt;
+                    contheader->ack.bexsist = true;
+                    contheader->ack.bhascount = hasCount;
+                    contheader->ack.count = ackCount;
+                    contheader->ack.start = ackStart;
+                    
+                   // pkt.set_playerid(p.second->client_Id);
+                  //  contheader->rwind.bexsist = true;
+                  //  contheader->rwind.rwindsize = p.second->GetRWind();
+                   // pkt.set_rwindsize();
+                    
+                    p.second->NoWaitPriortySend(sendBuffer);
+                    //GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);
+                  //  ackpreStart = ackStart;
+                  //  cout << "Send RUDP ACK  " << endl;
+                }
+                else
+                    break;
+            }
+            p.second->GetDeliveryManager()->ProcessTimeOutPackets();
+            //LONGLONG curTick = GetTickCount64();
+            //if (p.second->curRwindTimeStamp == 0)
+            //    p.second->curRwindTimeStamp = curTick;
+            //else
+            //{
+            //    if (curTick - p.second->curRwindTimeStamp > 100)
+            //    {
+            //        SendBufferRef sendBuffer = MakeControlPacketBuffer(p.second->client_Id);
+            //        ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
+            //        //  Protocol::S_RUDPACK pkt;
 
-        //    //        // pkt.set_playerid(p.second->client_Id);
-        //    //        contheader->rwind.bexsist = true;
-        //    //        contheader->rwind.rwindsize = p.second->GetRWind();
-        //    //        // pkt.set_rwindsize();
+            //        // pkt.set_playerid(p.second->client_Id);
+            //        contheader->rwind.bexsist = true;
+            //        contheader->rwind.rwindsize = p.second->GetRWind();
+            //        // pkt.set_rwindsize();
 
-        //    //        p.second->NoWaitPriortySend(sendBuffer);
+            //        p.second->NoWaitPriortySend(sendBuffer);
 
-        //    //        p.second->curRwindTimeStamp = curTick;
-        //    //    }
-        //    //}
-        //    //PacketDeliverCondition(static_pointer_cast<Player>(p.second));
-        //}
-        //
+            //        p.second->curRwindTimeStamp = curTick;
+            //    }
+            //}
+            //PacketDeliverCondition(static_pointer_cast<Player>(p.second));
+        }
+        
 
         
     }

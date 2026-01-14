@@ -22,14 +22,14 @@ void UDPRecvHandler::CreateAsyncWorkThread()
 	_ASSERT(_shard != nullptr);
 
 	GThreadManager->Launch([this]() {
-		_continue = true;
+		_continue.exchange(true);
 		DOWork();
 		});
 }
 
 void UDPRecvHandler::DOWork()
 {
-	while (_continue)
+	while (_continue.load())
 	{
 		shared_ptr<QoSPlayer> _player = _shard->PopRecvReadyQueue();
 		if (!_player) {
@@ -38,6 +38,11 @@ void UDPRecvHandler::DOWork()
 			
 			if (!_busyShard)
 			{
+				std::unique_lock<mutex> _lock(GQoS->GetRecvMutex());
+				GQoS->GetRecvCV().wait(_lock, [&]() { return !_shard->Empty_RecvReadyQueue() || GQoS->GetBusyShard_RCV() || !_continue.load(); });
+				if (!_continue.load())
+					return;
+				//cout << "UDPRecvHandler::DOWork()" << endl;
 				continue;
 				//this_thread::sleep_for(0ms);
 			}
@@ -105,7 +110,7 @@ void UDPRecvHandler::HandleRecvPacket(std::shared_ptr<QoSPlayer> _Player)
 }
 void UDPRecvHandler::StopThread()
 {
-	_continue = false;
+	_continue.exchange(false);
 }
 //void UDPRecvHandler::SleepTillGetSignal()
 //{

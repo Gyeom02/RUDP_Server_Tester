@@ -136,6 +136,7 @@ void QoSPlayer::PushSend(shared_ptr<vector<SendBufferRef>> packet)
 	{
 		//	cout << "PushSendReadyQueue 1" << endl;
 		_ownerShard->PushSendReadyQueue(shared_from_this());
+		GQoS->GetSendCV().notify_one();
 	}
 }
 
@@ -285,6 +286,7 @@ void QoSPlayer::PushRecv(BYTE* buffer, int32 size)
 	{
 		//cout << "PushRecvReadyQueue 1" << endl;
 		_ownerShard->PushRecvReadyQueue(shared_from_this());
+		GQoS->GetRecvCV().notify_one();
 	}
 }
 
@@ -619,7 +621,7 @@ void QoSShard::DoSendWork()
 	//			player->PopSend();
 	//	}
 	//}
-	while (running)
+	while (running.load())
 	{
 		shared_ptr<QoSPlayer> _player = PopSendReadyQueue();
 		if (!_player) {
@@ -628,6 +630,11 @@ void QoSShard::DoSendWork()
 
 			if (!_busyShard)
 			{
+				std::unique_lock<mutex> _lock(GQoS->GetSendMutex());
+				GQoS->GetSendCV().wait(_lock, [&]() { return !Empty_SendReadyQueue() || GQoS->GetBusyShard_SEND() || !running.load(); });
+				if (!running.load())
+					return;
+				//cout << "QoSShard::DoSendWork()" << endl;
 				continue;
 				//this_thread::sleep_for(2ms);
 			}
@@ -732,9 +739,10 @@ void QoSShard::AddReadyPlayerNum(int32 i)
 
 
 QoSShard::QoSShard()
-	: running(true)
+
 {
 	GThreadManager->Launch([this]() {
+		running.exchange(true);
 		DoSendWork();
 		});
 }

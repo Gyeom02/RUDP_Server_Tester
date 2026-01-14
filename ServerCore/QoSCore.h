@@ -136,12 +136,13 @@ public:
 
 	void DoSendWork();
 	//void DoRecvWork();
-	void Stop() { running = false; }
+	void Stop() { running.exchange(false); }
 
-	
+	bool Empty_RecvReadyQueue() { READ_LOCK_IDX(1); return _recvReadyQueue.empty(); }
 	void PushRecvReadyQueue(const shared_ptr<QoSPlayer>& _player);
 	shared_ptr<QoSPlayer> PopRecvReadyQueue();
-	
+
+	bool Empty_SendReadyQueue() { READ_LOCK_IDX(2); return _sendReadyQueue.empty(); }
 	void PushSendReadyQueue(const shared_ptr<QoSPlayer>& _player);
 	shared_ptr<QoSPlayer> PopSendReadyQueue();
 	//void PushSleepWorker(condition_variable& _cv);
@@ -156,7 +157,7 @@ private:
 	atomic<int32> _recvWorkReadyPlayerNum = 0;
 	atomic<int32> _sendWorkReadyPlayerNum = 0;
 	//queue<condition_variable&> _sleepWorkers;
-	bool running = false;
+	atomic<bool> running = false;
 	USE_MANY_LOCKS(3); // index(0) -> _qosPlayers를 위한것, index(1)-> RecvReadyQueue를 위한것,  index(2) ->RecvReadyQueue를 위한것,
 };
 
@@ -198,13 +199,19 @@ public:
 	QoSShard* GetBusyShard_SEND(); // SendWorker에서 자신이 담당하는 Shard의 sendReadyQueue가 비어있을때 도움이 필요한 다른 Shard를 찾는 함수
 
 
-
+	std::mutex& GetRecvMutex() { return _recvMutex; }
+	std::condition_variable& GetRecvCV() { return _recvCv; }
+	std::mutex& GetSendMutex() { return _sendMutex; }
+	std::condition_variable& GetSendCV() { return _sendCv; }
 private:
 	
 	array<unique_ptr<QoSShard>, QOS_SHARD_COUNT> _qosShards;
 	//void PopSend();
 	int32 GetShardIndex(int32 playerid) { return playerid % QOS_SHARD_COUNT; }
 	
-
+	std::mutex _recvMutex;
+	std::condition_variable _recvCv;
+	std::mutex _sendMutex;
+	std::condition_variable _sendCv;
 };
 

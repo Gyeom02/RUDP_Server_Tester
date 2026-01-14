@@ -372,69 +372,69 @@ int main()
 	//}
 	GTransportControl.RunThread();
 
-	//while (true)
-	//{
-	//	for (auto& p : GHostManager.GetPlayers())
-	//	{	//	{
-	//		//		PlayerRef player = static_pointer_cast<Player>(p.second);
-	//		PlayerRef player = static_pointer_cast<Player>(p.second);
-	//		if (player && player->client_Id != 0)
-	//		{
-	//			PacketDeliverCondition(player);
-	//		}
-	//	}
-	//}
-	uint32 ackpreStart = 0;
-	uint32 ackStart = 1;
-	uint32 ackCount = 0;
-	bool hasCount = false;
-	NetAddress netAddr;
-
 	while (true)
 	{
 		for (auto& p : GHostManager.GetPlayers())
-		{
-			//auto player = p.second;
-			memset(&netAddr, 0, sizeof(netAddr));
-			//this_thread::sleep_for(300ms);
-		   // int32 token = 5;
-			while (true) //AckRange 비울때까지
+		{	//	{
+			//		PlayerRef player = static_pointer_cast<Player>(p.second);
+			PlayerRef player = static_pointer_cast<Player>(p.second);
+			if (player && player->client_Id != 0)
 			{
-				//token--;
-
-				if (p.second->GetDeliveryManager()->WritePendingAcks(ackStart, ackCount, hasCount)) // 보낼 Ack이 쌓였다
-				{
-					/*if (ackpreStart == ackStart && ackpreStart > 1)
-					{
-						cout << "ackpreStart : " << ackpreStart << endl;
-						CRASH("ackpreStart == ackStart");
-					}*/
-					SendBufferRef sendBuffer = TransportControlPlane::MakeControlPacketBuffer(p.second->client_Id);
-					ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
-					//  Protocol::S_RUDPACK pkt;
-					contheader->ack.bexsist = true;
-					contheader->ack.bhascount = hasCount;
-					contheader->ack.count = ackCount;
-					contheader->ack.start = ackStart;
-
-					// pkt.set_playerid(p.second->client_Id);
-					//contheader->rwind.bexsist = true;
-					//contheader->rwind.rwindsize = p.second->GetRWind();
-					// pkt.set_rwindsize();
-
-					p.second->NoWaitPriortySend(sendBuffer);
-					//GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);
-				  //  ackpreStart = ackStart;
-				   //  cout << "Send RUDP ACK  " << endl;
-				}
-				else
-					break;
+				PacketDeliverCondition(player);
 			}
-			p.second->GetDeliveryManager()->ProcessTimeOutPackets();
-			PacketDeliverCondition(static_pointer_cast<Player>(p.second));
 		}
-		
 	}
+	//uint32 ackpreStart = 0;
+	//uint32 ackStart = 1;
+	//uint32 ackCount = 0;
+	//bool hasCount = false;
+	//NetAddress netAddr;
+
+	//while (true)
+	//{
+	//	for (auto& p : GHostManager.GetPlayers())
+	//	{
+	//		//auto player = p.second;
+	//		memset(&netAddr, 0, sizeof(netAddr));
+	//		//this_thread::sleep_for(300ms);
+	//	   // int32 token = 5;
+	//		while (true) //AckRange 비울때까지
+	//		{
+	//			//token--;
+
+	//			if (p.second->GetDeliveryManager()->WritePendingAcks(ackStart, ackCount, hasCount)) // 보낼 Ack이 쌓였다
+	//			{
+	//				/*if (ackpreStart == ackStart && ackpreStart > 1)
+	//				{
+	//					cout << "ackpreStart : " << ackpreStart << endl;
+	//					CRASH("ackpreStart == ackStart");
+	//				}*/
+	//				SendBufferRef sendBuffer = TransportControlPlane::MakeControlPacketBuffer(p.second->client_Id);
+	//				ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
+	//				//  Protocol::S_RUDPACK pkt;
+	//				contheader->ack.bexsist = true;
+	//				contheader->ack.bhascount = hasCount;
+	//				contheader->ack.count = ackCount;
+	//				contheader->ack.start = ackStart;
+
+	//				// pkt.set_playerid(p.second->client_Id);
+	//				//contheader->rwind.bexsist = true;
+	//				//contheader->rwind.rwindsize = p.second->GetRWind();
+	//				// pkt.set_rwindsize();
+
+	//				p.second->NoWaitPriortySend(sendBuffer);
+	//				//GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);
+	//			  //  ackpreStart = ackStart;
+	//			   //  cout << "Send RUDP ACK  " << endl;
+	//			}
+	//			else
+	//				break;
+	//		}
+	//		p.second->GetDeliveryManager()->ProcessTimeOutPackets();
+	//		PacketDeliverCondition(static_pointer_cast<Player>(p.second));
+	//	}
+	//	
+	//}
 	GThreadManager->Join();
 	
 	return 0;

@@ -37,6 +37,9 @@
     <Filter Include="RUDP\QoS\UDP">
       <UniqueIdentifier>{a352ec17-bf5c-4dd9-b0db-33b3aa4e723a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RUDP\utils">
+      <UniqueIdentifier>{6676ac90-665f-4000-8a2f-7830fdc6e83d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorePch.h">
@@ -207,6 +210,9 @@
     <ClInclude Include="TransportControlPlane.h">
       <Filter>RUDP</Filter>
     </ClInclude>
+    <ClInclude Include="RUDPUtils.h">
+      <Filter>RUDP\utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CorePch.cpp">
@@ -349,6 +355,9 @@
     </ClCompile>
     <ClCompile Include="TransportControlPlane.cpp">
       <Filter>RUDP</Filter>
+    </ClCompile>
+    <ClCompile Include="RUDPUtils.cpp">
+      <Filter>RUDP\utils</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
