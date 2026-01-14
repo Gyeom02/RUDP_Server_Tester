@@ -84,6 +84,31 @@ void TransportControl::OnPushRWind(int32 client_id, int32 add_size)
         });
 }
 
+bool TransportControl::EmptyReadyAckQueue()
+{
+    READ_LOCK; 
+    return _readyAckHostQueue.empty();
+}
+
+void TransportControl::PushHostAckReady(HostRef host)
+{
+    if (!host) 
+        return;  
+    WRITE_LOCK; 
+    _readyAckHostQueue.push(host);
+}
+
+HostRef TransportControl::PopHostAckReady()
+{
+    HostRef popHost = nullptr;
+    WRITE_LOCK; 
+    if (EmptyReadyAckQueue()) 
+        return popHost;
+    popHost = _readyAckHostQueue.front();
+    _readyAckHostQueue.pop();
+    return popHost;
+}
+
 void TransportControl::HandleControlPacket(PacketHeader* header)
 {
     if (header->size != ControlPacketSize)
@@ -129,7 +154,7 @@ void TransportControl::HandleControlPacket(PacketHeader* header)
 
 void TransportControl::DoWork()
 {
-    
+    HostRef ackReadyHost;
     while (brunning.load())
     {
         
@@ -140,55 +165,67 @@ void TransportControl::DoWork()
         }*/
         //TODO DO TImer Stuff 
         //uint32 ackpreStart = 0;
-       
-        _lazyAssist.SetNextTickFromNow();
+        {
+            _lazyAssist.SetNextTickFromNow();
 
-        unique_lock<mutex> _lock(_lazyAssist._jobMutex);
-        _lazyAssist._jobCv.wait_until(_lock, _lazyAssist._nextTick, [&]() { return !_jobWorker.IsEmpty() || !brunning.load(); });
-        //Lastly Do JobQueue
-        if (brunning.load() == false)
-            return;
+            unique_lock<mutex> _lock(_lazyAssist._jobMutex);
+            _lazyAssist._jobCv.wait_until(_lock, _lazyAssist._nextTick, [&]() { return !_jobWorker.IsEmpty() || !EmptyReadyAckQueue() || !brunning.load(); });
+            //Lastly Do JobQueue
+            if (brunning.load() == false)
+                return;
+            if (!EmptyReadyAckQueue())
+            {
+                
+                ackReadyHost = PopHostAckReady();
+            }
+            
+        }
+
         if (!_jobWorker.IsEmpty())
         {
             _jobWorker.Execute();
         }
+
+        if (ackReadyHost)
+        {
+           
+            HandleHostReadyAck(ackReadyHost);
+            ackReadyHost = nullptr;
+        }
+
       //  cout << "lazyAssist._jobCv.wait_until" << endl;
         //system("cls");
 
         //Thread 최적화 필요
         
-         uint32 ackStart = 1;
-        uint32 ackCount = 0;
-        bool hasCount = false;
-        NetAddress netAddr;
-
+       
         for (auto& p : GHostManager.GetPlayers())
         {
             //auto player = p.second;
-            memset(&netAddr, 0, sizeof(netAddr));
-            //this_thread::sleep_for(300ms);
-           // int32 token = 5;
-            while (true) //AckRange 비울때까지
-            {
-                //token--;
+           // memset(&netAddr, 0, sizeof(netAddr));
+           // //this_thread::sleep_for(300ms);
+           //// int32 token = 5;
+           // while (true) //AckRange 비울때까지
+           // {
+           //     //token--;
 
-                if (p.second->GetDeliveryManager()->WritePendingAcks(ackStart, ackCount, hasCount)) // 보낼 Ack이 쌓였다
-                {
-                    /*if (ackpreStart == ackStart && ackpreStart > 1)
-                    {
-                        cout << "ackpreStart : " << ackpreStart << endl;
-                        CRASH("ackpreStart == ackStart");
-                    }*/
-                    SendBufferRef sendBuffer = MakeAckControlPacket(p.second->client_Id, hasCount, ackStart, ackCount);
+           //     if (p.second->GetDeliveryManager()->WritePendingAcks(ackStart, ackCount, hasCount)) // 보낼 Ack이 쌓였다
+           //     {
+           //         /*if (ackpreStart == ackStart && ackpreStart > 1)
+           //         {
+           //             cout << "ackpreStart : " << ackpreStart << endl;
+           //             CRASH("ackpreStart == ackStart");
+           //         }*/
+           //         SendBufferRef sendBuffer = MakeAckControlPacket(p.second->client_Id, hasCount, ackStart, ackCount);
 
-                    p.second->NoWaitPriortySend(sendBuffer);
-                    //GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);
-                  //  ackpreStart = ackStart;
-                  //  cout << "Send RUDP ACK  " << endl;
-                }
-                else
-                    break;
-            }
+           //         p.second->NoWaitPriortySend(sendBuffer);
+           //         //GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);
+           //       //  ackpreStart = ackStart;
+           //       //  cout << "Send RUDP ACK  " << endl;
+           //     }
+           //     else
+           //         break;
+           // }
             p.second->GetDeliveryManager()->ProcessTimeOutPackets();
             //LONGLONG curTick = GetTickCount64();
             //if (p.second->curRwindTimeStamp == 0)
@@ -263,5 +300,52 @@ SendBufferRef TransportControl::MakeControlPacketBuffer(int32 client_id)
     header->client_Id = client_id;
     sendBuffer->Close(ControlPacketSize);
     return sendBuffer;
+}
+
+void TransportControl::HandleHostReadyAck(HostRef host)
+{
+   
+    //TODO Send Ack
+    uint32 ackStart = 1;
+    uint32 ackCount = 0;
+    bool hasCount = false;
+    NetAddress netAddr;
+
+    int32 token = ACKTOKEN;
+
+    bool bAckEmpty = false;
+    while (token--)
+    {
+        if (host->GetDeliveryManager()->WritePendingAcks(ackStart, ackCount, hasCount)) // 보낼 Ack이 쌓였다
+        {
+            /*if (ackpreStart == ackStart && ackpreStart > 1)
+            {
+                cout << "ackpreStart : " << ackpreStart << endl;
+                CRASH("ackpreStart == ackStart");
+            }*/
+            SendBufferRef sendBuffer = MakeAckControlPacket(host->client_Id, hasCount, ackStart, ackCount);
+
+            host->NoWaitPriortySend(sendBuffer);
+            //GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);
+          //  ackpreStart = ackStart;
+          //  cout << "Send RUDP ACK  " << endl;
+        }
+        else
+        {
+            bAckEmpty = true;
+            break;
+        }
+    }
+
+    
+    if (bAckEmpty && host->GetDeliveryManager()->CheckHostAckEmpty() /*정밀 Check*/)
+    {
+        
+        return; //다 보냄 
+    }
+    // 해당 호스트의 Ack을 다 못 보냄 다시 AckReadyQueue에 넣어야함
+    
+    PushHostAckReady(host);
+    GetLazyAssist()._jobCv.notify_one();
 }
 

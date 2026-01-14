@@ -35,6 +35,8 @@ bool Handle_S_DISCONNECT(UDPSocketPtr udpSocket, NetAddress netAddress, PacketHe
 bool Handle_S_INIT(UDPSocketPtr udpSocket, NetAddress netAddress, PacketHeader* header, Protocol::S_INIT& pkt)
 {
 	PlayerRef _player = MakeShared<Player>(pkt.id());
+	_player->InitDeliveryManager();
+
 	_player->ownerSocket = GUDP.GetUDPSocket(0)->shared_from_this();
 	_player->netAddress = _player->ownerSocket->GetNetAddress();
 	GHostManager.Add(pkt.id(), _player);

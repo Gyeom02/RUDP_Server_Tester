@@ -186,9 +186,6 @@
     <ClInclude Include="QoSCore.h">
       <Filter>RUDP\QoS</Filter>
     </ClInclude>
-    <ClInclude Include="Host.h">
-      <Filter>Main</Filter>
-    </ClInclude>
     <ClInclude Include="FragmentManager.h">
       <Filter>RUDP\QoS</Filter>
     </ClInclude>
@@ -212,6 +209,9 @@
     </ClInclude>
     <ClInclude Include="RUDPUtils.h">
       <Filter>RUDP\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Host.h">
+      <Filter>RUDP\QoS\UDP</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -332,9 +332,6 @@
     <ClCompile Include="QoSCore.cpp">
       <Filter>RUDP\QoS</Filter>
     </ClCompile>
-    <ClCompile Include="Host.cpp">
-      <Filter>Main</Filter>
-    </ClCompile>
     <ClCompile Include="FragmentManager.cpp">
       <Filter>RUDP\QoS</Filter>
     </ClCompile>
@@ -358,6 +355,9 @@
     </ClCompile>
     <ClCompile Include="RUDPUtils.cpp">
       <Filter>RUDP\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Host.cpp">
+      <Filter>RUDP\QoS\UDP</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

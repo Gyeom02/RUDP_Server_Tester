@@ -307,7 +307,7 @@ int main()
 							chatPkt.set_msg(longtext);
 							
 							auto sendBufferchatPkt = ServerPacketHandler::MakeReliableBuffer(chatPkt, QoSCore::LOW);
-							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt);
+							Send(p.second->client_Id, p.second->ownerSocket, p.second->netAddress, sendBufferchatPkt);
 
 							/*auto sendBufferchatPktt = ServerPacketHandler::MakeUnReliableBuffer(chatPktt);
 							Send(p.second->playerId, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPktt);

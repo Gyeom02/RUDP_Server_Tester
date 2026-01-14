@@ -3,7 +3,7 @@ namespace LazyAssist
 {
 	enum
 	{
-		NORMAL_TickMs = 100,
+		NORMAL_TickMs = 10,
 	};
 }
 struct LazyWorkAssist

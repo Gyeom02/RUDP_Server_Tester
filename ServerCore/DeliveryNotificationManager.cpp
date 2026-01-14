@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "DeliveryNotificationManager.h"
+#include "Host.h"
 
 DeliveryNotificationManager::DeliveryNotificationManager()
 	: mNextExpectedSequenceNumber(0), _recvWindow(mNextExpectedSequenceNumber)
@@ -217,10 +218,30 @@ bool DeliveryNotificationManager::ProcessSequenceNumber(PacketSequenceNumber SN,
 
 void DeliveryNotificationManager::AddPendingAck(PacketSequenceNumber SN)
 {
+	bool bexpected = false;
+	
 	WRITE_LOCK;
 	if (mPendingAcks.size() == 0 || !mPendingAcks.back().ExtendIfShould(SN))
 	{
+		//cout << "if (mPendingAcks.size() == 0 || !mPendingAcks.back().ExtendIfShould(SN))" << endl;
 		mPendingAcks.emplace_back(SN.GetSN());
+	}
+
+	if (bInsertAckReadyQueue.compare_exchange_strong(bexpected, true))
+	{
+		HostRef ownerHost;
+		if (ownerHost = _owner.lock())
+		{
+			GTransportControl.PushHostAckReady(ownerHost);
+			GTransportControl.GetLazyAssist()._jobCv.notify_one();
+			cout << " ownerHost == _owner.lock()" << endl;
+		}
+		else
+		{
+			ASSERT_CRASH("Host class Missed Call InitDeliveryManager");
+			/*bInsertAckReadyQueue.exchange(false);
+			cout << " ownerHost != _owner.lock()" << endl;*/
+		}
 	}
 }
 
@@ -303,6 +324,17 @@ bool DeliveryNotificationManager::WriteSeqeuenceNumber_URO(shared_ptr<vector<Sen
 		//++mDispatchedPacketCount;
 	}
 	return true;
+}
+
+bool DeliveryNotificationManager::CheckHostAckEmpty()
+{
+	WRITE_LOCK;
+	if (mPendingAcks.empty()) //비어있음을 확인
+	{
+		bInsertAckReadyQueue.exchange(false);
+		return true;
+	}
+	return false;
 }
 
 bool AckRange::ExtendIfShould(PacketSequenceNumber SN)

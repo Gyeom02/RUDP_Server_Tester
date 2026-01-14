@@ -1,5 +1,5 @@
 #pragma once
-class Host : public enable_shared_from_this<Host>
+class Host : public enable_shared_from_this<Host> 
 {
 private:
 	enum
@@ -10,6 +10,8 @@ private:
 public:
 	Host(int32 id) : client_Id(id) { deliveryManager = MakeShared<DeliveryNotificationManager>(); }
 	virtual ~Host() {}
+
+	void InitDeliveryManager() { deliveryManager->SetOwner(shared_from_this()); }
 
 	void Send(SendBufferRef sendBuffer);
 	void PriortySend(shared_ptr<vector<SendBufferRef>> sendBuffer);

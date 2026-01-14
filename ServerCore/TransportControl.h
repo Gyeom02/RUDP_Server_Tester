@@ -53,6 +53,7 @@ private:
 	{
 		ControlPacketSize = sizeof(PacketHeader) + sizeof(ControlHeader),
 		TICKMS = LazyAssist::NORMAL_TickMs,
+		ACKTOKEN = 5,
 	};
 public:
 	/*enum ControlType
@@ -65,15 +66,29 @@ public:
 
 	TransportControl(uint32 tickms = TICKMS);
 	~TransportControl();
-	bool CheckValidControl(PacketHeader* header);
-
-	void PushJob(CallbackType&& callback) { _jobWorker.PushJob(std::move(callback)); _lazyAssist._jobCv.notify_one(); }
 
 	void RunThread();
 	void StopThread();
 
+	bool CheckValidControl(PacketHeader* header);
+
+	void PushJob(CallbackType&& callback) { _jobWorker.PushJob(std::move(callback)); _lazyAssist._jobCv.notify_one(); }
+
+
+
 public:
+	static SendBufferRef MakeAckControlPacket(int32 client_id, int32 bhascount, int32 start, int32 count);
+	static SendBufferRef MakeRecoverRwindControlPacket(int32 client_id, int32 rwindsize);
+	static SendBufferRef MakeADRwindControlPacket(int32 client_id, int32 rwindsize, uint32 packetHandleCount);
+
+
 	void OnPushRWind(int32 client_id, int32 add_size);
+
+	bool EmptyReadyAckQueue();
+	void PushHostAckReady(HostRef host);
+	HostRef PopHostAckReady();
+
+	LazyWorkAssist& GetLazyAssist() { return _lazyAssist; }
 private:
 	bool IsControlPacket(int16 flag) { if (flag <= 0) return false; else return true; }
 
@@ -81,18 +96,19 @@ private:
 
 	void DoWork();
 //	void DoJobWork();
-public:
-	static SendBufferRef MakeAckControlPacket(int32 client_id, int32 bhascount,int32 start,int32 count);
-	static SendBufferRef MakeRecoverRwindControlPacket(int32 client_id, int32 rwindsize);
-	static SendBufferRef MakeADRwindControlPacket(int32 client_id, int32 rwindsize, uint32 packetHandleCount);
+	static SendBufferRef MakeControlPacketBuffer(int32 client_id);
+
+	void HandleHostReadyAck(HostRef host);
 	
 private:
 	atomic<bool> brunning = false;
 	ControlJobWorker _jobWorker;
-	//LazyWorkAssist& GetLazyAssist() { return _lazyAssist; }
-	LazyWorkAssist _lazyAssist;
-	static SendBufferRef MakeControlPacketBuffer(int32 client_id);
 	
+	LazyWorkAssist _lazyAssist;
+	
+
+	queue<HostRef> _readyAckHostQueue;
+	USE_LOCK; // For ReadyAckHostQueue;
 };
 
 extern TransportControl GTransportControl;

@@ -3,6 +3,8 @@
 #include "InFlightPacket.h"
 #include "RUDPWindow.h"
 
+class Host;
+
 class AckRange
 {
 public:
@@ -33,9 +35,10 @@ public:
 	{
 		TIMEOUT = 3000,
 	};
-	DeliveryNotificationManager();
+	explicit DeliveryNotificationManager();
 	~DeliveryNotificationManager();
 
+	void SetOwner(shared_ptr<Host> owner) { _owner = owner; }
 	//Public
 	// 
 	bool CheckPacketChannel(int16 channel, uint32 sn, int32 size);
@@ -85,6 +88,11 @@ public:
 	bool IsSpaceExistToSend(int32 sendSize) { return _sendWindow.IsSpaceExistToSend(sendSize); }
 	void AddReceiverRWind(int32 rwindSize) { _sendWindow.AddReceiverRWind(rwindSize); }
 	int32 GetReceiverRWind() { return _sendWindow.GetReceiverRWind(); }
+
+	bool GetbInsertAckReadyQueue() { return bInsertAckReadyQueue.load(); }
+	void SetbInsertAckReadyQueue(bool to) { bInsertAckReadyQueue.exchange(to); }
+	bool CheckHostAckEmpty();
+
 private:
 	/*   Reliable Ordered Packet의 변수   */
 	//송신
@@ -109,5 +117,9 @@ private:
 
 	RUDPRecvWindow _recvWindow;
 	RUDPSendWindow _sendWindow;
+
+	atomic<bool> bInsertAckReadyQueue = false;
+
+	std::weak_ptr<Host> _owner;
 	USE_LOCK;
 };

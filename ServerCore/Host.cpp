@@ -5,18 +5,18 @@ void Host::Send(SendBufferRef sendBuffer)
 {
 	//WRITE_LOCK;
 
-	ownerSocket->Send(static_pointer_cast<Host>(shared_from_this()), sendBuffer);
+	ownerSocket->Send(shared_from_this(), sendBuffer);
 }
 
 void Host::PriortySend(shared_ptr<vector<SendBufferRef>> sendBuffer)
 {
 	//WRITE_LOCK;
-	ownerSocket->PriortySend(static_pointer_cast<Host>(shared_from_this()), sendBuffer);
+	ownerSocket->PriortySend(shared_from_this(), sendBuffer);
 }
 void Host::NoWaitPriortySend(SendBufferRef sendBuffer)
 {
 	//WRITE_LOCK;
-	ownerSocket->NoWaitPriortySend(static_pointer_cast<Host>(shared_from_this()), sendBuffer);
+	ownerSocket->NoWaitPriortySend(shared_from_this(), sendBuffer);
 }
 bool Host::CanRPCT()
 {
