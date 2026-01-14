@@ -111,6 +111,7 @@ void UDPRecvHandler::HandleRecvPacket(std::shared_ptr<QoSPlayer> _Player)
 void UDPRecvHandler::StopThread()
 {
 	_continue.exchange(false);
+	GQoS->GetRecvCV().notify_all();
 }
 //void UDPRecvHandler::SleepTillGetSignal()
 //{

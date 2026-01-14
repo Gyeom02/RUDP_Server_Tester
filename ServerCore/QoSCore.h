@@ -136,13 +136,13 @@ public:
 
 	void DoSendWork();
 	//void DoRecvWork();
-	void Stop() { running.exchange(false); }
+	void Stop();
 
-	bool Empty_RecvReadyQueue() { READ_LOCK_IDX(1); return _recvReadyQueue.empty(); }
+	bool Empty_RecvReadyQueue();
 	void PushRecvReadyQueue(const shared_ptr<QoSPlayer>& _player);
 	shared_ptr<QoSPlayer> PopRecvReadyQueue();
 
-	bool Empty_SendReadyQueue() { READ_LOCK_IDX(2); return _sendReadyQueue.empty(); }
+	bool Empty_SendReadyQueue();
 	void PushSendReadyQueue(const shared_ptr<QoSPlayer>& _player);
 	shared_ptr<QoSPlayer> PopSendReadyQueue();
 	//void PushSleepWorker(condition_variable& _cv);

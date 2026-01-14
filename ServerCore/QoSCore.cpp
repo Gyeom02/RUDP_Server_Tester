@@ -651,6 +651,18 @@ void QoSShard::DoSendWork()
 	}
 }
 
+void QoSShard::Stop()
+{
+	running.exchange(false); 
+	GQoS->GetSendCV().notify_all();
+}
+
+bool QoSShard::Empty_RecvReadyQueue()
+{
+	READ_LOCK_IDX(1);
+	return _recvReadyQueue.empty();
+}
+
 void QoSShard::PushRecvReadyQueue(const shared_ptr<QoSPlayer>& _player)
 {
 	WRITE_LOCK_IDX(1);
@@ -682,6 +694,12 @@ shared_ptr<QoSPlayer> QoSShard::PopRecvReadyQueue()
 
 	_recvWorkReadyPlayerNum.fetch_add(-1);
 	return returnPtr;
+}
+
+bool QoSShard::Empty_SendReadyQueue()
+{
+	READ_LOCK_IDX(2); 
+	return _sendReadyQueue.empty();
 }
 
 void QoSShard::PushSendReadyQueue(const shared_ptr<QoSPlayer>& _player)

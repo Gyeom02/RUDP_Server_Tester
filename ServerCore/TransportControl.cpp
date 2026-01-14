@@ -65,6 +65,7 @@ void TransportControl::RunThread()
 void TransportControl::StopThread()
 {
     brunning.store(false);
+    _lazyAssist._jobCv.notify_one();
 }
 
 void TransportControl::OnPushRWind(int32 client_id, int32 add_size)
