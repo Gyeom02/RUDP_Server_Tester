@@ -177,8 +177,9 @@ void QoSPlayer::PopSend()
 				
 			//PacketHeader* header = reinterpret_cast<PacketHeader*>(savePacket->sendBuffer->Buffer());
 			_sendSumNum.fetch_sub(1);
-			for(int32 i = 0; i < savePacket->sendBuffers->size(); i++)
-				_owner->PriortySend(savePacket->sendBuffers);
+			//cout << "savePacket->sendBuffers->size() : " << savePacket->sendBuffers->size() << endl;
+			
+			_owner->PriortySend(savePacket->sendBuffers);
 			
 		}
 		 coin = 3;
@@ -203,8 +204,8 @@ void QoSPlayer::PopSend()
 				
 			//PacketHeader* header = reinterpret_cast<PacketHeader*>(savePacket->sendBuffer->Buffer());
 			_sendSumNum.fetch_sub(1);
-			for (int32 i = 0; i < savePacket->sendBuffers->size(); i++)
-				_owner->PriortySend(savePacket->sendBuffers);
+			
+			_owner->PriortySend(savePacket->sendBuffers);
 			
 		}
 		
@@ -232,8 +233,7 @@ void QoSPlayer::PopSend()
 			
 		}
 		if(cansend)
-			for (int32 i = 0; i < savePacket->sendBuffers->size(); i++)
-				_owner->PriortySend(savePacket->sendBuffers);
+			_owner->PriortySend(savePacket->sendBuffers);
 		//_sendSumNum.fetch_add(-1);
 		
 				
@@ -383,15 +383,24 @@ void QoSPlayer::OnOrderedRecv(int32 SeqNum, BYTE* buffer, int32 size)
 		while (!_orderedPacketQueue.empty())
 		{
 			
-			vector<BYTE>& v = _orderedPacketQueue.front();
-			PushRecv(v.data(), v.size());
-			allSize += v.size();
-			cout << "doneSize : " << v.size() << endl;
+			shared_ptr<FragmentContext> orderedPacket = _orderedPacketQueue.front();
+			int32 realPacketSize = 0; // fragment 패킷이라면 fragment Header 사이즈 * fragment 개수 가 추가적으로 더해진 진짜 버퍼 사이즈 값
+
+			vector<BYTE>& storedbuffer = orderedPacket->_storedBuffer;
+			PushRecv(storedbuffer.data(), storedbuffer.size());
+			realPacketSize += storedbuffer.size();
+
+			int16 fracount = orderedPacket->GetFragCount();
+			if (fracount > 1)
+				realPacketSize += sizeof(FragmentHeader) * fracount + sizeof(PacketHeader) * (fracount - 1); // (fracount - 1) -> 이미 storedbuffer.size에는 한개의 PacketHeader 사이즈가 포함된 값이기때문에 빼준다
+
+			allSize += realPacketSize;
+			//cout << "realPacketSize : " << realPacketSize << endl;
 			_orderedPacketQueue.pop();
 		}
-		cout << "doneSize : " << allSize << " | Befroe RWind : " << dm->GetRWind();
+		//cout << "allSize : " << allSize << " | Befroe RWind : " << dm->GetRWind();
 		dm->MakeSpaceRWind(allSize); // RecvBuffer에서 Logic 처리로 옮겨졌기때문에 RWind의 크기를 해당 패킷 사이즈 만큼 다시 넓혀줘야 받을 수 있음
-		cout <<" | " << "After RWind : " << dm->GetRWind() << endl;
+		//cout <<" | " << "After RWind : " << dm->GetRWind() << endl;
 		GTransportControl.OnPushRWind(_owner->client_Id, allSize);
 	}
 

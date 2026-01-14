@@ -16,19 +16,19 @@ private:
 
 struct Ack
 {
-	bool bexsist = false;
-	int32 bhascount;
-	int32 start;
-	int32 count;
+	uint8 bexsist = 0;
+	int32 bhascount = -1;
+	int32 start = -1;
+	int32 count = -1;
 };
 struct RWind
 {
-	bool bexsist = false;
-	int32 rwindsize;
+	uint8 bexsist = 0;
+	int32 rwindsize = -1;
 };
 struct Rtt
 {
-	bool bexsist = false;
+	uint8 bexsist = 0;
 	LONGLONG sent_timestamp;
 };
 struct ControlHeader

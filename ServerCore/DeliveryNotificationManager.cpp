@@ -64,6 +64,7 @@ InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(SOCKET objec
 {
 	uint32 startSN;
 	int32 bufferNum = sendBuffer->size();
+	//cout << "bufferNum : " << bufferNum << endl;
 	{
 		WRITE_LOCK;
 		startSN = mNextOutgoingSequenceNumber.load();
@@ -171,11 +172,16 @@ bool DeliveryNotificationManager::ProcessSequenceNumber(PacketSequenceNumber SN,
 	
 	if (SN.GetSN() < mNextExpectedSequenceNumber) //기다리고 있었던 수신 패킷 세퀀스 넘버가 아님 조용히 넘김
 	{
-		
+		cout << "SN.GetSN() < mNextExpectedSequenceNumber : " << SN.GetSN() << " < " << mNextExpectedSequenceNumber << endl;
+
 		return false;
 	}
 	if (!_recvWindow.CheckRecved(SN.GetSN())) // 중복 Seq
+	{
+		cout << "!_recvWindow.CheckRecved(SN.GetSN()) : " << "Recved SN : " << SN.GetSN() << "Expected SN : " <<_recvWindow.GetExpectedSqeNum() << endl;
+
 		return false;
+	}
 	//
 	if (!_recvWindow.IsSpaceExistToRecv(size)) // rwind valid size check
 	{
@@ -183,12 +189,13 @@ bool DeliveryNotificationManager::ProcessSequenceNumber(PacketSequenceNumber SN,
 
 		return false;
 	}
-	
+
+	_recvWindow.TryRecv(SN.GetSN()); _recvWindow.ReduceSpaceRWind(size);
 	//cout << "  SN.GetSN() : " << SN.GetSN() << endl;
 	
 	if (SN.GetSN() > mNextExpectedSequenceNumber) //예상하던 수신 패킷 세퀀스넘버가 맞음
 	{
-		cout << "AddPendingAck(SN);" << endl;
+		//cout << "AddPendingAck(SN);" << endl;
 		AddPendingAck(SN);
 		return true;
 		
@@ -199,12 +206,12 @@ bool DeliveryNotificationManager::ProcessSequenceNumber(PacketSequenceNumber SN,
 		
 		AddPendingAck(SN);
 
-		cout << "AddPendingAck(SN);" << endl;
+		//cout << "AddPendingAck(SN);" << endl;
 		return true;
 	}
 	
 
-	return false;
+	return true;
 
 }
 

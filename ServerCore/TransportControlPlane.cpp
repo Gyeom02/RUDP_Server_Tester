@@ -71,9 +71,9 @@ void TransportControlPlane::OnPushRWind(int32 client_id, int32 add_size)
         return;
   //  cout << "OnPushRWind 2" << endl;
     jobworker.PushJob([this, client_id, host, add_size]() {
-       // cout << "jobworker.PushJob OnPushRWind" << endl;
+     //   cout << "jobworker.PushJob OnPushRWind" << endl;
         SendBufferRef sendBuffer = MakeControlPacketBuffer(client_id);
-        ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer());
+        ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
         //  Protocol::S_RUDPACK pkt;
         
 
@@ -96,13 +96,14 @@ void TransportControlPlane::HandleControlPacket(PacketHeader* header)
     HostRef player = GHostManager.GetPlayer(header->client_Id);
     if (contHeader->ack.bexsist == true)
     {
+       // cout << "contHeader->ack.bexsist == true" << endl;
         int32 bhascount = contHeader->ack.bhascount;
         int32 start = contHeader->ack.start;
         int32 count = contHeader->ack.count;
 
         jobworker.PushJob([player, bhascount, start, count]() {
             
-           // cout << "jobworker.PushJob ProcessAcks" << endl;
+            //cout << "jobworker.PushJob ProcessAcks" << endl;
             if (player == nullptr)
             {
                 //cout << "Handle_C_RUDPACK PlayerID : " << pkt.playerid() << " | SequenceStart : " << pkt.start() << endl;

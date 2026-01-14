@@ -24,12 +24,18 @@ bool RUDPRecvWindow::CheckRecved(uint32 SeqNum)
 	if (_RecvedBitMap[index] == 1)
 		return false;
 
-	if (_expctedSeqNum == SeqNum) //기다리던 패킷이 왔다.
-		DetachExpectedSeq();
-
-	_RecvedBitMap[index] = 1;
+	
 	//cout << "RUDPRecvWindow::CheckRecved true" << endl;
 	return true;
+}
+
+void RUDPRecvWindow::TryRecv(uint32 SeqNum)
+{
+	int32 index = SeqNum % RUDPWIND::SN_MAX_SIZE;
+	if (_expctedSeqNum == SeqNum) //기다리던 패킷이 왔다.
+		DetachExpectedSeq();
+	else
+		_RecvedBitMap[index] = 1;
 }
 
 void RUDPRecvWindow::DetachExpectedSeq() // 예상하던 Seq의 패킷이 들어옴

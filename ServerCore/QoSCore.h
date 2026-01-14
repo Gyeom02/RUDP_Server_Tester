@@ -113,7 +113,7 @@ private:
 	//atomic<bool> _bRecvWorkerUsing = false; //어떤한 RecvWorker가 사용중인지 알려주는 Flag
 	/* For Fragment Handle Function And Values */
 	Ordered_FG_Manager _fragmentManager;
-	queue<vector<BYTE>> _orderedPacketQueue;
+	queue<shared_ptr<FragmentContext>> _orderedPacketQueue;
 	USE_MANY_LOCKS(2);
 };
 

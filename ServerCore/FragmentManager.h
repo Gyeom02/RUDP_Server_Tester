@@ -14,7 +14,7 @@ public:
 	bool IsAllStored() { return (stored_frag_count == frag_Count); }
 	int16 GetSize() { return stored_size; }
 	uint32 GetNextExpectedSeqNum() { return primID + 1; }
-
+	int16 GetFragCount() { return frag_Count; }
 
 	void SetPrimID(uint32 id) { primID = id; }
 private:
@@ -55,16 +55,16 @@ private:
 		//MAX = RUDPWIND::SN_MAX_SIZE,
 	};
 public: //API
-	bool OnOrderedRecv(uint32 seqNum, BYTE* buffer, int32 size, OUT queue<vector<BYTE>>& outReadyQueue);
+	bool OnOrderedRecv(uint32 seqNum, BYTE* buffer, int32 size, OUT queue<shared_ptr<FragmentContext>>& outReadyQueue);
 
 	//bool OnRecv(BYTE* buffer, int32 size, OUT vector<BYTE>& outBuffer, OUT int32& outsize);
-	bool OnFragment(uint32 seqNum, BYTE* buffer, int32 size, OUT queue<vector<BYTE>>& outReadyQueue);
+	bool OnFragment(uint32 seqNum, BYTE* buffer, int32 size, OUT queue<shared_ptr<FragmentContext>>& outReadyQueue);
 
 
 	//bool PopReadyPacket(OUT std::vector<BYTE>& _outv);
 	//void PushReadyPacket(const std::vector<BYTE>& _packet);
 
-	bool IsThereReadyPacket(uint32 expectedseqNum, OUT queue < vector<BYTE>>& _queue);
+	bool IsThereReadyPacket(uint32 expectedseqNum, OUT queue <shared_ptr<FragmentContext>>& _queue);
 
 public: //
 	Ordered_FG_Manager() :_fragmentPassSNs(RUDPWIND::SN_MAX_SIZE, false) {}

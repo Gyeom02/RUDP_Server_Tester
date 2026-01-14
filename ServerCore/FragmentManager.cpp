@@ -37,7 +37,7 @@ void FragmentContext::Store(BYTE* buffer, int32 size, int16 offset, int16 index)
 }
 
 
-bool Ordered_FG_Manager::OnOrderedRecv(uint32 seqNum, BYTE* buffer, int32 size, OUT queue<vector<BYTE>>& outReadyQueue)
+bool Ordered_FG_Manager::OnOrderedRecv(uint32 seqNum, BYTE* buffer, int32 size, OUT queue<shared_ptr<FragmentContext>>& outReadyQueue)
 {
     PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
     
@@ -69,7 +69,7 @@ bool Ordered_FG_Manager::OnOrderedRecv(uint32 seqNum, BYTE* buffer, int32 size, 
     }
 }
 
-bool Ordered_FG_Manager::OnFragment(uint32 seqNum, BYTE* buffer, int32 size, OUT queue<vector<BYTE>>& outReadyQueue)
+bool Ordered_FG_Manager::OnFragment(uint32 seqNum, BYTE* buffer, int32 size, OUT queue<shared_ptr<FragmentContext>>& outReadyQueue)
 {
 
     PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
@@ -204,7 +204,7 @@ bool Ordered_FG_Manager::OnFragment(uint32 seqNum, BYTE* buffer, int32 size, OUT
 //    _readyPacket.push(std::move(_packet));
 //}
 
-bool Ordered_FG_Manager::IsThereReadyPacket(uint32 expectedseqNum, OUT queue<vector<BYTE>>& _queue)
+bool Ordered_FG_Manager::IsThereReadyPacket(uint32 expectedseqNum, OUT queue<shared_ptr< FragmentContext>>& _queue)
 {
     bool isexist = false;
     
@@ -227,11 +227,11 @@ bool Ordered_FG_Manager::IsThereReadyPacket(uint32 expectedseqNum, OUT queue<vec
             break;
 
         }
-        shared_ptr< FragmentContext>& ctx = iter->second;
+        shared_ptr< FragmentContext> ctx = iter->second;
         if (ctx->IsAllStored())
         {
             isexist = true;
-            _queue.push(std::move(ctx->_storedBuffer));
+            _queue.push(ctx);
             
             //  PopReadyPacket(iter->second._storedBuffer);
          //   cout << "ctx->IsAllStored() : " << _expectedSeqNum << endl;

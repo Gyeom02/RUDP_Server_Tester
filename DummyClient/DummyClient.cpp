@@ -171,7 +171,7 @@ int main()
 		cout << "SetConsoleCtrlHandler Failed" << endl;
 	else
 		cout << "SetConsoleCtrlHandler Succeed" << endl;
-	this_thread::sleep_for(2s);
+	this_thread::sleep_for(1s);
 
 	if (GUDP.UDPInit(UDP::CLIENT))
 	{
@@ -187,7 +187,7 @@ int main()
 		 
 		Recv(GUDP.GetUDPSocket(0), GUDP.GetUDPSocket(0)->GetNetAddress());
 	}
-	this_thread::sleep_for(5s);
+	this_thread::sleep_for(1s);
 
 	//ClientServiceRef service = MakeShared<ClientService>(
 	//	NetAddress(L"127.0.0.1", 7777),
@@ -291,7 +291,7 @@ int main()
 
 				while (true)
 				{
-					this_thread::sleep_for(0.016ms);
+					this_thread::sleep_for(16ms);
 					if (GHostManager.GetPlayers().empty())
 						continue;
 					for (auto& p : GHostManager.GetPlayers())
@@ -317,7 +317,7 @@ int main()
 						//	Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPktttt);
 						}
 					}
-					this_thread::sleep_for(200ms);
+					//this_thread::sleep_for(200ms);
 					//PacketDeliverCondition();
 
 					//if (GetTickCount64() - now >= timeout)
