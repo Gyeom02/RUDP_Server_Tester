@@ -22,10 +22,11 @@ namespace QoS
 	};
 	enum Priority : uint16
 	{
-		HIGH = 0,
-		MEDIUM = 1,
-		LOW = 2,
-		RESEND = 3,
+		RESEND = 0,
+		HIGH = 1,
+		MEDIUM = 2,
+		LOW = 3,
+		
 		PRIORTY_NUM = 4,
 	};
 }
