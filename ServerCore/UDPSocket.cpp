@@ -75,10 +75,11 @@ void UDPSocket::UDPWork()
 						processLen += header->size;
 						continue;
 					}
-					/*if(header->channel == QoSCore::Channel::RO)
+					/*if(header->channel == QoS::Channel::RO)
 						if(header->controlflag != 0)
 							cout << "header->channel == QoSCore::Channel::RO | SN : " << header->sn << " | header->ControlFlag : " << header->controlflag << endl;
-					*/if (player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn, header->size) == false)
+					*/
+					if (player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn, header->size) == false)
 					{
 						//cout << "(player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn) == false) SN : " << header->sn<< endl;
 						processLen += header->size;
