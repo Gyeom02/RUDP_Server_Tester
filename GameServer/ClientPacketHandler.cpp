@@ -10,18 +10,18 @@ PacketHandlerFunc GPacketHandler[UINT16_MAX];
 
 bool Handle_C_RUDPACK(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_RUDPACK& pkt)
 {
-	int32 bhascount = pkt.bhascount();
-	int32 start = pkt.start();
-	int32 count = pkt.count();
-	
-	PlayerRef player = static_pointer_cast<Player>(GHostManager.GetPlayer(pkt.playerid()));
-	if (player == nullptr)
-	{
-		//cout << "Handle_C_RUDPACK PlayerID : " << pkt.playerid() << " | SequenceStart : " << pkt.start() << endl;
-		return false;
-	}
-	player->GetDeliveryManager()->AddReceiverRWind(pkt.rwindsize());
-	player->GetDeliveryManager()->ProcessAcks(start, count, bhascount);
+	//int32 bhascount = pkt.bhascount();
+	//int32 start = pkt.start();
+	//int32 count = pkt.count();
+	//
+	//PlayerRef player = static_pointer_cast<Player>(GHostManager.GetPlayer(pkt.playerid()));
+	//if (player == nullptr)
+	//{
+	//	//cout << "Handle_C_RUDPACK PlayerID : " << pkt.playerid() << " | SequenceStart : " << pkt.start() << endl;
+	//	return false;
+	//}
+	//player->GetDeliveryManager()->AddReceiverRWind(pkt.rwindsize());
+	//player->GetDeliveryManager()->ProcessAcks(start, count, bhascount);
 	//cout << "Handle_C_RUDPACK PlayerID : " << pkt.playerid() << " | SequenceStart : " << pkt.start() << endl;
 	return true;
 }
@@ -187,7 +187,7 @@ bool Handle_C_ENTER_GAME(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHe
 
 bool Handle_C_MSG(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_MSG& pkt)
 {
-	//std::cout << pkt.msg() << "^^" << endl;
+	std::cout << pkt.msg() << "^^" << endl;
 
 	/*Protocol::S_MSG chatPkt;
 	chatPkt.set_msg(pkt.msg());

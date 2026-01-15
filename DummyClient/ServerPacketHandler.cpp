@@ -10,15 +10,15 @@ PacketHandlerFunc GPacketHandler[UINT16_MAX];
 bool Handle_S_RUDPACK(UDPSocketPtr udpSocket, NetAddress netAddress, PacketHeader* header, Protocol::S_RUDPACK& pkt)
 {
 	//cout << "Handle_S_RUDPACK" << endl;
-	int32 bhascount = pkt.bhascount();
-	int32 start = pkt.start();
-	int32 count = pkt.count();
-	/*if (pkt.playerid() == 0)
-		return false;*/
-	PlayerRef player = static_pointer_cast<Player>(GHostManager.GetPlayer(header->client_Id));
-	//cout << "Handle_S_RUDPACK PlayerID : " << header->playerId << endl;
-	player->GetDeliveryManager()->AddReceiverRWind(pkt.rwindsize());
- 	player->GetDeliveryManager()->ProcessAcks(start, count, bhascount);
+	//int32 bhascount = pkt.bhascount();
+	//int32 start = pkt.start();
+	//int32 count = pkt.count();
+	///*if (pkt.playerid() == 0)
+	//	return false;*/
+	//PlayerRef player = static_pointer_cast<Player>(GHostManager.GetPlayer(header->client_Id));
+	////cout << "Handle_S_RUDPACK PlayerID : " << header->playerId << endl;
+	//player->GetDeliveryManager()->AddReceiverRWind(pkt.rwindsize());
+ //	player->GetDeliveryManager()->ProcessAcks(start, count, bhascount);
 	return true;
 }
 

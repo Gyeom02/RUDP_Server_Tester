@@ -13,10 +13,10 @@ void Host::PriortySend(shared_ptr<vector<SendBufferRef>> sendBuffer)
 	//WRITE_LOCK;
 	ownerSocket->PriortySend(shared_from_this(), sendBuffer);
 }
-void Host::NoWaitPriortySend(SendBufferRef sendBuffer)
+void Host::ControlSend(SendBufferRef sendBuffer)
 {
 	//WRITE_LOCK;
-	ownerSocket->NoWaitPriortySend(shared_from_this(), sendBuffer);
+	ownerSocket->ControlSend(shared_from_this(), sendBuffer);
 }
 bool Host::CanRPCT()
 {

@@ -14,11 +14,12 @@ public:
 	USE_LOCK;
 };
 
+#pragma pack(push, 1)
 struct Ack
 {
 	uint8 bexsist = 0;
-	int32 bhascount = -1;
-	int32 start = -1;
+	uint8 bhascount = 0;
+	uint32 start = -1;
 	int32 count = -1;
 };
 struct Rwind 
@@ -33,7 +34,7 @@ struct Rtt
 	uint8 bexsist = 0;
 	LONGLONG sent_timestamp;
 };
-#pragma pack(push, 1)
+
 struct ControlHeader
 {
 	uint8 Type; // Control Type
@@ -83,7 +84,7 @@ public:
 
 
 public:
-	static SendBufferRef MakeAckControlPacket(int32 client_id, int32 bhascount, int32 start, int32 count);
+	static SendBufferRef MakeAckControlPacket(int32 client_id, int32 bhascount, uint32 start, int32 count);
 	static SendBufferRef MakeRecoverRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size);
 	static SendBufferRef MakeADRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size);
 

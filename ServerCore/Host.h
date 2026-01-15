@@ -15,7 +15,7 @@ public:
 
 	void Send(SendBufferRef sendBuffer);
 	void PriortySend(shared_ptr<vector<SendBufferRef>> sendBuffer);
-	void NoWaitPriortySend(SendBufferRef sendBuffer);
+	void ControlSend(SendBufferRef sendBuffer); // Only For Control Packet Send
 
 	bool CanRPCT();
 

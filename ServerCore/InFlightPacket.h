@@ -42,10 +42,13 @@ public:
 
 	int32 Send();
 
+
 private:
+	
 	PacketSequenceNumber _packetSequenceNumber;
 	ULONGLONG mTimeDispatched = 0;
 	SendBufferRef _sendBuffer;
 	std::weak_ptr<Host> _owner;
+	
 };
 using InFlightPacketPtr = shared_ptr<InFlightPacket>;

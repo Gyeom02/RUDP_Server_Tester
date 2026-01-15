@@ -282,8 +282,11 @@ int main()
 	*/
 
 	string longtext = "";
-	while (longtext.size() < 1200)
+	string shorttext = "";
+	while (longtext.size() < 3000)
 		longtext += "ABCDEFGHIJKLNMOPQRSWZXABCDEFGHIJKLNMOPQRSWZXABCDEFGHIJKLNMOPQRSWZX";
+	while (shorttext.size() < 1200)
+		shorttext += "Hello Server From Client";
 	this_thread::sleep_for(1s);
 	for (int32 i = 0; i < 1; i++) // i = 패킷 강도를 나타냄
 		GThreadManager->Launch([=]() // 플레이어 클래스마다 RUDP AckRange 클래스 배열을 갖고있고 돌아가면서 차있으면 AckRange 정보를 송신한다
@@ -298,19 +301,23 @@ int main()
 					{
 						if (p.second->client_Id != 0)
 						{
-							Protocol::C_MSG chatPktt;
-							chatPktt.set_msg("Hello Server");
-							auto sendBufferchatPkttttt = ServerPacketHandler::MakeReliableBuffer_Low(chatPktt);
-							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkttttt);
-							auto sendBufferchatPktttt = ServerPacketHandler::MakeReliableBuffer_Medium(chatPktt);
-							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPktttt);
-							auto sendBufferchatPkttt = ServerPacketHandler::MakeReliableBuffer_High(chatPktt);
-							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkttt);
-							
+							Protocol::C_MSG longChatPkt;
+							longChatPkt.set_msg(longtext);
+							Protocol::C_MSG shortChatPkt;
+							shortChatPkt.set_msg(shorttext);
+							//auto sendBufferchatPkttttt = ServerPacketHandler::MakeReliableBuffer_Low(chatPktt);
+							//Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkttttt);
+							auto sendBufferchatPkt = ServerPacketHandler::MakeReliableBuffer_Medium(shortChatPkt);
+							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt);
+							auto sendBufferchatPkt2 = ServerPacketHandler::MakeReliableBuffer_High(shortChatPkt);
+							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt2);
+							auto sendBufferchatPkt3 = ServerPacketHandler::MakeReliableBuffer_Low(shortChatPkt);
+							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt3);
+
 							
 							//cout << "SENDING MSG ID : " << p.second->playerId << endl;
-							Protocol::C_MSG chatPkt;
-							chatPkt.set_msg(longtext);
+							//Protocol::C_MSG chatPkt;
+							//chatPkt.set_msg(longtext);
 							
 							//auto sendBufferchatPkt = ServerPacketHandler::MakeReliableBuffer(chatPkt);
 							//Send(p.second->client_Id, p.second->ownerSocket, p.second->netAddress, sendBufferchatPkt);

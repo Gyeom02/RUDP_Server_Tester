@@ -81,7 +81,7 @@ void TransportControl::OnPushRWind(int32 client_id, int32 add_size, uint32 total
        
         // pkt.set_rwindsize();
 
-        host->NoWaitPriortySend(sendBuffer);
+        host->ControlSend(sendBuffer);
         });
 }
 
@@ -278,7 +278,7 @@ void TransportControl::DoWork()
     }
 }
 
-SendBufferRef TransportControl::MakeAckControlPacket(int32 client_id,  int32 bhascount, int32 start, int32 count)
+SendBufferRef TransportControl::MakeAckControlPacket(int32 client_id,  int32 bhascount, uint32 start, int32 count)
 {
     SendBufferRef sendBuffer = MakeControlPacketBuffer(client_id);
     ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
@@ -342,7 +342,7 @@ void TransportControl::HandleHostReadyAck(HostRef host)
    
     //TODO Send Ack
     uint32 ackStart = 1;
-    uint32 ackCount = 0;
+    int32 ackCount = 0;
     bool hasCount = false;
     NetAddress netAddr;
 
@@ -360,7 +360,7 @@ void TransportControl::HandleHostReadyAck(HostRef host)
             }*/
             SendBufferRef sendBuffer = MakeAckControlPacket(host->client_Id, hasCount, ackStart, ackCount);
 
-            host->NoWaitPriortySend(sendBuffer);
+            host->ControlSend(sendBuffer);
             //GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);
           //  ackpreStart = ackStart;
           //  cout << "Send RUDP ACK  " << endl;
@@ -398,7 +398,7 @@ void TransportControl::PeriodicRwindSync(HostRef host, int32 rwindsize, uint32 t
 
         // pkt.set_rwindsize();
 
-        host->NoWaitPriortySend(sendBuffer);
+        host->ControlSend(sendBuffer);
         });
     
 }

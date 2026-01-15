@@ -171,24 +171,19 @@ int32 UDPSocket::PriortySend(HostRef player, shared_ptr<vector<SendBufferRef>> s
 
 }
 
-int32 UDPSocket::NoWaitPriortySend(HostRef player, SendBufferRef sendBuffer)
+int32 UDPSocket::ControlSend(HostRef player, SendBufferRef sendBuffer)
 {
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 	/*if (header->priority == QoSCore::FPC)
 		return FPCSend(player, sendBuffer);*/
-	switch (header->channel)
+	if(header->channel == QoS::Channel::URO)
 	{
-	case QoS::Channel::RO:
-		return ReliableSend(player, sendBuffer);
-	case QoS::Channel::URO:
+
 		return UnReliable_Ordered_Send(player, sendBuffer);
-	case QoS::Channel::RPCT:
-		return UnReliableSend(player, sendBuffer);
-	default:
-		break;
+
 	}
 	
-		
+	return -1;
 
 }
 bool UDPSocket::CheckMSSover(SendBufferRef sendBuffer)
@@ -306,16 +301,16 @@ SendBufferRef UDPSocket::MakeFragmentBuffer(int32 size)
 	return fragmentSendBuffer;
 }
 
-int UDPSocket::ReliableSend(HostRef player, SendBufferRef sendBuffer)
-{
-	NetAddress netAddr = player->netAddress;
-	//PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
-	//header->playerId = player->playerId;
-
-	player->GetDeliveryManager()->WriteSeqeuenceNumber(sendBuffer);
-
-	return FPCSend(player, sendBuffer);
-}
+//int UDPSocket::ReliableSend(HostRef player, SendBufferRef sendBuffer)
+//{
+//	NetAddress netAddr = player->netAddress;
+//	//PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
+//	//header->playerId = player->playerId;
+//
+//	player->GetDeliveryManager()->WriteSeqeuenceNumber(sendBuffer);
+//
+//	return FPCSend(player, sendBuffer);
+//}
 
 int UDPSocket::UnReliable_Ordered_Send(HostRef player, SendBufferRef sendBuffer)
 {
@@ -324,10 +319,10 @@ int UDPSocket::UnReliable_Ordered_Send(HostRef player, SendBufferRef sendBuffer)
 	return FPCSend(player, sendBuffer);
 }
 
-int UDPSocket::UnReliableSend(HostRef player, SendBufferRef sendBuffer)
-{
-	return FPCSend(player, sendBuffer);
-}
+//int UDPSocket::UnReliableSend(HostRef player, SendBufferRef sendBuffer)
+//{
+//	return FPCSend(player, sendBuffer);
+//}
 
 int UDPSocket::FPCSend(HostRef player, SendBufferRef sendBuffer)
 {

@@ -15,8 +15,8 @@ public:
 	AckRange operator=(const AckRange& ackRange) = delete;
 	bool ExtendIfShould(PacketSequenceNumber SN);
 
-	void AckWrite(OUT uint32& start, OUT uint32& count, OUT bool& hasCount);
-	void AckRead(uint32 start, uint32 count);
+	void AckWrite(OUT uint32& start, OUT int32& count, OUT bool& hasCount);
+	void AckRead(uint32 start, int32 count);
 
 	uint32 GetStart() { return mStart; }
 	uint32 GetCount() { return mCount; }
@@ -25,11 +25,18 @@ public:
 private:
 	
 	uint32 mStart;
-	uint32 mCount;
+	int32 mCount;
 };
 
-class DeliveryNotificationManager : public enable_shared_from_this<DeliveryNotificationManager>
+class DeliveryNotificationManager final: public enable_shared_from_this<DeliveryNotificationManager>
 {
+private:
+	enum
+	{
+		InFlightPacket_LOCK = 0,
+		Map_LOCK = 1, // For mSnToInFlightPacketMap
+		Ack_LOCK = 2, // For mPendingAcks
+	};
 public:
 	enum : ULONGLONG
 	{
@@ -44,7 +51,7 @@ public:
 	bool CheckPacketChannel(int16 channel, uint32 sn, int32 size);
 	//////
 	//송신
-	InFlightPacketPtr WriteSeqeuenceNumber(SendBufferRef sendBuffer);
+//	InFlightPacketPtr WriteSeqeuenceNumber(SendBufferRef sendBuffer);
 	InFlightPacketPtr WriteSeqeuenceNumber(shared_ptr<vector<SendBufferRef>>sendBuffer);
 
 	void ProcessAcks(uint32 start, uint32 count, bool hasCount);
@@ -55,7 +62,7 @@ public:
 	//수신
 	bool ProcessSequenceNumber(PacketSequenceNumber SN, int32 size);
 	void AddPendingAck(PacketSequenceNumber SN);
-	bool WritePendingAcks(OUT uint32& start, OUT uint32& count, OUT bool& hasCount);
+	bool WritePendingAcks(OUT uint32& start, OUT int32& count, OUT bool& hasCount);
 
 	//타임아웃체크
 	void ProcessTimeOutPackets();
@@ -98,7 +105,12 @@ public:
 	bool GetbInsertAckReadyQueue() { return bInsertAckReadyQueue.load(); }
 	void SetbInsertAckReadyQueue(bool to) { bInsertAckReadyQueue.exchange(to); }
 	bool CheckHostAckEmpty();
-
+private:
+	InFlightPacketPtr FindInFlightPacketFromSN(uint32 sn);
+	void StoreInFlightPacketFromSN(uint32 sn, InFlightPacketPtr inflightPacket);
+	InFlightPacketPtr EraseInFlightPacketFronSN(uint32 sn);
+	bool CheckValidAckSN(uint32 sn);
+	InFlightPacketPtr HandleAck(uint32 sn);
 private:
 	/*   Reliable Ordered Packet의 변수   */
 	//송신
@@ -127,5 +139,8 @@ private:
 	atomic<bool> bInsertAckReadyQueue = false;
 
 	std::weak_ptr<Host> _weakOwner;
-	USE_LOCK;
+
+	unordered_map<int32, InFlightPacketPtr> mSnToInFlightPacketMap; // sn % RUDPWIND::SN_RANGE_HALF to InFlightPacketPtr
+	atomic<uint32> _curExpectedAckSN = 0;
+	USE_MANY_LOCKS(3); // 0 = InPlightPacket , 1 = mSnToInFlightPacketMap , 2 = mPendingAcks
 };
