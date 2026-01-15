@@ -68,16 +68,16 @@ void TransportControl::StopThread()
     _lazyAssist._jobCv.notify_one();
 }
 
-void TransportControl::OnPushRWind(int32 client_id, int32 add_size)
+void TransportControl::OnPushRWind(int32 client_id, int32 add_size, uint32 total_recovered_size)
 {
   //  cout << "OnPushRWind 1" << endl;
     HostRef host = GHostManager.GetPlayer(client_id);
     if (!host)
         return;
   //  cout << "OnPushRWind 2" << endl;
-    _jobWorker.PushJob([this, client_id, host, add_size]() {
+    _jobWorker.PushJob([this, client_id, host, add_size, total_recovered_size]() {
      //   cout << "jobworker.PushJob OnPushRWind" << endl;
-        SendBufferRef sendBuffer = MakeRecoverRwindControlPacket(client_id, add_size);
+        SendBufferRef sendBuffer = MakeRecoverRwindControlPacket(client_id, add_size, total_recovered_size);
        
         // pkt.set_rwindsize();
 
@@ -118,6 +118,8 @@ void TransportControl::HandleControlPacket(PacketHeader* header)
     ControlHeader* contHeader = reinterpret_cast<ControlHeader*>(&header[1]);
 
     HostRef player = GHostManager.GetPlayer(header->client_Id);
+
+    
     if (contHeader->ack.bexsist == true)
     {
        // cout << "contHeader->ack.bexsist == true" << endl;
@@ -142,7 +144,33 @@ void TransportControl::HandleControlPacket(PacketHeader* header)
     }
     if (contHeader->rwind.bexsist == true)
     {
-        player->GetDeliveryManager()->AddReceiverRWind(contHeader->rwind.rwindsize);
+        uint32 curTotalRWind = player->GetDeliveryManager()->GetTotal_Send_RWind();
+        if (contHeader->Type == ControlType::RECOVER_RWIND)
+        {
+            if (contHeader->rwind.total_recovered_size <= curTotalRWind)
+                return; //RECOVER_RWIND Type 패킷(같거나 또는 더 큰 total_recovered_size를 갖은)이 먼저 옴
+            player->GetDeliveryManager()->AddReceiverRWind(contHeader->rwind.rwindsize);
+            player->GetDeliveryManager()->SetTotal_Send_RWind(contHeader->rwind.total_recovered_size);
+           // cout << "Recover RWind : " << player->GetDeliveryManager()->GetReceiverRWind() << endl;
+        }
+        else if(contHeader->Type == ControlType::AD_RWIND)
+        {
+            
+            if (contHeader->rwind.total_recovered_size <= curTotalRWind)
+            {
+               // cout << "contHeader->rwind.total_recovered_size <= curTotalRWind" << endl;
+                return; //RECOVER_RWIND Type 패킷(같거나 또는 더 큰 total_recovered_size를 갖은)이 먼저 옴
+            }
+            
+            uint32 deltaSize = contHeader->rwind.total_recovered_size - curTotalRWind; // 안 적용된 recovered Rwind size
+           // cout << "deltaSize : " << deltaSize << endl;
+           // cout << "curTotalRWind : " << curTotalRWind << endl;
+            player->GetDeliveryManager()->AddReceiverRWind(deltaSize);
+            player->GetDeliveryManager()->SetTotal_Send_RWind(contHeader->rwind.total_recovered_size);
+           
+            if (player->GetDeliveryManager()->GetReceiverRWind() > contHeader->rwind.rwindsize)
+                player->GetDeliveryManager()->StoreReceiverRWind(contHeader->rwind.rwindsize);
+        }
       //  cout << "Player ID : " << player->client_Id <<" | contHeader->rwind.bexsist == true : " << contHeader->rwind.rwindsize << endl;
     }
     if (contHeader->rtt.bexsist == true)
@@ -228,27 +256,20 @@ void TransportControl::DoWork()
            //         break;
            // }
             p.second->GetDeliveryManager()->ProcessTimeOutPackets();
-            //LONGLONG curTick = GetTickCount64();
-            //if (p.second->curRwindTimeStamp == 0)
-            //    p.second->curRwindTimeStamp = curTick;
-            //else
-            //{
-            //    if (curTick - p.second->curRwindTimeStamp > 100)
-            //    {
-            //        SendBufferRef sendBuffer = MakeControlPacketBuffer(p.second->client_Id);
-            //        ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
-            //        //  Protocol::S_RUDPACK pkt;
 
-            //        // pkt.set_playerid(p.second->client_Id);
-            //        contheader->rwind.bexsist = true;
-            //        contheader->rwind.rwindsize = p.second->GetRWind();
-            //        // pkt.set_rwindsize();
+            LONGLONG curTick = GetTickCount64();
+            if (p.second->curRwindTimeStamp == 0)
+                p.second->curRwindTimeStamp = curTick;
+            else
+            {
+                if (curTick - p.second->curRwindTimeStamp > AD_RWIND_PERIOD)
+                {
+                    PeriodicRwindSync(p.second, p.second->GetDeliveryManager()->GetRWind(), p.second->GetDeliveryManager()->GetTotal_Recv_RWind());
+                 
 
-            //        p.second->NoWaitPriortySend(sendBuffer);
-
-            //        p.second->curRwindTimeStamp = curTick;
-            //    }
-            //}
+                    p.second->curRwindTimeStamp = curTick;
+                }
+            }
             //PacketDeliverCondition(static_pointer_cast<Player>(p.second));
         }
         
@@ -262,6 +283,7 @@ SendBufferRef TransportControl::MakeAckControlPacket(int32 client_id,  int32 bha
     SendBufferRef sendBuffer = MakeControlPacketBuffer(client_id);
     ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
     //  Protocol::S_RUDPACK pkt;
+    contheader->Type = ControlType::ACK;
     contheader->ack.bexsist = true;
     contheader->ack.bhascount = bhascount;
     contheader->ack.start = start;
@@ -271,7 +293,7 @@ SendBufferRef TransportControl::MakeAckControlPacket(int32 client_id,  int32 bha
     return sendBuffer;
 }
 
-SendBufferRef TransportControl::MakeRecoverRwindControlPacket(int32 client_id, int32 rwindsize)
+SendBufferRef TransportControl::MakeRecoverRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size)
 {
     SendBufferRef sendBuffer = MakeControlPacketBuffer(client_id);
     ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
@@ -279,14 +301,26 @@ SendBufferRef TransportControl::MakeRecoverRwindControlPacket(int32 client_id, i
 
 
     // pkt.set_playerid(p.second->client_Id);
+    contheader->Type = ControlType::RECOVER_RWIND;
     contheader->rwind.bexsist = true;
     contheader->rwind.rwindsize = rwindsize;
+    contheader->rwind.total_recovered_size = total_recovered_size;
     return sendBuffer;
 }
 
-SendBufferRef TransportControl::MakeADRwindControlPacket(int32 client_id, int32 rwindsize, uint32 packetHandleCount)
+SendBufferRef TransportControl::MakeADRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size)
 {
-    return SendBufferRef();
+    SendBufferRef sendBuffer = MakeControlPacketBuffer(client_id);
+    ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
+    //  Protocol::S_RUDPACK pkt;
+
+
+    // pkt.set_playerid(p.second->client_Id);
+    contheader->Type = ControlType::AD_RWIND;
+    contheader->rwind.bexsist = true;
+    contheader->rwind.rwindsize = rwindsize;
+    contheader->rwind.total_recovered_size = total_recovered_size;
+    return sendBuffer;
 }
 
 
@@ -348,5 +382,24 @@ void TransportControl::HandleHostReadyAck(HostRef host)
     
     PushHostAckReady(host);
     GetLazyAssist()._jobCv.notify_one();
+}
+
+void TransportControl::PeriodicRwindSync(HostRef host, int32 rwindsize, uint32 total_recovered_size)
+{
+   // HostRef host = GHostManager.GetPlayer(client_id);
+   // cout << "PeriodicRwindSync" << endl;
+    int32 client_id = host->client_Id;
+    if (!host)
+        return;
+    //  cout << "OnPushRWind 2" << endl;
+    _jobWorker.PushJob([this, client_id, host, rwindsize, total_recovered_size]() {
+        //   cout << "jobworker.PushJob OnPushRWind" << endl;
+        SendBufferRef sendBuffer = MakeADRwindControlPacket(client_id, rwindsize, total_recovered_size);
+
+        // pkt.set_rwindsize();
+
+        host->NoWaitPriortySend(sendBuffer);
+        });
+    
 }
 

@@ -309,7 +309,7 @@ int UDPSocket::ReliableSend(HostRef player, SendBufferRef sendBuffer)
 	//PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 	//header->playerId = player->playerId;
 
-	player->GetDeliveryManager()->WriteSeqeuenceNumber(player->ownerSocket->GetSocket(), netAddr, sendBuffer);
+	player->GetDeliveryManager()->WriteSeqeuenceNumber(sendBuffer);
 
 	return FPCSend(player, sendBuffer);
 }
@@ -364,7 +364,7 @@ int UDPSocket::ReliableSend(HostRef player, shared_ptr<vector<SendBufferRef>> se
 	//PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 	//header->playerId = player->playerId;
 
-	player->GetDeliveryManager()->WriteSeqeuenceNumber(player->ownerSocket->GetSocket(), netAddr, sendBuffer);
+	player->GetDeliveryManager()->WriteSeqeuenceNumber( sendBuffer);
 
 	return FPCSend(player, sendBuffer);
 }

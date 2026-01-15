@@ -157,20 +157,27 @@ void QoSPlayer::PopSend()
 
 				savePacket = _sendQueues[QoSCore::RO].front();
 
-				if (!dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
-				{
-#ifdef _DEBUG
-					//HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-					//CONSOLE_SCREEN_BUFFER_INFO info;
-					////GetConsoleScreenBufferInfo(h, &info);
-					//COORD pos = { (SHORT)0, (SHORT)11};
-					//SetConsoleCursorPosition(h, pos);
 
-					//cout << "Player ID : " << _owner->client_Id << " | Out Of RWind : " << dm->GetReceiverRWind() << " < " << savePacket->AllBuffersSize << endl;
+				PacketHeader* header = reinterpret_cast<PacketHeader*>((*(savePacket->sendBuffers))[0]->Buffer());
+				if (header->retransnum <= 0)//재전송 패킷이면 RWind 로직 패스(이미 처음 보낼때 패킷 사이즈만큼 RWind 처리했기때문)
+				{
+					if (!dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
+					{
+#ifdef _DEBUG
+						//HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+						//CONSOLE_SCREEN_BUFFER_INFO info;
+						////GetConsoleScreenBufferInfo(h, &info);
+						//COORD pos = { (SHORT)0, (SHORT)11};
+						//SetConsoleCursorPosition(h, pos);
+
+					//	cout << "Player ID : " << _owner->client_Id << " | Out Of RWind : " << dm->GetReceiverRWind() << " < " << savePacket->AllBuffersSize << endl;
 
 #endif
-					break;
+						break;
+					}
+					//else cout << "Player ID : " << _owner->client_Id << " Valid RWind : " << dm->GetReceiverRWind() << " >= " << savePacket->AllBuffersSize << endl;
 				}
+				//else cout << "Retrans Packet header->retransnum <= 0" << endl;
 				_sendQueues[QoSCore::RO].pop();
 				
 				
@@ -402,8 +409,10 @@ void QoSPlayer::OnOrderedRecv(int32 SeqNum, BYTE* buffer, int32 size)
 		}
 		//cout << "allSize : " << allSize << " | Befroe RWind : " << dm->GetRWind();
 		dm->MakeSpaceRWind(allSize); // RecvBuffer에서 Logic 처리로 옮겨졌기때문에 RWind의 크기를 해당 패킷 사이즈 만큼 다시 넓혀줘야 받을 수 있음
+		dm->AddTotal_Recv_RWind(allSize);
 		//cout <<" | " << "After RWind : " << dm->GetRWind() << endl;
-		GTransportControl.OnPushRWind(_owner->client_Id, allSize);
+		//cout << "dm->GetTotal_Recv_RWind() : " << dm->GetTotal_Recv_RWind() << endl;
+		GTransportControl.OnPushRWind(_owner->client_Id, allSize, dm->GetTotal_Recv_RWind());
 	}
 
 }

@@ -4,7 +4,7 @@ namespace RUDPWIND
 {
 	enum
 	{
-		SN_MAX_SIZE = 1024,
+		SN_MAX_SIZE = 25,
 		SN_RANGE_HALF = SN_MAX_SIZE / 2,
 		RWIND_BASE_SIZE = 64000, // 64kb라는뜻 보통 FPS Server은 64~128, MMO Server은 128~256을 가진다
 	};
@@ -41,30 +41,41 @@ public: 	/* rWind */
 	int32 GetRWind() { return _myRWind.load(); }
 	void MakeSpaceRWind(int32 doneRecvSize) { if (doneRecvSize <= 0) return; _myRWind.fetch_add(doneRecvSize); }
 	void ReduceSpaceRWind(int32 size) { if (size <= 0) return; _myRWind.fetch_sub(size); }
+
+	uint32 GetTotalRWind() { return _totalRecoverRWind.load(); }
+	void AddTotalRWind(uint32 doneRecvSize) { if (doneRecvSize <= 0) return; _totalRecoverRWind.fetch_add(doneRecvSize); }
+	//void SubTotalRWind(int32 size) { if (size <= 0) return; _totalRecoverRWind.fetch_sub(size); }
 private:	/* rWind */
 	const int32 _RWind_Fixed_Max;
 	const int32 _RWind_Fixed_Lowest;
 	atomic<int32> _myRWind;
+	atomic<uint32> _totalRecoverRWind;
+
 };
 
 class RUDPSendWindow // Send 할때 수신측의 rwind, cwind를 확인하고 보낼지 말지를 컨트롤함
 {
 public:
 
-	explicit RUDPSendWindow(int32 windSize = RUDPWIND::RWIND_BASE_SIZE) : _receiverRWind(windSize), _myCWind(windSize){}
+	explicit RUDPSendWindow(int32 windSize = RUDPWIND::RWIND_BASE_SIZE) : _receiverRWind(windSize), _totalRecoverRWind(0), _myCWind(windSize){}
 
 	bool IsSpaceExistToSend(int32 sendSize) {
-		WRITE_LOCK;
 		if (sendSize <= 0) return false;
 		if (_receiverRWind.load() >= sendSize) { _receiverRWind.fetch_sub(sendSize); return true; }
 		else return false;
 	}
 
-	void AddReceiverRWind(int32 size) { WRITE_LOCK; _receiverRWind.fetch_add(size); }
-	int32 GetReceiverRWind() { int32 readRwind = 0; { READ_LOCK; readRwind = _receiverRWind.load(); } return readRwind; }
+	void AddReceiverRWind(int32 size) { _receiverRWind.fetch_add(size); }
+	int32 GetReceiverRWind() { return _receiverRWind.load(); }
+
+	uint32 GetTotalRWind() { return _totalRecoverRWind.load(); }
+	void SetTotalRWind(uint32 doneRecvSize) { if (doneRecvSize <= 0) return; _totalRecoverRWind.exchange(doneRecvSize); }
+
+	void StoreReceiverRWind(int32 rwindsize) { _receiverRWind.store(rwindsize); }
 private:
 	atomic<int32> _receiverRWind;
+	atomic<uint32> _totalRecoverRWind;
 	atomic<int32> _myCWind;
-	USE_LOCK;
+	//USE_LOCK;
 	
 };

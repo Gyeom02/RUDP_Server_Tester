@@ -1,6 +1,6 @@
 #pragma once
 
-
+class Host;
 
 class PacketSequenceNumber
 {
@@ -28,12 +28,10 @@ private:
 class InFlightPacket
 {
 public:
-	explicit InFlightPacket(SOCKET object, NetAddress netAddr, PacketSequenceNumber packetSN, SendBufferRef sendBuffer) : _socket(object), _netAddr(netAddr), _packetSequenceNumber(packetSN), _sendBuffer(sendBuffer) { mTimeDispatched = GetTickCount64(); }
+	explicit InFlightPacket(std::weak_ptr<Host> owner, PacketSequenceNumber packetSN, SendBufferRef sendBuffer) : _owner(owner), _packetSequenceNumber(packetSN), _sendBuffer(sendBuffer) { mTimeDispatched = GetTickCount64(); }
 	~InFlightPacket() {}
 
-	NetAddress GetNetAddr() { return _netAddr; }
-	SOCKET GetSocket() { return _socket; }
-
+	shared_ptr<Host> GetOwner() { return _owner.lock(); }
 	void SetTransmissionData(SendBufferRef sendBuffer) { _sendBuffer = sendBuffer; }
 	SendBufferRef GetTransmissionData() { return _sendBuffer; }
 	void HandleDeliveryFailure(DeliveryManagerRef deliveryManager);
@@ -48,7 +46,6 @@ private:
 	PacketSequenceNumber _packetSequenceNumber;
 	ULONGLONG mTimeDispatched = 0;
 	SendBufferRef _sendBuffer;
-	NetAddress _netAddr;
-	SOCKET _socket;
+	std::weak_ptr<Host> _owner;
 };
 using InFlightPacketPtr = shared_ptr<InFlightPacket>;

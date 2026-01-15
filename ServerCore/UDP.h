@@ -11,7 +11,7 @@ class UDP
 public:
 	static enum
 	{
-		SOCKNUM = 1,
+		SOCKNUM = 10,
 		PLUS_WORKER_NUM = 0,
 		//POPRECV_WORKER_NUM = 2,
 		MAX_WORKER_NUM = QOS_SHARD_COUNT + PLUS_WORKER_NUM,

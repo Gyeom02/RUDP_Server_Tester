@@ -38,14 +38,14 @@ public:
 	explicit DeliveryNotificationManager();
 	~DeliveryNotificationManager();
 
-	void SetOwner(shared_ptr<Host> owner) { _owner = owner; }
+	void SetOwner(shared_ptr<Host> owner) { _weakOwner = owner; }
 	//Public
 	// 
 	bool CheckPacketChannel(int16 channel, uint32 sn, int32 size);
 	//////
 	//송신
-	InFlightPacketPtr WriteSeqeuenceNumber(SOCKET object, NetAddress netAddr, SendBufferRef sendBuffer);
-	InFlightPacketPtr WriteSeqeuenceNumber(SOCKET object, NetAddress netAddr, shared_ptr<vector<SendBufferRef>>sendBuffer);
+	InFlightPacketPtr WriteSeqeuenceNumber(SendBufferRef sendBuffer);
+	InFlightPacketPtr WriteSeqeuenceNumber(shared_ptr<vector<SendBufferRef>>sendBuffer);
 
 	void ProcessAcks(uint32 start, uint32 count, bool hasCount);
 	void HandlePacketDeliveryFailure(const InFlightPacketPtr& inFlightPacket);
@@ -82,12 +82,18 @@ public:
 	/*   _recvWindow의 함수   */
 	int32 GetExpectedSeqNum() { return _recvWindow.GetExpectedSqeNum(); }
 	int32 GetRWind() { return _recvWindow.GetRWind(); }
+	uint32 GetTotal_Recv_RWind() { return _recvWindow.GetTotalRWind(); }
 	void MakeSpaceRWind(int32 doneSize) { _recvWindow.MakeSpaceRWind(doneSize); }
+	void AddTotal_Recv_RWind(int32 doneSize) { _recvWindow.AddTotalRWind(doneSize); }
 
 	/*   _sendWindow의 함수   */
 	bool IsSpaceExistToSend(int32 sendSize) { return _sendWindow.IsSpaceExistToSend(sendSize); }
 	void AddReceiverRWind(int32 rwindSize) { _sendWindow.AddReceiverRWind(rwindSize); }
+	uint32 GetTotal_Send_RWind() { return _sendWindow.GetTotalRWind(); }
+	void SetTotal_Send_RWind(int32 doneSize) { _sendWindow.SetTotalRWind(doneSize); }
 	int32 GetReceiverRWind() { return _sendWindow.GetReceiverRWind(); }
+	void StoreReceiverRWind(int32 rwindsize) { _sendWindow.StoreReceiverRWind(rwindsize); }
+
 
 	bool GetbInsertAckReadyQueue() { return bInsertAckReadyQueue.load(); }
 	void SetbInsertAckReadyQueue(bool to) { bInsertAckReadyQueue.exchange(to); }
@@ -120,6 +126,6 @@ private:
 
 	atomic<bool> bInsertAckReadyQueue = false;
 
-	std::weak_ptr<Host> _owner;
+	std::weak_ptr<Host> _weakOwner;
 	USE_LOCK;
 };

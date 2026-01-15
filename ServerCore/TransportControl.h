@@ -21,39 +21,45 @@ struct Ack
 	int32 start = -1;
 	int32 count = -1;
 };
-struct RecoverRWind //Recv를 통해 사용한 Rwind의 버퍼 사이즈 값을 QoS에서 Logic Layer로 올리기전 상대방에게 처리된 패킷의 사이즈 값을 다시보내 RWind 회복에 도움
+struct Rwind 
 {
 	uint8 bexsist = 0;
 	int32 rwindsize = -1;
+	uint32 total_recovered_size = -1;
 };
-struct ADRWind //UsedRWind와 개별적으로 현재 RWind의 전체 사이즈를 보냄, 패킷 진행도(패킷을 보낸 수와 받은 수를 매치하여 상대방은 해당 패킷을 무시하거나 ReceiverWind를 업데이트함
-{
-	uint8 bexsist = 0;
-	int32 rwindsize = -1;
-	uint32 packetHandleCount = -1;
-};
+
 struct Rtt
 {
 	uint8 bexsist = 0;
 	LONGLONG sent_timestamp;
 };
+#pragma pack(push, 1)
 struct ControlHeader
 {
-	int16 Type; // Server Or Client
-
+	uint8 Type; // Control Type
 	Ack ack;
-	RecoverRWind rwind;
+	Rwind rwind; 
 	Rtt rtt;
 };
+#pragma pack(pop)
 
 class TransportControl
 {
+public:
+	enum ControlType
+	{
+		ACK = 1,
+		RECOVER_RWIND = 2,
+		AD_RWIND = 3,
+		RTT = 4,
+	};
 private:
 	enum
 	{
 		ControlPacketSize = sizeof(PacketHeader) + sizeof(ControlHeader),
 		TICKMS = LazyAssist::NORMAL_TickMs,
 		ACKTOKEN = 5,
+		AD_RWIND_PERIOD = 200, // ms단위
 	};
 public:
 	/*enum ControlType
@@ -78,11 +84,11 @@ public:
 
 public:
 	static SendBufferRef MakeAckControlPacket(int32 client_id, int32 bhascount, int32 start, int32 count);
-	static SendBufferRef MakeRecoverRwindControlPacket(int32 client_id, int32 rwindsize);
-	static SendBufferRef MakeADRwindControlPacket(int32 client_id, int32 rwindsize, uint32 packetHandleCount);
+	static SendBufferRef MakeRecoverRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size);
+	static SendBufferRef MakeADRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size);
 
 
-	void OnPushRWind(int32 client_id, int32 add_size);
+	void OnPushRWind(int32 client_id, int32 add_size, uint32 total_recovered_size);
 
 	bool EmptyReadyAckQueue();
 	void PushHostAckReady(HostRef host);
@@ -100,6 +106,7 @@ private:
 
 	void HandleHostReadyAck(HostRef host);
 	
+	void PeriodicRwindSync(HostRef host, int32 rwindsize, uint32 total_recovered_size); // 송신측과 수신측의 Rwind 동기화를 위한 주기적인 Control Packet 송신
 private:
 	atomic<bool> brunning = false;
 	ControlJobWorker _jobWorker;
@@ -108,6 +115,8 @@ private:
 	
 
 	queue<HostRef> _readyAckHostQueue;
+
+	
 	USE_LOCK; // For ReadyAckHostQueue;
 };
 

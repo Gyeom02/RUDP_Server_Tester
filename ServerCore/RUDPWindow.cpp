@@ -2,7 +2,7 @@
 #include "RUDPWindow.h"
 
 RUDPRecvWindow::RUDPRecvWindow(uint32 _expctedSeqNum)
-	: _expctedSeqNum(_expctedSeqNum), _RecvedBitMap(RUDPWIND::SN_MAX_SIZE, 0), _RWind_Fixed_Max(RUDPWIND::RWIND_BASE_SIZE), _RWind_Fixed_Lowest(0), _myRWind(_RWind_Fixed_Max)
+	: _expctedSeqNum(_expctedSeqNum), _RecvedBitMap(RUDPWIND::SN_MAX_SIZE, 0), _RWind_Fixed_Max(RUDPWIND::RWIND_BASE_SIZE), _RWind_Fixed_Lowest(0), _myRWind(_RWind_Fixed_Max), _totalRecoverRWind(0)
 {
 	
 #ifdef _DEBUG

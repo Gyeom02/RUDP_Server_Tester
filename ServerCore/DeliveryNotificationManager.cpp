@@ -45,23 +45,26 @@ bool DeliveryNotificationManager::CheckPacketChannel(int16 channel, uint32 sn, i
 //	
 //	return mInFlightPackets.back();
 //}
-InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(SOCKET object, NetAddress netAddr, SendBufferRef sendBuffer)
+InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(SendBufferRef sendBuffer)
 {
 	
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 	PacketSequenceNumber sequenceNumber = mNextOutgoingSequenceNumber++;
-	header->sn = sequenceNumber.GetSN(); // 패킷 헤더에 SequenceNumber 부착
+	if(header->retransnum <= 0) // 처음 전송일때만 sn 초기화
+		header->sn = sequenceNumber.GetSN(); // 패킷 헤더에 SequenceNumber 부착
 
 	++mDispatchedPacketCount;
 
 	WRITE_LOCK;
 
-	mInFlightPackets.emplace_back(MakeShared<InFlightPacket>(object, netAddr, sequenceNumber, sendBuffer));
+	HostRef owner;
+	if (owner = _weakOwner.lock());
+		mInFlightPackets.emplace_back(MakeShared<InFlightPacket>(owner, sequenceNumber, sendBuffer));
 	
 	return mInFlightPackets.back();
 }
 
-InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(SOCKET object, NetAddress netAddr, shared_ptr<vector<SendBufferRef>> sendBuffer)
+InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(shared_ptr<vector<SendBufferRef>> sendBuffer)
 {
 	uint32 startSN;
 	int32 bufferNum = sendBuffer->size();
@@ -80,8 +83,9 @@ InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(SOCKET objec
 		++mDispatchedPacketCount;
 
 		WRITE_LOCK;
-
-		mInFlightPackets.emplace_back(MakeShared<InFlightPacket>(object, netAddr, sequenceNumber, (*sendBuffer)[i]));
+		HostRef owner;
+		if (owner = _weakOwner.lock());
+			mInFlightPackets.emplace_back(MakeShared<InFlightPacket>(owner, sequenceNumber, (*sendBuffer)[i]));
 	}
 	return mInFlightPackets.back();
 }
@@ -113,9 +117,31 @@ void DeliveryNotificationManager::ProcessAcks(uint32 start, uint32 count, bool h
 				//사본을 만든다음, 목록에서 일단 제거함
 				//핸들링 도중 살아있는 패킷이 무엇인지 찾아볼 때 이 패킷에 보여서는 안되기 때문이다.
 				//auto copyOfInFlightPacket = nextInFlightPacket;
-				mInFlightPackets.pop_front();
-				mSequenceNotMatchedCount++;
-				success_flag = 1;
+				if (nextInFlightPacketSequenceNumber.GetSN() + mInFlightPackets.size() - 1 < nextAckdSequenceNumber.GetSN())
+				{
+#ifdef _DEBUG
+					cout << "nextInFlightPacketSequenceNumber.GetSN() + mInFlightPackets.size() - 1 < nextAckdSequenceNumber.GetSN()" << endl;
+#endif
+					break;
+				}
+				else
+				{
+					int32 index = nextAckdSequenceNumber.GetSN() - nextInFlightPacketSequenceNumber.GetSN();
+					nextInFlightPacket = mInFlightPackets[index];
+					ASSERT_CRASH(nextInFlightPacket);
+
+					auto iter = mInFlightPackets.begin() + index;
+					mInFlightPackets.erase(iter);
+					
+					
+					//mSequenceNotMatchedCount++;
+					++nextAckdSequenceNumber;
+					success_flag = 2;
+					
+				}
+				
+				
+				
 				
 				//cout << nextInFlightPacketSequenceNumber.GetSN() << " < " << nextAckdSequenceNumber.GetSN() << endl;
 			}
@@ -230,7 +256,7 @@ void DeliveryNotificationManager::AddPendingAck(PacketSequenceNumber SN)
 	if (bInsertAckReadyQueue.compare_exchange_strong(bexpected, true))
 	{
 		HostRef ownerHost;
-		if (ownerHost = _owner.lock())
+		if (ownerHost = _weakOwner.lock())
 		{
 			GTransportControl.PushHostAckReady(ownerHost);
 			GTransportControl.GetLazyAssist()._jobCv.notify_one();
@@ -238,7 +264,7 @@ void DeliveryNotificationManager::AddPendingAck(PacketSequenceNumber SN)
 		}
 		else
 		{
-			ASSERT_CRASH("Host class Missed Call InitDeliveryManager");
+			CRASH("Host class Missed Call InitDeliveryManager");
 			/*bInsertAckReadyQueue.exchange(false);
 			cout << " ownerHost != _owner.lock()" << endl;*/
 		}

@@ -13,9 +13,15 @@ void InFlightPacket::HandleDeliveryFailure(DeliveryManagerRef deliveryManager)
 	}
 	else // 아직 재전송 할 수 있음
 	{
-	//	cout << "ReSend" << endl;
-		deliveryManager->WriteSeqeuenceNumber(_socket, GetNetAddr(), sendBuffer);
-		Send();
+		header->priority = QoSCore::Priority::HIGH; // 재전송이므로 제일 높은 우선순위로 변경
+		//	cout << "ReSend" << endl;
+		HostRef owner = GetOwner();
+		if (owner)
+		{
+			//deliveryManager->WriteSeqeuenceNumber(sendBuffer);
+			//Send();
+			owner->Send(sendBuffer);
+		}
 	}
 }
 
@@ -37,13 +43,13 @@ void InFlightPacket::HandleDeliverySuccess(DeliveryManagerRef deliveryManager)
 int32 InFlightPacket::Send()
 {
 
-	SOCKADDR_IN netaddr = _netAddr.GetSockAddr();
+	SOCKADDR_IN netaddr = GetOwner()->netAddress.GetSockAddr();
 	//cout << netAddr.GetPort()<< endl;
 	//wcout << netAddr.GetIpAddress() << endl;
 	int32 addrLen = sizeof(netaddr);
 	while (true)
 	{
-		if (::sendto(_socket, reinterpret_cast<const char*>(_sendBuffer->Buffer()), _sendBuffer->WriteSize(), 0, reinterpret_cast<SOCKADDR*>(&netaddr), addrLen) == SOCKET_ERROR)
+		if (::sendto(GetOwner()->ownerSocket->GetSocket(), reinterpret_cast<const char*>(_sendBuffer->Buffer()), _sendBuffer->WriteSize(), 0, reinterpret_cast<SOCKADDR*>(&netaddr), addrLen) == SOCKET_ERROR)
 		{
 			if (::WSAGetLastError() == WSAEWOULDBLOCK)
 				continue;
