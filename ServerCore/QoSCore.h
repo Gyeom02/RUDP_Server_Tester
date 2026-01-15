@@ -11,6 +11,24 @@
 #define RECV_READ_LOCK READ_LOCK_IDX(0)
 #define SEND_READ_LOCK READ_LOCK_IDX(1)
 
+namespace QoS
+{
+	enum Channel : uint16
+	{
+		RO = 0, // Reliable Ordered Packet Channel
+		URO = 1, // Unreliable Ordered Packet Channel //
+		RPCT = 2, // Unreliable Ordered Packet Channel But For Packet used for Replication
+		NO_CHANNEL = 3,
+	};
+	enum Priority : uint16
+	{
+		HIGH = 0,
+		MEDIUM = 1,
+		LOW = 2,
+		RESEND = 3,
+		PRIORTY_NUM = 4,
+	};
+}
 
 constexpr const int32 QOS_SHARD_COUNT = 4;
 using TimePoint = chrono::steady_clock::time_point;
@@ -59,6 +77,8 @@ struct SavedRecvPacket
 
 class QoSShard;
 
+class QoSCore;
+
 class QoSPlayer : public enable_shared_from_this<QoSPlayer>
 {
 private:
@@ -72,14 +92,14 @@ private:
 		void Push(const shared_ptr<SavedSendPacket>& rhs, uint16 priority);
 		//void UROPush(const shared_ptr<SavedSendPacket>& rhs, uint16 priority);
 		
-		std::array<queue<shared_ptr<SavedSendPacket>>, QoSCore::Priority::PRIORTY_NUM> _queue;
+		std::array<queue<shared_ptr<SavedSendPacket>>, QoS::Priority::PRIORTY_NUM> _queue;
 	};
 	struct QoSRecvQueue
 	{
 		void Push(const shared_ptr<SavedRecvPacket>& rhs, uint16 priority);
 		
 
-		std::array<queue<shared_ptr<SavedRecvPacket>>, QoSCore::Priority::PRIORTY_NUM> _queue;
+		std::array<queue<shared_ptr<SavedRecvPacket>>, QoS::Priority::PRIORTY_NUM> _queue;
 	};
 public:
 	QoSPlayer(HostRef& owner, QoSShard* _shard, int32 tokenper, int32 burst) : _owner(owner), _ownerShard(_shard), _sendBucket(tokenper, burst) { cout << "QoSPlayer Added " << endl; }
@@ -181,21 +201,7 @@ private:
 class QoSCore
 {
 public:
-	enum Channel : uint16
-	{
-		RO = 0, // Reliable Ordered Packet Channel
-		URO = 1, // Unreliable Ordered Packet Channel //
-		RPCT = 2, // Unreliable Ordered Packet Channel But For Packet used for Replication
-		NO_CHANNEL = 3,
-	};
-	enum Priority: uint16
-	{
-		HIGH = 0,
-		MEDIUM = 1,
-		LOW = 2,
-		RESEND = 3,
-		PRIORTY_NUM = 4,
-	};
+	
 	QoSCore();
 
 	void OnRecv(int32 SeqNum, int32 client_Id, BYTE* buffer, int32 size);

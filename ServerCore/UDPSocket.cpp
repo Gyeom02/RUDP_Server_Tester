@@ -156,11 +156,11 @@ int32 UDPSocket::PriortySend(HostRef player, shared_ptr<vector<SendBufferRef>> s
 		return FPCSend(player, sendBuffer);*/
 	switch (header->channel)
 	{
-	case QoSCore::Channel::RO:
+	case QoS::Channel::RO:
 		return ReliableSend(player, sendBuffer);
-	case QoSCore::Channel::URO:
+	case QoS::Channel::URO:
 		return UnReliable_Ordered_Send(player, sendBuffer);
-	case QoSCore::Channel::RPCT:
+	case QoS::Channel::RPCT:
 		return UnReliableSend(player, sendBuffer);
 	default:
 		break;
@@ -177,11 +177,11 @@ int32 UDPSocket::NoWaitPriortySend(HostRef player, SendBufferRef sendBuffer)
 		return FPCSend(player, sendBuffer);*/
 	switch (header->channel)
 	{
-	case QoSCore::Channel::RO:
+	case QoS::Channel::RO:
 		return ReliableSend(player, sendBuffer);
-	case QoSCore::Channel::URO:
+	case QoS::Channel::URO:
 		return UnReliable_Ordered_Send(player, sendBuffer);
-	case QoSCore::Channel::RPCT:
+	case QoS::Channel::RPCT:
 		return UnReliableSend(player, sendBuffer);
 	default:
 		break;
@@ -216,7 +216,7 @@ int32 UDPSocket::NormalSend(HostRef player, shared_ptr<vector<SendBufferRef>> se
 	if ((*sendBuffer).empty())
 		return 0;
 	PacketHeader* header = reinterpret_cast<PacketHeader*>((*sendBuffer)[0]->Buffer());
-	if (header->channel == QoSCore::Channel::RPCT)
+	if (header->channel == QoS::Channel::RPCT)
 	{
 		if (player->CanRPCT())
 		{

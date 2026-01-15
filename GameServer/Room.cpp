@@ -172,7 +172,7 @@ void Room::ListSort(int32 teamNum, int32 index) //좀 더 LOCK 수정 봐야함
 			startindex++;
 			less--;
 		}
-		SendBufferRef sendBuffer = ClientPacketHandler::MakeReliableBuffer(pkt, QoSCore::HIGH);
+		SendBufferRef sendBuffer = ClientPacketHandler::MakeReliableBuffer(pkt);
 		Broadcast(sendBuffer);
 
 		
@@ -197,7 +197,7 @@ void Room::ListSort(int32 teamNum, int32 index) //좀 더 LOCK 수정 봐야함
 		inform->set_moveteamnum(-1);
 
 		SetListID(sortindex, startindex, listToPrim[sortindex]);
-		SendBufferRef sendBuffer = ClientPacketHandler::MakeReliableBuffer(pkt, QoSCore::HIGH);
+		SendBufferRef sendBuffer = ClientPacketHandler::MakeReliableBuffer(pkt);
 		Broadcast(sendBuffer);
 	}
 	else if (TeamModeNum == 3) //2팀
@@ -224,7 +224,7 @@ void Room::ListSort(int32 teamNum, int32 index) //좀 더 LOCK 수정 봐야함
 			startindex++;
 			less--;
 		}
-		SendBufferRef sendBuffer = ClientPacketHandler::MakeReliableBuffer(pkt, QoSCore::HIGH);
+		SendBufferRef sendBuffer = ClientPacketHandler::MakeReliableBuffer(pkt);
 		Broadcast(sendBuffer);
 	}
 }

@@ -105,19 +105,19 @@ void QoSPlayer::PushSend(shared_ptr<vector<SendBufferRef>> packet)
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(packet->front()->Buffer());
 
 	uint16 channel = header->channel;
-	if (channel == QoSCore::RO)
+	if (channel == QoS::RO)
 	{
 		SEND_WRITE_LOCK;
-		_sendQueues[QoSCore::RO].Push((MakeShared<SavedSendPacket>(packet)), header->priority);
+		_sendQueues[QoS::RO].Push((MakeShared<SavedSendPacket>(packet)), header->priority);
 		_sendSumNum.fetch_add(1);
 	}
-	else if (channel == QoSCore::URO)
+	else if (channel == QoS::URO)
 	{
 		SEND_WRITE_LOCK;
-		_sendQueues[QoSCore::URO].Push((MakeShared<SavedSendPacket>(packet)), header->priority);
+		_sendQueues[QoS::URO].Push((MakeShared<SavedSendPacket>(packet)), header->priority);
 		_sendSumNum.fetch_add(1);
 	}
-	else if (channel == QoSCore::RPCT)
+	else if (channel == QoS::RPCT)
 	{
 		SEND_WRITE_LOCK;
 		if (_sendRPCTPacket_ptr == nullptr)
@@ -152,28 +152,28 @@ void QoSPlayer::PopSend()
 			
 			
 			{
-				auto& ROQueue = _sendQueues[QoSCore::RO]._queue;
+				auto& ROQueue = _sendQueues[QoS::RO]._queue;
 				
 				SEND_WRITE_LOCK;
 				/*if (ROQueue.empty() || )
 					break;*/
 				//auto& ResendQueue = _sendQueues[QoSCore::RO]._queue[QoSCore::Priority::RESEND];
-				if (!ROQueue[QoSCore::Priority::RESEND].empty())
+				if (!ROQueue[QoS::Priority::RESEND].empty())
 				{
-					selected_priorty = QoSCore::Priority::RESEND;
+					selected_priorty = QoS::Priority::RESEND;
 				}
-				else if (!ROQueue[QoSCore::Priority::HIGH].empty())
+				else if (!ROQueue[QoS::Priority::HIGH].empty())
 				{
-					selected_priorty = QoSCore::Priority::HIGH;
+					selected_priorty = QoS::Priority::HIGH;
 				}
-				else if (!ROQueue[QoSCore::Priority::MEDIUM].empty())
+				else if (!ROQueue[QoS::Priority::MEDIUM].empty())
 				{
 
-					selected_priorty = QoSCore::Priority::MEDIUM;
+					selected_priorty = QoS::Priority::MEDIUM;
 				}
-				else if (!ROQueue[QoSCore::Priority::LOW].empty())
+				else if (!ROQueue[QoS::Priority::LOW].empty())
 				{
-					selected_priorty = QoSCore::Priority::LOW;
+					selected_priorty = QoS::Priority::LOW;
 				}
 				else break;
 
@@ -219,27 +219,27 @@ void QoSPlayer::PopSend()
 		{
 			
 			{
-				auto& UROQueue = _sendQueues[QoSCore::URO]._queue;
+				auto& UROQueue = _sendQueues[QoS::URO]._queue;
 
 				SEND_WRITE_LOCK;
 				/*if (ROQueue.empty() || )
 					break;*/
 					//auto& ResendQueue = _sendQueues[QoSCore::RO]._queue[QoSCore::Priority::RESEND];
-				if (!UROQueue[QoSCore::Priority::RESEND].empty())
+				if (!UROQueue[QoS::Priority::RESEND].empty())
 				{
-					selected_priorty = QoSCore::Priority::RESEND;
+					selected_priorty = QoS::Priority::RESEND;
 				}
-				else if (!UROQueue[QoSCore::Priority::HIGH].empty())
+				else if (!UROQueue[QoS::Priority::HIGH].empty())
 				{
-					selected_priorty = QoSCore::Priority::HIGH;
+					selected_priorty = QoS::Priority::HIGH;
 				}
-				else if (!UROQueue[QoSCore::Priority::MEDIUM].empty())
+				else if (!UROQueue[QoS::Priority::MEDIUM].empty())
 				{
-					selected_priorty = QoSCore::Priority::MEDIUM;
+					selected_priorty = QoS::Priority::MEDIUM;
 				}
-				else if (!UROQueue[QoSCore::Priority::LOW].empty())
+				else if (!UROQueue[QoS::Priority::LOW].empty())
 				{
-					selected_priorty = QoSCore::Priority::LOW;
+					selected_priorty = QoS::Priority::LOW;
 				}
 				else break;
 
@@ -311,19 +311,19 @@ void QoSPlayer::PushRecv(BYTE* buffer, int32 size)
 	uint16 channel = header->channel;
 
 	
-	if (channel == QoSCore::RO)
+	if (channel == QoS::RO)
 	{
 		RECV_WRITE_LOCK;
-		_recvQueues[QoSCore::RO].Push(MakeShared<SavedRecvPacket>(buffer, size), header->priority);
+		_recvQueues[QoS::RO].Push(MakeShared<SavedRecvPacket>(buffer, size), header->priority);
 		_recvSumNum.fetch_add(1);
 	}
-	else if (channel == QoSCore::URO)
+	else if (channel == QoS::URO)
 	{
 		RECV_WRITE_LOCK;
-		_recvQueues[QoSCore::URO].Push(MakeShared<SavedRecvPacket>(buffer, size), header->priority);
+		_recvQueues[QoS::URO].Push(MakeShared<SavedRecvPacket>(buffer, size), header->priority);
 		_recvSumNum.fetch_add(1);
 	}
-	else if (channel == QoSCore::RPCT)
+	else if (channel == QoS::RPCT)
 	{
 		RECV_WRITE_LOCK;
 		if(_recvRPCTPacket_ptr == nullptr)
@@ -354,23 +354,23 @@ shared_ptr<SavedRecvPacket> QoSPlayer::PopRecv_RO()
 	{
 		RECV_WRITE_LOCK;
 
-		auto& ROQueue = _recvQueues[QoSCore::RO]._queue;
+		auto& ROQueue = _recvQueues[QoS::RO]._queue;
 
-		if (!ROQueue[QoSCore::Priority::RESEND].empty())
+		if (!ROQueue[QoS::Priority::RESEND].empty())
 		{
-			selected_priorty = QoSCore::Priority::RESEND;
+			selected_priorty = QoS::Priority::RESEND;
 		}
-		else if (!ROQueue[QoSCore::Priority::HIGH].empty())
+		else if (!ROQueue[QoS::Priority::HIGH].empty())
 		{
-			selected_priorty = QoSCore::Priority::HIGH;
+			selected_priorty = QoS::Priority::HIGH;
 		}
-		else if (!ROQueue[QoSCore::Priority::MEDIUM].empty())
+		else if (!ROQueue[QoS::Priority::MEDIUM].empty())
 		{
-			selected_priorty = QoSCore::Priority::MEDIUM;
+			selected_priorty = QoS::Priority::MEDIUM;
 		}
-		else if (!ROQueue[QoSCore::Priority::LOW].empty())
+		else if (!ROQueue[QoS::Priority::LOW].empty())
 		{
-			selected_priorty = QoSCore::Priority::LOW;
+			selected_priorty = QoS::Priority::LOW;
 		}
 		else return nullptr;
 
@@ -400,23 +400,23 @@ shared_ptr<SavedRecvPacket> QoSPlayer::PopRecv_URO()
 	{
 		RECV_WRITE_LOCK;
 
-		auto& UROQueue = _recvQueues[QoSCore::URO]._queue;
+		auto& UROQueue = _recvQueues[QoS::URO]._queue;
 
-		if (!UROQueue[QoSCore::Priority::RESEND].empty())
+		if (!UROQueue[QoS::Priority::RESEND].empty())
 		{
-			selected_priorty = QoSCore::Priority::RESEND;
+			selected_priorty = QoS::Priority::RESEND;
 		}
-		else if (!UROQueue[QoSCore::Priority::HIGH].empty())
+		else if (!UROQueue[QoS::Priority::HIGH].empty())
 		{
-			selected_priorty = QoSCore::Priority::HIGH;
+			selected_priorty = QoS::Priority::HIGH;
 		}
-		else if (!UROQueue[QoSCore::Priority::MEDIUM].empty())
+		else if (!UROQueue[QoS::Priority::MEDIUM].empty())
 		{
-			selected_priorty = QoSCore::Priority::MEDIUM;
+			selected_priorty = QoS::Priority::MEDIUM;
 		}
-		else if (!UROQueue[QoSCore::Priority::LOW].empty())
+		else if (!UROQueue[QoS::Priority::LOW].empty())
 		{
-			selected_priorty = QoSCore::Priority::LOW;
+			selected_priorty = QoS::Priority::LOW;
 		}
 		else return nullptr;
 
@@ -641,7 +641,7 @@ QoSCore::QoSCore()
 void QoSCore::OnRecv(int32 SeqNum, int32 client_Id, BYTE* buffer, int32 size)
 {
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
-	if (header->channel == QoSCore::Channel::RO) // Reliable Ordered
+	if (header->channel == QoS::Channel::RO) // Reliable Ordered
 	{
 		
 		OnOrderedRecv(SeqNum, client_Id, buffer, size);
@@ -905,7 +905,7 @@ SavedRecvPacket::~SavedRecvPacket()
 
 void QoSPlayer::QoSSendQueue::Push(const shared_ptr<SavedSendPacket>& rhs, uint16 priority)
 {
-	ASSERT_CRASH(priority >= 0 && priority < QoSCore::Priority::PRIORTY_NUM);
+	ASSERT_CRASH(priority >= 0 && priority <QoS::Priority::PRIORTY_NUM);
 
 	_queue[priority].push(rhs);
 	
@@ -913,7 +913,7 @@ void QoSPlayer::QoSSendQueue::Push(const shared_ptr<SavedSendPacket>& rhs, uint1
 
 void QoSPlayer::QoSRecvQueue::Push(const shared_ptr<SavedRecvPacket>& rhs, uint16 priority)
 {
-	ASSERT_CRASH(priority >= 0 && priority < QoSCore::Priority::PRIORTY_NUM);
+	ASSERT_CRASH(priority >= 0 && priority <QoS::Priority::PRIORTY_NUM);
 
 	_queue[priority].push(rhs);
 

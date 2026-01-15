@@ -223,7 +223,7 @@ bool Handle_C_MAKEROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHead
 	sendpkt.set_roomid(pkt.id());
 	sendpkt.set_roomprimid(player->roomprimid);
 	sendpkt.set_roomlistid(givenlistid);
-	auto sendBuffer = ClientPacketHandler::MakeReliableBuffer(sendpkt, QoSCore::MEDIUM);
+	auto sendBuffer = ClientPacketHandler::MakeReliableBuffer(sendpkt);
 	udpSocket->Send(player, sendBuffer);
 	//playerRef->type = player->playertype();
 	//playerRef->ownerSession = gameSession;
@@ -272,7 +272,7 @@ bool Handle_C_ENTERROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHea
 	pktplayer->set_name(to_string(pkt.id()));
 	pktplayer->set_roomid(givenroomid); // roomprimid를 의미함
 	pktplayer->set_roomlistid(givenlistid); // roomlistid를 의미함
-	SendBufferRef newplayersb = ClientPacketHandler::MakeReliableBuffer(newplayerpkt, QoSCore::HIGH);
+	SendBufferRef newplayersb = ClientPacketHandler::MakeReliableBuffer(newplayerpkt);
 	room->Broadcast(newplayersb);
 	/* 지금 들어가는 플레이어에게 기존 존재하던 플레이어들의 정보를 동기화 및 방에 진입하게 하는 패킷을 보내는 코드*/
 	Protocol::S_ENTERROOM enterpkt;
@@ -291,7 +291,7 @@ bool Handle_C_ENTERROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHea
 		pktplayers->set_roomid(ps->roomprimid);
 		pktplayers->set_roomlistid(room->GetPrimToList(ps->roomprimid));
 	}
-	auto entersendbuffer = ClientPacketHandler::MakeReliableBuffer(enterpkt, QoSCore::HIGH);
+	auto entersendbuffer = ClientPacketHandler::MakeReliableBuffer(enterpkt);
 	udpSocket->Send(player, entersendbuffer);
 	room->Enter(player);
 		
@@ -333,7 +333,7 @@ bool Handle_C_MOVETEAM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHead
 		imform->set_roomlistid(pkt.roomlistid());
 		imform->set_movetolistid(pkt.movetolistid());
 		imform->set_moveteamnum(player->teamNum);
-		auto sendBuffer = ClientPacketHandler::MakeReliableBuffer(movepkt, QoSCore::HIGH);
+		auto sendBuffer = ClientPacketHandler::MakeReliableBuffer(movepkt);
 		room->Broadcast(sendBuffer);
 			
 		room->ListSort(room->GetTeamNum(pkt.roomlistid()), pkt.roomlistid());
@@ -403,7 +403,7 @@ bool Handle_C_LEAVEROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHea
 	sendpkt.set_primid(player->roomprimid);
 	sendpkt.set_listid(room->GetPrimToList(player->roomprimid));
 	sendpkt.set_newroomid(nextHostID);
-	SendBufferRef sendBuffer = ClientPacketHandler::MakeReliableBuffer(sendpkt, QoSCore::HIGH);
+	SendBufferRef sendBuffer = ClientPacketHandler::MakeReliableBuffer(sendpkt);
 	room->Broadcast(sendBuffer);
 	if (!bEraseRoom)
 	{
@@ -439,7 +439,7 @@ bool Handle_C_CHANGETEAMMODE(UDPSocketPtr udpSocket, NetAddress clientAddr, Pack
 				*mt = v.back();
 				v.pop_back();
 			}
-			SendBufferRef sendbuffer = ClientPacketHandler::MakeReliableBuffer(sendpkt, QoSCore::HIGH);
+			SendBufferRef sendbuffer = ClientPacketHandler::MakeReliableBuffer(sendpkt);
 			room->Broadcast(sendbuffer);
 		}
 	}
@@ -458,7 +458,7 @@ bool Handle_C_MOVESELECTROOM(UDPSocketPtr udpSocket, NetAddress clientAddr, Pack
 		{
 			room->SetRoomFlow(Room::SELECTROOM);
 			Protocol::S_MOVESELECTROOM pktt;
-			SendBufferRef sendbuffer = ClientPacketHandler::MakeReliableBuffer(pktt, QoSCore::MEDIUM);
+			SendBufferRef sendbuffer = ClientPacketHandler::MakeReliableBuffer(pktt);
 			room->Broadcast(sendbuffer);
 		}
 		
@@ -477,7 +477,7 @@ bool Handle_C_CHANGECHARAC(UDPSocketPtr udpSocket, NetAddress clientAddr, Packet
 		pktt.set_primid(pkt.primid());
 		pktt.set_characid(pkt.characid());
 		pktt.set_skinid(pkt.skinid());
-		SendBufferRef sendbuffer = ClientPacketHandler::MakeReliableBuffer(pktt, QoSCore::HIGH);
+		SendBufferRef sendbuffer = ClientPacketHandler::MakeReliableBuffer(pktt);
 		room->Broadcast(sendbuffer);
 
 	}
@@ -519,7 +519,7 @@ bool Handle_C_READY(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader*
 						}
 					}
 					Protocol::S_STARTGAME startpkt;
-					SendBufferRef spsendbuffer = ClientPacketHandler::MakeReliableBuffer(startpkt, QoSCore::HIGH);
+					SendBufferRef spsendbuffer = ClientPacketHandler::MakeReliableBuffer(startpkt);
 					room->Broadcast(spsendbuffer);
 			
 				}
@@ -532,7 +532,7 @@ bool Handle_C_READY(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader*
 			Protocol::S_READY readypkt;
 			readypkt.set_primid(pkt.primid());
 			readypkt.set_bready(player->bready);
-			SendBufferRef rpsendbuffer = ClientPacketHandler::MakeReliableBuffer(readypkt, QoSCore::HIGH);
+			SendBufferRef rpsendbuffer = ClientPacketHandler::MakeReliableBuffer(readypkt);
 			room->Broadcast(rpsendbuffer);
 		}
 	}
@@ -581,7 +581,7 @@ bool Handle_C_SENDIMPORT(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHe
 				pktvel->set_vz(player->vel.vz);
 
 			}
-			SendBufferRef sendbuffer = ClientPacketHandler::MakeReliableBuffer(pktt, QoSCore::HIGH);
+			SendBufferRef sendbuffer = ClientPacketHandler::MakeReliableBuffer(pktt);
 			udpSocket->Send(player, sendbuffer);
 		}
 	}

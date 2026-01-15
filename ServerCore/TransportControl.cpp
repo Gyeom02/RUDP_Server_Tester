@@ -329,7 +329,7 @@ SendBufferRef TransportControl::MakeControlPacketBuffer(int32 client_id)
 {
     SendBufferRef sendBuffer = GSendBufferManager->Open(ControlPacketSize);
     PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
-    header->channel = QoSCore::Channel::URO;
+    header->channel = QoS::Channel::URO;
     header->size = ControlPacketSize;
     header->controlflag = 1;
     header->client_Id = client_id;

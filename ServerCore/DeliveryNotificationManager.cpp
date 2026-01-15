@@ -15,15 +15,15 @@ bool DeliveryNotificationManager::CheckPacketChannel(int16 channel, uint32 sn, i
 {
 	switch (channel)
 	{
-	case QoSCore::Channel::RO:
+	case QoS::Channel::RO:
 		if (ProcessSequenceNumber(sn, size) == false)
 			return false;
 		break;
-	case QoSCore::Channel::URO:
+	case QoS::Channel::URO:
 		if (ProcessSequenceNumber_URO(sn) == false)
 			return false;
 		break;
-	case QoSCore::Channel::RPCT:
+	case QoS::Channel::RPCT:
 		break;
 	}
 
@@ -120,7 +120,7 @@ void DeliveryNotificationManager::ProcessAcks(uint32 start, uint32 count, bool h
 				if (nextInFlightPacketSequenceNumber.GetSN() + mInFlightPackets.size() - 1 < nextAckdSequenceNumber.GetSN())
 				{
 #ifdef _DEBUG
-					cout << "nextInFlightPacketSequenceNumber.GetSN() + mInFlightPackets.size() - 1 < nextAckdSequenceNumber.GetSN()" << endl;
+					//cout << "nextInFlightPacketSequenceNumber.GetSN() + mInFlightPackets.size() - 1 < nextAckdSequenceNumber.GetSN()" << endl;
 #endif
 					break;
 				}

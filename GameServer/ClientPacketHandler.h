@@ -143,15 +143,32 @@ private:
 
 		return sendBuffer;
 	}
-
+	template<typename PKT>
+	static SendBufferRef MakeReliableBuffer(PKT pkt, uint16 priority) { return MakeSendBuffer(pkt, QoS::Channel::RO, priority); }
+	template<typename PKT>
+	static SendBufferRef MakeUnReliableBuffer(PKT pkt, uint16 priority) { return MakeSendBuffer(pkt, QoS::Channel::URO, priority); }
+	
 public:
 
 	template<typename PKT>
-	static SendBufferRef MakeReliableBuffer(PKT pkt, uint16 priorty) {  return MakeSendBuffer(pkt, QoSCore::Channel::RO, priorty); }
+	static SendBufferRef MakeReliableBuffer_High(PKT pkt) { return MakeReliableBuffer(pkt, QoS::Priority::HIGH); }
 	template<typename PKT>
-	static SendBufferRef MakeUnReliableBuffer(PKT pkt) { return MakeSendBuffer(pkt, QoSCore::Channel::URO, QoSCore::Priority::LOW); } //
+	static SendBufferRef MakeReliableBuffer_Medium(PKT pkt) { return MakeReliableBuffer(pkt, QoS::Priority::MEDIUM); }
 	template<typename PKT>
-	static SendBufferRef MakeReplicateBuffer(PKT pkt) { return MakeSendBuffer(pkt, QoSCore::Channel::RPCT, QoSCore::Priority::LOW); } //
+	static SendBufferRef MakeReliableBuffer_Low(PKT pkt) { return MakeReliableBuffer(pkt, QoS::Priority::LOW); }
+	template<typename PKT>
+	static SendBufferRef MakeUnReliableBuffer_High(PKT pkt) { return MakeUnReliableBuffer(pkt, QoS::Priority::HIGH); }
+	template<typename PKT>
+	static SendBufferRef MakeUnReliableBuffer_Medium(PKT pkt) { return MakeUnReliableBuffer(pkt, QoS::Priority::MEDIUM); }
+	template<typename PKT>
+	static SendBufferRef MakeUnReliableBuffer_Low(PKT pkt) { return MakeUnReliableBuffer(pkt, QoS::Priority::LOW); }
 
+	template<typename PKT>
+	static SendBufferRef MakeReliableBuffer(PKT pkt) { return MakeReliableBuffer_Medium(pkt); }
+	template<typename PKT>
+	static SendBufferRef MakeUnReliableBuffer(PKT pkt) { return MakeUnReliableBuffer_Medium(pkt); }
+
+	template<typename PKT>
+	static SendBufferRef MakeReplicateBuffer(PKT pkt) { return MakeSendBuffer(pkt, QoS::Channel::RPCT, QoS::Priority::LOW); }
 	
 };

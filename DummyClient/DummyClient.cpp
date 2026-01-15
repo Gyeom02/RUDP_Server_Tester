@@ -20,7 +20,7 @@ public:
 	virtual void OnConnected() override
 	{
 		Protocol::C_LOGIN pkt;
-		auto sendBuffer = ServerPacketHandler::MakeReliableBuffer(pkt, QoSCore::LOW);
+		auto sendBuffer = ServerPacketHandler::MakeReliableBuffer(pkt);
 		Send(sendBuffer);
 	}
 
@@ -144,7 +144,7 @@ void CloseApp()
 		pkt.set_id(player->client_Id);
 		pkt.set_roomid(player->roomId);
 		pkt.set_roomprimid(player->roomprimid);
-		SendBufferRef sendBuffer = ServerPacketHandler::MakeReliableBuffer(pkt, QoSCore::HIGH);
+		SendBufferRef sendBuffer = ServerPacketHandler::MakeReliableBuffer(pkt);
 
 		player->Send(sendBuffer);
 	}
@@ -282,7 +282,7 @@ int main()
 	*/
 
 	string longtext = "";
-	while (longtext.size() < 3000)
+	while (longtext.size() < 1200)
 		longtext += "ABCDEFGHIJKLNMOPQRSWZXABCDEFGHIJKLNMOPQRSWZXABCDEFGHIJKLNMOPQRSWZX";
 	this_thread::sleep_for(1s);
 	for (int32 i = 0; i < 1; i++) // i = 패킷 강도를 나타냄
@@ -300,13 +300,13 @@ int main()
 						{
 							Protocol::C_MSG chatPktt;
 							chatPktt.set_msg("Hello Server");
-							//auto sendBufferchatPkttt = ServerPacketHandler::MakeReliableBuffer(chatPktt, QoSCore::LOW);
+							//auto sendBufferchatPkttt = ServerPacketHandler::MakeReliableBuffer(chatPktt);
 							//Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkttt);
 							//cout << "SENDING MSG ID : " << p.second->playerId << endl;
 							Protocol::C_MSG chatPkt;
 							chatPkt.set_msg(longtext);
 							
-							auto sendBufferchatPkt = ServerPacketHandler::MakeReliableBuffer(chatPkt, QoSCore::LOW);
+							auto sendBufferchatPkt = ServerPacketHandler::MakeReliableBuffer(chatPkt);
 							Send(p.second->client_Id, p.second->ownerSocket, p.second->netAddress, sendBufferchatPkt);
 
 							/*auto sendBufferchatPktt = ServerPacketHandler::MakeUnReliableBuffer(chatPktt);
@@ -372,18 +372,18 @@ int main()
 	//}
 	GTransportControl.RunThread();
 
-	//while (true)
-	//{
-	//	for (auto& p : GHostManager.GetPlayers())
-	//	{	//	{
-	//		//		PlayerRef player = static_pointer_cast<Player>(p.second);
-	//		PlayerRef player = static_pointer_cast<Player>(p.second);
-	//		if (player && player->client_Id != 0)
-	//		{
-	//			PacketDeliverCondition(player);
-	//		}
-	//	}
-	//}
+	while (true)
+	{
+		for (auto& p : GHostManager.GetPlayers())
+		{	//	{
+			//		PlayerRef player = static_pointer_cast<Player>(p.second);
+			PlayerRef player = static_pointer_cast<Player>(p.second);
+			if (player && player->client_Id != 0)
+			{
+				PacketDeliverCondition(player);
+			}
+		}
+	}
 	//uint32 ackpreStart = 0;
 	//uint32 ackStart = 1;
 	//uint32 ackCount = 0;
