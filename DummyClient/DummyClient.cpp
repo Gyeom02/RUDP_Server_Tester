@@ -282,7 +282,7 @@ int main()
 	*/
 
 	string longtext = "";
-	while (longtext.size() < 1200)
+	while (longtext.size() < 3000)
 		longtext += "ABCDEFGHIJKLNMOPQRSWZXABCDEFGHIJKLNMOPQRSWZXABCDEFGHIJKLNMOPQRSWZX";
 	this_thread::sleep_for(1s);
 	for (int32 i = 0; i < 1; i++) // i = 패킷 강도를 나타냄

@@ -3,7 +3,8 @@
 *.lo
 *.o
 *.obj
-
+*.idb
+*.lib
 
 
 

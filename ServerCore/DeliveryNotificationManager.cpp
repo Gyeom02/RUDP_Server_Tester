@@ -260,7 +260,7 @@ void DeliveryNotificationManager::AddPendingAck(PacketSequenceNumber SN)
 		{
 			GTransportControl.PushHostAckReady(ownerHost);
 			GTransportControl.GetLazyAssist()._jobCv.notify_one();
-			cout << " ownerHost == _owner.lock()" << endl;
+			//cout << " ownerHost == _owner.lock()" << endl;
 		}
 		else
 		{
