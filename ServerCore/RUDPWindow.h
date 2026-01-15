@@ -4,7 +4,7 @@ namespace RUDPWIND
 {
 	enum
 	{
-		SN_MAX_SIZE = 25,
+		SN_MAX_SIZE = 1024,
 		SN_RANGE_HALF = SN_MAX_SIZE / 2,
 		RWIND_BASE_SIZE = 64000, // 64kb라는뜻 보통 FPS Server은 64~128, MMO Server은 128~256을 가진다
 	};

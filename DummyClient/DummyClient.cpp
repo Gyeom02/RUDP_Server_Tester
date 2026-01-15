@@ -372,18 +372,18 @@ int main()
 	//}
 	GTransportControl.RunThread();
 
-	while (true)
-	{
-		for (auto& p : GHostManager.GetPlayers())
-		{	//	{
-			//		PlayerRef player = static_pointer_cast<Player>(p.second);
-			PlayerRef player = static_pointer_cast<Player>(p.second);
-			if (player && player->client_Id != 0)
-			{
-				PacketDeliverCondition(player);
-			}
-		}
-	}
+	//while (true)
+	//{
+	//	for (auto& p : GHostManager.GetPlayers())
+	//	{	//	{
+	//		//		PlayerRef player = static_pointer_cast<Player>(p.second);
+	//		PlayerRef player = static_pointer_cast<Player>(p.second);
+	//		if (player && player->client_Id != 0)
+	//		{
+	//			PacketDeliverCondition(player);
+	//		}
+	//	}
+	//}
 	//uint32 ackpreStart = 0;
 	//uint32 ackStart = 1;
 	//uint32 ackCount = 0;

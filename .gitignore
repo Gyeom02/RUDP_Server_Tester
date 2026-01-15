@@ -3,10 +3,6 @@
 *.lo
 *.o
 *.obj
-*.idb
-*.lib
-
-
 
 .sln
 .vs/

@@ -43,7 +43,7 @@ TransportControl::~TransportControl()
 
 bool TransportControl::CheckValidControl(PacketHeader* header)
 {
-    if (!IsControlPacket(header->ControlFlag))
+    if (!IsControlPacket(header->controlflag))
         return false;
     
    
@@ -331,7 +331,7 @@ SendBufferRef TransportControl::MakeControlPacketBuffer(int32 client_id)
     PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
     header->channel = QoSCore::Channel::URO;
     header->size = ControlPacketSize;
-    header->ControlFlag = 1;
+    header->controlflag = 1;
     header->client_Id = client_id;
     sendBuffer->Close(ControlPacketSize);
     return sendBuffer;

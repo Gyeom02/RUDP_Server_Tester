@@ -64,7 +64,22 @@ class QoSPlayer : public enable_shared_from_this<QoSPlayer>
 private:
 	enum
 	{
-		QUEUE_MAX = 2,
+		QUEUE_MAX = 2, // RFCT Dose Not Need Queue 
+	};
+
+	struct QoSSendQueue
+	{
+		void Push(const shared_ptr<SavedSendPacket>& rhs, uint16 priority);
+		//void UROPush(const shared_ptr<SavedSendPacket>& rhs, uint16 priority);
+		
+		std::array<queue<shared_ptr<SavedSendPacket>>, QoSCore::Priority::PRIORTY_NUM> _queue;
+	};
+	struct QoSRecvQueue
+	{
+		void Push(const shared_ptr<SavedRecvPacket>& rhs, uint16 priority);
+		
+
+		std::array<queue<shared_ptr<SavedRecvPacket>>, QoSCore::Priority::PRIORTY_NUM> _queue;
 	};
 public:
 	QoSPlayer(HostRef& owner, QoSShard* _shard, int32 tokenper, int32 burst) : _owner(owner), _ownerShard(_shard), _sendBucket(tokenper, burst) { cout << "QoSPlayer Added " << endl; }
@@ -92,8 +107,8 @@ public:
 public:
 	HostRef& GetOwner() { return _owner; }
 
-	array<queue<shared_ptr<SavedSendPacket>>, QUEUE_MAX> _sendQueues;
-	array<queue<shared_ptr<SavedRecvPacket>>, QUEUE_MAX> _recvQueues;
+	array<QoSSendQueue, QUEUE_MAX> _sendQueues;
+	array<QoSRecvQueue, QUEUE_MAX> _recvQueues;
 	shared_ptr<SavedSendPacket> _sendRPCTPacket_ptr;
 	shared_ptr<SavedRecvPacket> _recvRPCTPacket_ptr;
 
@@ -178,7 +193,8 @@ public:
 		HIGH = 0,
 		MEDIUM = 1,
 		LOW = 2,
-		PRIORTY_NULL = 3,
+		RESEND = 3,
+		PRIORTY_NUM = 4,
 	};
 	QoSCore();
 

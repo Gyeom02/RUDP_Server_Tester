@@ -137,6 +137,7 @@ private:
 		header->channel = channel;
 		header->priority = priorty;
 		header->retransnum = 0;
+		header->controlflag = 0;
 		ASSERT_CRASH(pkt.SerializeToArray(&header[1], dataSize));
 		sendBuffer->Close(packetSize);
 

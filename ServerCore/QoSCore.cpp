@@ -108,13 +108,13 @@ void QoSPlayer::PushSend(shared_ptr<vector<SendBufferRef>> packet)
 	if (channel == QoSCore::RO)
 	{
 		SEND_WRITE_LOCK;
-		_sendQueues[QoSCore::RO].push(MakeShared<SavedSendPacket>(packet));
+		_sendQueues[QoSCore::RO].Push((MakeShared<SavedSendPacket>(packet)), header->priority);
 		_sendSumNum.fetch_add(1);
 	}
 	else if (channel == QoSCore::URO)
 	{
 		SEND_WRITE_LOCK;
-		_sendQueues[QoSCore::URO].push(MakeShared<SavedSendPacket>(packet));
+		_sendQueues[QoSCore::URO].Push((MakeShared<SavedSendPacket>(packet)), header->priority);
 		_sendSumNum.fetch_add(1);
 	}
 	else if (channel == QoSCore::RPCT)
@@ -143,6 +143,7 @@ void QoSPlayer::PushSend(shared_ptr<vector<SendBufferRef>> packet)
 void QoSPlayer::PopSend()
 {
 	shared_ptr<SavedSendPacket> savePacket = nullptr; //기아 현상 해결해야함
+	uint16 selected_priorty = -1;
 	{
 		int coin = 5;
 		DeliveryManagerRef dm = _owner->GetDeliveryManager();
@@ -151,12 +152,35 @@ void QoSPlayer::PopSend()
 			
 			
 			{
+				auto& ROQueue = _sendQueues[QoSCore::RO]._queue;
+				
 				SEND_WRITE_LOCK;
-				if (_sendQueues[QoSCore::RO].empty() || !_sendBucket.Consume())
+				/*if (ROQueue.empty() || )
+					break;*/
+				//auto& ResendQueue = _sendQueues[QoSCore::RO]._queue[QoSCore::Priority::RESEND];
+				if (!ROQueue[QoSCore::Priority::RESEND].empty())
+				{
+					selected_priorty = QoSCore::Priority::RESEND;
+				}
+				else if (!ROQueue[QoSCore::Priority::HIGH].empty())
+				{
+					selected_priorty = QoSCore::Priority::HIGH;
+				}
+				else if (!ROQueue[QoSCore::Priority::MEDIUM].empty())
+				{
+
+					selected_priorty = QoSCore::Priority::MEDIUM;
+				}
+				else if (!ROQueue[QoSCore::Priority::LOW].empty())
+				{
+					selected_priorty = QoSCore::Priority::LOW;
+				}
+				else break;
+
+				if (!_sendBucket.Consume())
 					break;
 
-				savePacket = _sendQueues[QoSCore::RO].front();
-
+				savePacket = ROQueue[selected_priorty].front();
 
 				PacketHeader* header = reinterpret_cast<PacketHeader*>((*(savePacket->sendBuffers))[0]->Buffer());
 				if (header->retransnum <= 0)//재전송 패킷이면 RWind 로직 패스(이미 처음 보낼때 패킷 사이즈만큼 RWind 처리했기때문)
@@ -178,7 +202,7 @@ void QoSPlayer::PopSend()
 					//else cout << "Player ID : " << _owner->client_Id << " Valid RWind : " << dm->GetReceiverRWind() << " >= " << savePacket->AllBuffersSize << endl;
 				}
 				//else cout << "Retrans Packet header->retransnum <= 0" << endl;
-				_sendQueues[QoSCore::RO].pop();
+				ROQueue[selected_priorty].pop();
 				
 				
 			}
@@ -195,17 +219,42 @@ void QoSPlayer::PopSend()
 		{
 			
 			{
+				auto& UROQueue = _sendQueues[QoSCore::URO]._queue;
 
 				SEND_WRITE_LOCK;
-				if (_sendQueues[QoSCore::URO].empty() || !_sendBucket.Consume())
+				/*if (ROQueue.empty() || )
+					break;*/
+					//auto& ResendQueue = _sendQueues[QoSCore::RO]._queue[QoSCore::Priority::RESEND];
+				if (!UROQueue[QoSCore::Priority::RESEND].empty())
+				{
+					selected_priorty = QoSCore::Priority::RESEND;
+				}
+				else if (!UROQueue[QoSCore::Priority::HIGH].empty())
+				{
+					selected_priorty = QoSCore::Priority::HIGH;
+				}
+				else if (!UROQueue[QoSCore::Priority::MEDIUM].empty())
+				{
+					selected_priorty = QoSCore::Priority::MEDIUM;
+				}
+				else if (!UROQueue[QoSCore::Priority::LOW].empty())
+				{
+					selected_priorty = QoSCore::Priority::LOW;
+				}
+				else break;
+
+				if (!_sendBucket.Consume())
 					break;
+				////////
 				
-				savePacket = _sendQueues[QoSCore::URO].front();
+				
+				savePacket = UROQueue[selected_priorty].front();
+
 				if (!dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
 				{
 					break;
 				}
-				_sendQueues[QoSCore::URO].pop();
+				UROQueue[selected_priorty].pop();
 				
 			
 			}
@@ -265,13 +314,13 @@ void QoSPlayer::PushRecv(BYTE* buffer, int32 size)
 	if (channel == QoSCore::RO)
 	{
 		RECV_WRITE_LOCK;
-		_recvQueues[QoSCore::RO].push(MakeShared<SavedRecvPacket>(buffer, size));
+		_recvQueues[QoSCore::RO].Push(MakeShared<SavedRecvPacket>(buffer, size), header->priority);
 		_recvSumNum.fetch_add(1);
 	}
 	else if (channel == QoSCore::URO)
 	{
 		RECV_WRITE_LOCK;
-		_recvQueues[QoSCore::URO].push(MakeShared<SavedRecvPacket>(buffer, size));
+		_recvQueues[QoSCore::URO].Push(MakeShared<SavedRecvPacket>(buffer, size), header->priority);
 		_recvSumNum.fetch_add(1);
 	}
 	else if (channel == QoSCore::RPCT)
@@ -301,16 +350,34 @@ void QoSPlayer::PushRecv(BYTE* buffer, int32 size)
 shared_ptr<SavedRecvPacket> QoSPlayer::PopRecv_RO()
 {
 	shared_ptr<SavedRecvPacket> savePacket;
-	{
-		RECV_READ_LOCK;
-		if (_recvQueues[QoSCore::RO].empty())
-			return nullptr;
-	}
+	uint16 selected_priorty = -1;
 	{
 		RECV_WRITE_LOCK;
+
+		auto& ROQueue = _recvQueues[QoSCore::RO]._queue;
+
+		if (!ROQueue[QoSCore::Priority::RESEND].empty())
+		{
+			selected_priorty = QoSCore::Priority::RESEND;
+		}
+		else if (!ROQueue[QoSCore::Priority::HIGH].empty())
+		{
+			selected_priorty = QoSCore::Priority::HIGH;
+		}
+		else if (!ROQueue[QoSCore::Priority::MEDIUM].empty())
+		{
+			selected_priorty = QoSCore::Priority::MEDIUM;
+		}
+		else if (!ROQueue[QoSCore::Priority::LOW].empty())
+		{
+			selected_priorty = QoSCore::Priority::LOW;
+		}
+		else return nullptr;
+
+		////
 		
-		savePacket = _recvQueues[QoSCore::RO].front();
-		_recvQueues[QoSCore::RO].pop();
+		savePacket = ROQueue[selected_priorty].front();
+		ROQueue[selected_priorty].pop();
 		
 #ifdef _DEBUG
 		_ASSERT(savePacket != nullptr);
@@ -329,22 +396,41 @@ shared_ptr<SavedRecvPacket> QoSPlayer::PopRecv_RO()
 shared_ptr<SavedRecvPacket> QoSPlayer::PopRecv_URO()
 {
 	shared_ptr<SavedRecvPacket> savePacket;
-	{
-		RECV_READ_LOCK;
-		if (_recvQueues[QoSCore::URO].empty())
-			return nullptr;
-	}
+	uint16 selected_priorty = -1;
 	{
 		RECV_WRITE_LOCK;
 
-		savePacket = _recvQueues[QoSCore::URO].front();
-		_recvQueues[QoSCore::URO].pop();
+		auto& UROQueue = _recvQueues[QoSCore::URO]._queue;
+
+		if (!UROQueue[QoSCore::Priority::RESEND].empty())
+		{
+			selected_priorty = QoSCore::Priority::RESEND;
+		}
+		else if (!UROQueue[QoSCore::Priority::HIGH].empty())
+		{
+			selected_priorty = QoSCore::Priority::HIGH;
+		}
+		else if (!UROQueue[QoSCore::Priority::MEDIUM].empty())
+		{
+			selected_priorty = QoSCore::Priority::MEDIUM;
+		}
+		else if (!UROQueue[QoSCore::Priority::LOW].empty())
+		{
+			selected_priorty = QoSCore::Priority::LOW;
+		}
+		else return nullptr;
+
+		////
+
+		savePacket = UROQueue[selected_priorty].front();
+		UROQueue[selected_priorty].pop();
 
 #ifdef _DEBUG
 		_ASSERT(savePacket != nullptr);
 #else
 #endif
 	}
+
 
 	/*buffer = savePacket->_buffer;
 	size = savePacket->_size;*/
@@ -816,3 +902,21 @@ SavedRecvPacket::~SavedRecvPacket()
 	delete[] _buffer;
 	_buffer = nullptr;
 }
+
+void QoSPlayer::QoSSendQueue::Push(const shared_ptr<SavedSendPacket>& rhs, uint16 priority)
+{
+	ASSERT_CRASH(priority >= 0 && priority < QoSCore::Priority::PRIORTY_NUM);
+
+	_queue[priority].push(rhs);
+	
+}
+
+void QoSPlayer::QoSRecvQueue::Push(const shared_ptr<SavedRecvPacket>& rhs, uint16 priority)
+{
+	ASSERT_CRASH(priority >= 0 && priority < QoSCore::Priority::PRIORTY_NUM);
+
+	_queue[priority].push(rhs);
+
+}
+
+

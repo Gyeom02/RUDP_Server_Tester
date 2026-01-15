@@ -40,7 +40,7 @@ void FragmentContext::Store(BYTE* buffer, int32 size, int16 offset, int16 index)
 bool Ordered_FG_Manager::OnOrderedRecv(uint32 seqNum, BYTE* buffer, int32 size, OUT queue<shared_ptr<FragmentContext>>& outReadyQueue)
 {
     PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
-    
+    //cout << "OnOrderedRecv SN : " << header->sn << endl;
     int32 payloadSize = header->size - sizeof(PacketHeader);
     if (header->bFragment != 1) // 조각화된 패킷이아님
     {
@@ -223,7 +223,7 @@ bool Ordered_FG_Manager::IsThereReadyPacket(uint32 expectedseqNum, OUT queue<sha
         auto iter = _orderedCtxs.find(_expectedSeqNum);
         if (iter == _orderedCtxs.end())
         {
-      //      cout << "iter == _fragCtxs.end() : " << _expectedSeqNum << endl;
+           // cout << "Ordered_FG_Manager::IsThereReadyPacket Failed Expected SN : " << _expectedSeqNum << endl;
             break;
 
         }

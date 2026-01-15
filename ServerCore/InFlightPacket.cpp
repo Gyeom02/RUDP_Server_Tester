@@ -13,7 +13,7 @@ void InFlightPacket::HandleDeliveryFailure(DeliveryManagerRef deliveryManager)
 	}
 	else // 아직 재전송 할 수 있음
 	{
-		header->priority = QoSCore::Priority::HIGH; // 재전송이므로 제일 높은 우선순위로 변경
+		header->priority = QoSCore::Priority::RESEND; // 재전송이므로 제일 높은 우선순위로 변경
 		//	cout << "ReSend" << endl;
 		HostRef owner = GetOwner();
 		if (owner)

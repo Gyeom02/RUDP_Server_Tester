@@ -75,17 +75,19 @@ void UDPSocket::UDPWork()
 						processLen += header->size;
 						continue;
 					}
-
-					if (player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn, header->size) == false)
+					/*if(header->channel == QoSCore::Channel::RO)
+						if(header->controlflag != 0)
+							cout << "header->channel == QoSCore::Channel::RO | SN : " << header->sn << " | header->ControlFlag : " << header->controlflag << endl;
+					*/if (player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn, header->size) == false)
 					{
-						//cout << "(player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn) == false)" << endl;
+						//cout << "(player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn) == false) SN : " << header->sn<< endl;
 						processLen += header->size;
 						continue;
 					}
 					
 					if (GTransportControl.CheckValidControl(header)) // ControlPacket¿Ã¥Ÿ
 					{
-					//	cout << "CheckValidControl" << endl;
+						//cout << "CheckValidControl SN : " << header->sn << endl;
 					}
 					else
 					{
@@ -398,7 +400,7 @@ int UDPSocket::FPCSend(HostRef player, shared_ptr<vector<SendBufferRef>>sendBuff
 	for(int32 i = 0; i < (*sendBuffer).size(); i++)
 	{ 
 		header = reinterpret_cast<PacketHeader*>((*sendBuffer)[i]->Buffer());
-	//cout << "FPCSend : " << player->playerId << endl;
+	  //  cout << "FPCSend Header SN : " << header->sn << endl;
 		header->client_Id = player->client_Id;
 		sendLen += (*sendBuffer)[i]->WriteSize();
 	//cout << "FPCSend PlayerID : " << header->playerId << endl;
