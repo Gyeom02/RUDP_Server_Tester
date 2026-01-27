@@ -1,11 +1,11 @@
 #include "pch.h"
 #include "UDP.h"
 #include "ThreadManager.h"
-
+#include <iphlpapi.h>
 //#define SERVERADDR L"192.168.219.106"
 
 UDP GUDP;
-bool UDP::UDPSocketReset(int32 index)
+bool UDP::UDPSocketReset(int32 index, PCWSTR serverAddr)
 {
 	UDPSocketPtr object = MakeShared<UDPSocket>();
 
@@ -20,15 +20,23 @@ bool UDP::UDPSocketReset(int32 index)
 		cout << "Failed Creating UDP Socket : " << index << endl;
 		return false;
 	}
-
 	SOCKADDR_IN udpAddr;
 	::memset(&udpAddr, 0, sizeof(udpAddr));
 	udpAddr.sin_family = AF_INET;
 	udpAddr.sin_port = ::htons(7777 + index);
-	IN_ADDR address;
-	InetPtonW(AF_INET, SERVERADDR, &address);
-	udpAddr.sin_addr = address;
 
+	if (serverAddr == L"") //아무런 IP도 받지 않으면 Private IP를 자동으로 세팅함
+	{
+		IN_ADDR address;
+		InetPtonW(AF_INET, PRVT_SERVERADDR, &address);
+		udpAddr.sin_addr = address;
+	}
+	else
+	{
+		IN_ADDR address;
+		InetPtonW(AF_INET, serverAddr, &address);
+		udpAddr.sin_addr = address;
+	}
 
 	//int optval = 1;
 	//setsockopt(_udpSocket, SOL_SOCKET, SO_REUSEADDR, (const char*)&optval, sizeof(optval));
@@ -61,6 +69,7 @@ bool UDP::UDPSocketReset(int32 index)
 	cout << "UDP Socket Created : " << index << endl;
 	return true;
 }
+
 
 UDP::UDP()
 {

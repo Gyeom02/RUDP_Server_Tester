@@ -152,12 +152,13 @@ void QoSPlayer::PopSend()
 			
 			
 			{
-				auto& ROQueue = _sendQueues[QoS::RO]._queue;
-				
 				SEND_WRITE_LOCK;
+				auto& ROQueue = _sendQueues[QoS::RO]._queue;
+
+				
 				/*if (ROQueue.empty() || )
 					break;*/
-				//auto& ResendQueue = _sendQueues[QoSCore::RO]._queue[QoSCore::Priority::RESEND];
+					//auto& ResendQueue = _sendQueues[QoSCore::RO]._queue[QoSCore::Priority::RESEND];
 				if (!ROQueue[QoS::Priority::RESEND].empty())
 				{
 					selected_priorty = QoS::Priority::RESEND;
@@ -181,45 +182,67 @@ void QoSPlayer::PopSend()
 					break;
 
 				savePacket = ROQueue[selected_priorty].front();
-
-				PacketHeader* header = reinterpret_cast<PacketHeader*>((*(savePacket->sendBuffers))[0]->Buffer());
-				if (header->retransnum <= 0)//재전송 패킷이면 RWind 로직 패스(이미 처음 보낼때 패킷 사이즈만큼 RWind 처리했기때문)
+				int32 startindex = savePacket->SendStartIndex;
+				//bool bSendAll = true;
+				for (int32 i = startindex; i < savePacket->sendBuffers->size(); i++)
 				{
-					if (!dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
+					SendBufferRef sendbuffer = (*(savePacket->sendBuffers))[i];
+					PacketHeader* header = reinterpret_cast<PacketHeader*>(sendbuffer->Buffer());
+					if (header->retransnum <= 0)//재전송 패킷이면 RWind 로직 패스(이미 처음 보낼때 패킷 사이즈만큼 RWind 처리했기때문)
 					{
+						if (!dm->IsSpaceExistToSend(header->size)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
+						{
 #ifdef _DEBUG
-						//HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-						//CONSOLE_SCREEN_BUFFER_INFO info;
-						////GetConsoleScreenBufferInfo(h, &info);
-						//COORD pos = { (SHORT)0, (SHORT)11};
-						//SetConsoleCursorPosition(h, pos);
+							//HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+							//CONSOLE_SCREEN_BUFFER_INFO info;
+							////GetConsoleScreenBufferInfo(h, &info);
+							//COORD pos = { (SHORT)0, (SHORT)11};
+							//SetConsoleCursorPosition(h, pos);
 
-					//	cout << "Player ID : " << _owner->client_Id << " | Out Of RWind : " << dm->GetReceiverRWind() << " < " << savePacket->AllBuffersSize << endl;
+							//cout << "Player ID : " << _owner->client_Id << " | Out Of RWind : " << dm->GetReceiverRWind() << " < " << savePacket->AllBuffersSize << endl;
 
 #endif
-						break;
+						//	bSendAll = false;
+							break;
+						}
+						_owner->GetDeliveryManager()->WriteSeqeuenceNumber(sendbuffer);
+						if (header->bFragment == 1) //Fragment Packet이다
+						{
+							FragmentHeader* fragHeader = reinterpret_cast<FragmentHeader*>(&header[1]);
+							if (fragHeader->index == 0) // 첫번째 fragment이다
+							{
+								savePacket->firstFragSN = header->sn;
+							}
+							fragHeader->first_sn = savePacket->firstFragSN;
+						}
+						//else cout << "Player ID : " << _owner->client_Id << " Valid RWind : " << dm->GetReceiverRWind() << " >= " << savePacket->AllBuffersSize << endl;
 					}
-					//else cout << "Player ID : " << _owner->client_Id << " Valid RWind : " << dm->GetReceiverRWind() << " >= " << savePacket->AllBuffersSize << endl;
+					//else cout << "Retrans Packet header->retransnum <= 0" << endl;
+
+
+
+					//cout << "savePacket->sendBuffers->size() : " << savePacket->sendBuffers->size() << endl;
+					
+					_owner->PriortySend(sendbuffer);
+					savePacket->SendStartIndex++;
 				}
-				//else cout << "Retrans Packet header->retransnum <= 0" << endl;
-				ROQueue[selected_priorty].pop();
-				
-				
+				if (savePacket->SendStartIndex >= savePacket->sendBuffers->size())
+				{
+					ROQueue[selected_priorty].pop();
+					_sendSumNum.fetch_sub(1);
+				}
 			}
 				
 			//PacketHeader* header = reinterpret_cast<PacketHeader*>(savePacket->sendBuffer->Buffer());
-			_sendSumNum.fetch_sub(1);
-			//cout << "savePacket->sendBuffers->size() : " << savePacket->sendBuffers->size() << endl;
 			
-			_owner->PriortySend(savePacket->sendBuffers);
 			
 		}
 		 coin = 3;
 		while (coin--)
 		{
-			
+			auto& UROQueue = _sendQueues[QoS::URO]._queue;
 			{
-				auto& UROQueue = _sendQueues[QoS::URO]._queue;
+				
 
 				SEND_WRITE_LOCK;
 				/*if (ROQueue.empty() || )
@@ -249,20 +272,30 @@ void QoSPlayer::PopSend()
 				
 				
 				savePacket = UROQueue[selected_priorty].front();
+				int32 startindex = savePacket->SendStartIndex;
+				//bool bAllSend = true;
 
-				if (!dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
+				for (int32 i = startindex; i < savePacket->sendBuffers->size(); i++)
 				{
-					break;
+					SendBufferRef sendbuffer = (*(savePacket->sendBuffers))[i];
+					if (!dm->IsSpaceExistToSend(sendbuffer->WriteSize())) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
+					{
+					//	bAllSend = false;
+						break;
+					}
+
+					_owner->PriortySend(sendbuffer);
+					savePacket->SendStartIndex++;
 				}
-				UROQueue[selected_priorty].pop();
-				
-			
+				if (savePacket->SendStartIndex == savePacket->sendBuffers->size())
+				{
+					_sendSumNum.fetch_sub(1);
+					UROQueue[selected_priorty].pop();
+				}
 			}
 				
 			//PacketHeader* header = reinterpret_cast<PacketHeader*>(savePacket->sendBuffer->Buffer());
-			_sendSumNum.fetch_sub(1);
 			
-			_owner->PriortySend(savePacket->sendBuffers);
 			
 		}
 		
@@ -290,7 +323,7 @@ void QoSPlayer::PopSend()
 			
 		}
 		if(cansend)
-			_owner->PriortySend(savePacket->sendBuffers);
+			_owner->PriortySend((*(savePacket->sendBuffers))[0]);
 		//_sendSumNum.fetch_add(-1);
 		
 				

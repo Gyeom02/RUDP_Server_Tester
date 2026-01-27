@@ -4,9 +4,16 @@ namespace RUDPWIND
 {
 	enum
 	{
-		SN_MAX_SIZE = 1024,
-		SN_RANGE_HALF = SN_MAX_SIZE / 2,
+		OVERHEAD = 100,
+		SN_MAX_SIZE = 65536, // index 최대값 + 1 의 값
+	 	SN_RANGE_HALF = SN_MAX_SIZE / 2,
+		//RWIND_MAX_SIZE = 64000,
+		/*RWIND_BASE_SIZE = RWIND_MAX_SIZE - DEFAULT_MTU_SIZE, */
 		RWIND_BASE_SIZE = 64000, // 64kb라는뜻 보통 FPS Server은 64~128, MMO Server은 128~256을 가진다
+		FRAG_BITMAP_INDEX_MAX = 65536,
+		SEND_BUFFER_CHUNK_SIZE = RWIND_BASE_SIZE / 2 - OVERHEAD, // Header와 Payload 전체 합쳐서 패킷 최대 크기
+		
+		OFO_MAX_SIZE = RWIND_BASE_SIZE - SEND_BUFFER_CHUNK_SIZE - OVERHEAD,
 	};
 }
 
@@ -19,18 +26,24 @@ public:
 
 
 	bool CheckRecved(uint32 SeqNum);
-	void TryRecv(uint32 SeqNum); // Only When CheckRecved return True
+	bool CheckSize(uint32 SeqNum, int32 size);
+
+	bool CheckAndTryFrag(struct PacketHeader* header,  struct FragmentHeader* fragHeader, int32 needSpaceSize);
+	
+	void TryRecv(uint32 SeqNum, int32 size); // Only When CheckRecved return True
+	//void TryFrag(FragmentHeader* fragHeader, uint32 sn, int32 size);
 	void DetachExpectedSeq();
-
-	uint32 GetExpectedSqeNum() { return _expctedSeqNum;  }
+	//void DetechLastFrag();
+	uint32 GetExpectedSqeNum() { return _expctedSeqNum.load();  }
 private:
-	uint32 _expctedSeqNum = 0; // it's not atomic or need Lock, fundemental of this is one socket(recvfrom)
-
+	atomic<int32> _expctedSeqNum = 0; // it's not atomic or need Lock, fundemental of this is one socket(recvfrom)
+	uint32 _ofo_Valid_Wind = 0;
 	//uint32 windowSize = RUDPWIND::SN_RANGE_HALF;
 
-	vector<uint8> _RecvedBitMap;
+	vector<int32> _RecvedSizeMap; // For Out Of Order Packets
+	//vector<uint8> _FragBitMap;
 
-
+	unordered_map<uint32, int16> _frag_storeCountMap;
 
 public: 	/* rWind */
 	bool IsSpaceExistToRecv(int32 recvSize) {

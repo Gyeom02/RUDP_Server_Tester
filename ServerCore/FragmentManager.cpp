@@ -2,7 +2,7 @@
 #include "FragmentManager.h"
 
 
-FragmentContext::FragmentContext(PacketHeader* header, uint32 primid, int16 frag_count, int16 original_size) // 贸澜 积己等芭烙
+FragmentContext::FragmentContext(PacketHeader* header, uint32 primid, int16 frag_count, int32 original_size) // 贸澜 积己等芭烙
     : primID(primid), frag_Count(frag_count), original_Size(original_size)
     
 {

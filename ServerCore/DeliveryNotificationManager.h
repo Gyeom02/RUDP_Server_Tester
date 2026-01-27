@@ -48,19 +48,19 @@ public:
 	void SetOwner(shared_ptr<Host> owner) { _weakOwner = owner; }
 	//Public
 	// 
-	bool CheckPacketChannel(int16 channel, uint32 sn, int32 size);
+	bool CheckPacketChannel(PacketHeader* header);
 	//////
 	//송신
 //	InFlightPacketPtr WriteSeqeuenceNumber(SendBufferRef sendBuffer);
-	InFlightPacketPtr WriteSeqeuenceNumber(shared_ptr<vector<SendBufferRef>>sendBuffer);
+	InFlightPacketPtr WriteSeqeuenceNumber(SendBufferRef sendBuffer);
 
-	void ProcessAcks(uint32 start, uint32 count, bool hasCount);
+	void ProcessAcks(uint32 start, uint32 count, bool hasCount, uint32 cuExpectedSN);
 	void HandlePacketDeliveryFailure(const InFlightPacketPtr& inFlightPacket);
 	void HandlePacketDeliverySuccess(const InFlightPacketPtr& inFlightPacket);
 
 
 	//수신
-	bool ProcessSequenceNumber(PacketSequenceNumber SN, int32 size);
+	bool ProcessSequenceNumber(PacketHeader* header);
 	void AddPendingAck(PacketSequenceNumber SN);
 	bool WritePendingAcks(OUT uint32& start, OUT int32& count, OUT bool& hasCount);
 
@@ -68,7 +68,8 @@ public:
 	void ProcessTimeOutPackets();
 
 	uint32 GetDeliveredPacketCount() { return mDeliveredPacketCount.load(); }
-	uint32 GetDroppedPacketCount() { return mDroppedPacketCount.load(); }
+	uint32 GetDroppedPacketCount() { return mResendPacketCount.load() - mSuccessReSendPacketNum.load(); }
+	uint32 GetResendPacketCount() { return mResendPacketCount.load(); }
 	int32 GetTimeOutCount() { return mTimeOutCount.load(); }
 	int32 GetSequenceNotMatchedCount() { return mSequenceNotMatchedCount.load(); }
 	uint32 GetDispatchedPacketCount() { return mDispatchedPacketCount.load(); }
@@ -111,11 +112,13 @@ private:
 	InFlightPacketPtr EraseInFlightPacketFronSN(uint32 sn);
 	bool CheckValidAckSN(uint32 sn);
 	InFlightPacketPtr HandleAck(uint32 sn);
+
+	void UpdateExpectedAckSN(uint32 newSN);
 private:
 	/*   Reliable Ordered Packet의 변수   */
 	//송신
 	atomic<uint32> mNextOutgoingSequenceNumber = 0; // 현재 송신된 패킷의 번호를 알려주는 변수
-	atomic<uint32> mDroppedPacketCount = 0;
+	atomic<uint32> mResendPacketCount = 0;
 	atomic<uint32> mDeliveredPacketCount = 0;
 	//수신
 	atomic<uint32> mNextExpectedSequenceNumber = 0; // 현재 수신된 패킷의 예상되는 세퀀스번호
@@ -140,7 +143,7 @@ private:
 
 	std::weak_ptr<Host> _weakOwner;
 
-	unordered_map<int32, InFlightPacketPtr> mSnToInFlightPacketMap; // sn % RUDPWIND::SN_RANGE_HALF to InFlightPacketPtr
+	unordered_map<uint32, InFlightPacketPtr> mSnToInFlightPacketMap; // sn % RUDPWIND::SN_RANGE_HALF to InFlightPacketPtr
 	atomic<uint32> _curExpectedAckSN = 0;
 	USE_MANY_LOCKS(3); // 0 = InPlightPacket , 1 = mSnToInFlightPacketMap , 2 = mPendingAcks
 };

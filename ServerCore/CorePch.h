@@ -1,6 +1,7 @@
 #pragma once
-#define SERVERADDR L"192.168.219.105"
+#define PRVT_SERVERADDR L"127.0.0.1"
 #define _LOCKTIMEOUT_CHECK
+#define CHECK_DEADLOCK
 
 #include "Types.h"
 #include "CoreMacro.h"

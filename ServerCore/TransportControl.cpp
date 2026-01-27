@@ -102,11 +102,14 @@ void TransportControl::PushHostAckReady(HostRef host)
 HostRef TransportControl::PopHostAckReady()
 {
     HostRef popHost = nullptr;
-    WRITE_LOCK; 
-    if (EmptyReadyAckQueue()) 
-        return popHost;
-    popHost = _readyAckHostQueue.front();
-    _readyAckHostQueue.pop();
+   
+    {
+        WRITE_LOCK;
+        if (EmptyReadyAckQueue())
+            return popHost;
+        popHost = _readyAckHostQueue.front();
+        _readyAckHostQueue.pop();
+    }
     return popHost;
 }
 
@@ -126,8 +129,8 @@ void TransportControl::HandleControlPacket(PacketHeader* header)
         int32 bhascount = contHeader->ack.bhascount;
         int32 start = contHeader->ack.start;
         int32 count = contHeader->ack.count;
-
-        _jobWorker.PushJob([player, bhascount, start, count]() {
+        uint32 curExpectedSN = contHeader->ack.curExpectedSN;
+        _jobWorker.PushJob([player, bhascount, start, count, curExpectedSN]() {
             
             //cout << "jobworker.PushJob ProcessAcks" << endl;
             if (player == nullptr)
@@ -137,8 +140,8 @@ void TransportControl::HandleControlPacket(PacketHeader* header)
                 return;
             }
             // player->GetDeliveryManager()->SetReceiverRWind(pkt.rwindsize());
-            player->GetDeliveryManager()->ProcessAcks(start, count, bhascount);
-           
+            player->GetDeliveryManager()->ProcessAcks(start, count, bhascount, curExpectedSN);
+            ///player->GetDeliveryManager()->UpdateExpectedAckSN(curExpectedSN);
             });
         
     }
@@ -155,13 +158,13 @@ void TransportControl::HandleControlPacket(PacketHeader* header)
         }
         else if(contHeader->Type == ControlType::AD_RWIND)
         {
-            
+           // cout << "contHeader->Type == ControlType::AD_RWIND : " << player->client_Id << " | rwindsize : " << contHeader->rwind.rwindsize << endl;
             if (contHeader->rwind.total_recovered_size <= curTotalRWind)
             {
                // cout << "contHeader->rwind.total_recovered_size <= curTotalRWind" << endl;
                 return; //RECOVER_RWIND Type 패킷(같거나 또는 더 큰 total_recovered_size를 갖은)이 먼저 옴
             }
-            
+           
             uint32 deltaSize = contHeader->rwind.total_recovered_size - curTotalRWind; // 안 적용된 recovered Rwind size
            // cout << "deltaSize : " << deltaSize << endl;
            // cout << "curTotalRWind : " << curTotalRWind << endl;
@@ -171,7 +174,7 @@ void TransportControl::HandleControlPacket(PacketHeader* header)
             if (player->GetDeliveryManager()->GetReceiverRWind() > contHeader->rwind.rwindsize)
                 player->GetDeliveryManager()->StoreReceiverRWind(contHeader->rwind.rwindsize);
         }
-      //  cout << "Player ID : " << player->client_Id <<" | contHeader->rwind.bexsist == true : " << contHeader->rwind.rwindsize << endl;
+       // cout << "Player ID : " << player->client_Id <<" | contHeader->rwind.bexsist == true : " << contHeader->rwind.rwindsize << endl;
     }
     if (contHeader->rtt.bexsist == true)
     {
@@ -278,7 +281,7 @@ void TransportControl::DoWork()
     }
 }
 
-SendBufferRef TransportControl::MakeAckControlPacket(int32 client_id,  int32 bhascount, uint32 start, int32 count)
+SendBufferRef TransportControl::MakeAckControlPacket(int32 client_id,  int32 bhascount, uint32 start, int32 count, uint32 curExpectedSN)
 {
     SendBufferRef sendBuffer = MakeControlPacketBuffer(client_id);
     ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
@@ -288,7 +291,7 @@ SendBufferRef TransportControl::MakeAckControlPacket(int32 client_id,  int32 bha
     contheader->ack.bhascount = bhascount;
     contheader->ack.start = start;
     contheader->ack.count = count;
-    
+    contheader->ack.curExpectedSN = curExpectedSN;
 
     return sendBuffer;
 }
@@ -358,7 +361,7 @@ void TransportControl::HandleHostReadyAck(HostRef host)
                 cout << "ackpreStart : " << ackpreStart << endl;
                 CRASH("ackpreStart == ackStart");
             }*/
-            SendBufferRef sendBuffer = MakeAckControlPacket(host->client_Id, hasCount, ackStart, ackCount);
+            SendBufferRef sendBuffer = MakeAckControlPacket(host->client_Id, hasCount, ackStart, ackCount, host->GetDeliveryManager()->GetExpectedSeqNum());
 
             host->ControlSend(sendBuffer);
             //GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);

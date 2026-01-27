@@ -5,8 +5,10 @@
 // Read -> Write 안됨, Write->Read는 됨
 void Lock::WriteLock(const char* name)
 {
-#if _DEBUG
-	GDeadLockProfiler->PushLock(name);
+#ifdef _DEBUG
+	#ifdef CHECK_DEADLOCK
+		GDeadLockProfiler->PushLock(name);
+	#endif
 #endif
 
 	// 동일한 쓰레드가 소유하고 있다면 무조건 성공.
@@ -48,8 +50,10 @@ void Lock::WriteLock(const char* name)
 
 void Lock::WriteUnlock(const char* name)
 {
-#if _DEBUG
-	GDeadLockProfiler->PopLock(name);
+#ifdef _DEBUG
+	#ifdef CHECK_DEADLOCK
+		GDeadLockProfiler->PopLock(name);
+	#endif
 #endif
 
 	// ReadLock 다 풀기 전에는 WriteUnlock 불가능.
@@ -64,7 +68,9 @@ void Lock::WriteUnlock(const char* name)
 void Lock::ReadLock(const char* name)
 {
 #if _DEBUG
-	GDeadLockProfiler->PushLock(name);
+	#ifdef CHECK_DEADLOCK
+		GDeadLockProfiler->PushLock(name);
+	#endif
 #endif
 
 	// 동일한 쓰레드가 소유하고 있다면 무조건 성공.
@@ -96,7 +102,9 @@ void Lock::ReadLock(const char* name)
 void Lock::ReadUnlock(const char* name)
 {
 #if _DEBUG
-	GDeadLockProfiler->PopLock(name);
+	#ifdef CHECK_DEADLOCK
+		GDeadLockProfiler->PopLock(name);
+	#endif
 #endif
 
 	if ((_lockFlag.fetch_sub(1) & READ_COUNT_MASK) == 0)

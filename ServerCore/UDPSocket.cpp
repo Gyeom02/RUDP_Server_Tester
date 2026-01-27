@@ -79,7 +79,7 @@ void UDPSocket::UDPWork()
 						if(header->controlflag != 0)
 							cout << "header->channel == QoSCore::Channel::RO | SN : " << header->sn << " | header->ControlFlag : " << header->controlflag << endl;
 					*/
-					if (player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn, header->size) == false)
+					if (player->GetDeliveryManager()->CheckPacketChannel(header) == false)
 					{
 						//cout << "(player->GetDeliveryManager()->CheckPacketChannel(header->channel, header->sn) == false) SN : " << header->sn<< endl;
 						processLen += header->size;
@@ -150,9 +150,9 @@ int32 UDPSocket::Send(HostRef player, SendBufferRef sendBuffer)
 	return 0;
 }
 
-int32 UDPSocket::PriortySend(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffer)
+int32 UDPSocket::PriortySend(HostRef player, SendBufferRef sendBuffer)
 {
-	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->front()->Buffer());
+	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 	/*if (header->priority == QoSCore::FPC)
 		return FPCSend(player, sendBuffer);*/
 	switch (header->channel)
@@ -255,7 +255,7 @@ int32 UDPSocket::SizeOverSend(HostRef player, SendBufferRef sendBuffer)
 		int32 newPayloadSize = dividePacketBaseSize;
 		if (dividePacketBaseSize > payloadSize)
 			newPayloadSize = payloadSize;
-
+		packetDivideIndex = i;
 		int32 PktTotallSize = sizeof(PacketHeader) + sizeof(FragmentHeader) + newPayloadSize;
 		//PacketHeader °ª ¹Ù²Þ
 		//newHeader.size = sizeof(PacketHeader) + sizeof(FragmentHeader) + PktSize;
@@ -312,12 +312,12 @@ SendBufferRef UDPSocket::MakeFragmentBuffer(int32 size)
 //	return FPCSend(player, sendBuffer);
 //}
 
-int UDPSocket::UnReliable_Ordered_Send(HostRef player, SendBufferRef sendBuffer)
-{
-	player->GetDeliveryManager()->WriteSeqeuenceNumber_URO(sendBuffer);
-
-	return FPCSend(player, sendBuffer);
-}
+//int UDPSocket::UnReliable_Ordered_Send(HostRef player, SendBufferRef sendBuffer)
+//{
+//	player->GetDeliveryManager()->WriteSeqeuenceNumber_URO(sendBuffer);
+//
+//	return FPCSend(player, sendBuffer);
+//}
 
 //int UDPSocket::UnReliableSend(HostRef player, SendBufferRef sendBuffer)
 //{
@@ -356,18 +356,18 @@ int UDPSocket::FPCSend(HostRef player, SendBufferRef sendBuffer)
 
 
 
-int UDPSocket::ReliableSend(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffer)
+int UDPSocket::ReliableSend(HostRef player, SendBufferRef sendBuffer)
 {
 	NetAddress netAddr = player->netAddress;
 	//PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
 	//header->playerId = player->playerId;
 
-	player->GetDeliveryManager()->WriteSeqeuenceNumber( sendBuffer);
+	//player->GetDeliveryManager()->WriteSeqeuenceNumber(sendBuffer); Move To QoSCore.cpp QoSPlayer::PopSend
 
 	return FPCSend(player, sendBuffer);
 }
 
-int UDPSocket::UnReliable_Ordered_Send(HostRef player, shared_ptr<vector<SendBufferRef>>sendBuffer)
+int UDPSocket::UnReliable_Ordered_Send(HostRef player, SendBufferRef sendBuffer)
 {
 	
 	//PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
@@ -379,7 +379,7 @@ int UDPSocket::UnReliable_Ordered_Send(HostRef player, shared_ptr<vector<SendBuf
 }
 
 
-int UDPSocket::UnReliableSend(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffer)
+int UDPSocket::UnReliableSend(HostRef player, SendBufferRef sendBuffer)
 {
 	return FPCSend(player, sendBuffer);
 }

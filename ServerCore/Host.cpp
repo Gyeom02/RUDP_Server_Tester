@@ -8,7 +8,7 @@ void Host::Send(SendBufferRef sendBuffer)
 	ownerSocket->Send(shared_from_this(), sendBuffer);
 }
 
-void Host::PriortySend(shared_ptr<vector<SendBufferRef>> sendBuffer)
+void Host::PriortySend(SendBufferRef sendBuffer)
 {
 	//WRITE_LOCK;
 	ownerSocket->PriortySend(shared_from_this(), sendBuffer);

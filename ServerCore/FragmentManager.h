@@ -5,7 +5,7 @@ class FragmentContext
 {
 public:
 
-	FragmentContext(PacketHeader* header, uint32 primid, int16 frag_count, int16 original_size);
+	FragmentContext(PacketHeader* header, uint32 primid, int16 frag_count, int32 original_size);
 
 	void Store(BYTE* buffer, int32 size, int16 offset, int16 index);
 	std::vector<BYTE> _storedBuffer;
@@ -25,7 +25,7 @@ private:
 	atomic<int16> stored_size = 0; // 현재 저장된 사이즈;
 
 	int16 frag_Count = -1; // 총 조각화된 패킷의 수
-	int16 original_Size = -1; // 원본 패킷의 PayLoad 사이즈(Byte 단위)
+	int32 original_Size = -1; // 원본 패킷의 PayLoad 사이즈(Byte 단위)
 
 	uint32 primID = -1; // SN (조각화 패킷한테는 제일 먼저 보내진 SN가 가장 작은 것을 primID로 삼는다)
 	

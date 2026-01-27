@@ -40,7 +40,7 @@ public:
 	PacketSequenceNumber& GetSequenceNumber() { return _packetSequenceNumber; }
 	ULONGLONG GetTimeDispactched() { return mTimeDispatched;  }
 
-	int32 Send();
+	//int32 Send();
 
 
 private:

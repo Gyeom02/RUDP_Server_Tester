@@ -15,12 +15,14 @@ public:
 };
 
 #pragma pack(push, 1)
+
 struct Ack
 {
 	uint8 bexsist = 0;
 	uint8 bhascount = 0;
-	uint32 start = -1;
+	uint32 start = 0;
 	int32 count = -1;
+	uint32 curExpectedSN = 0; // 현재 기다리고있는 패킷의 sn (RO Packet) 이 변수의 의미는 이보다 작은 SN의 패킷은 이미 받아서 처리했음을 의미
 };
 struct Rwind 
 {
@@ -84,7 +86,7 @@ public:
 
 
 public:
-	static SendBufferRef MakeAckControlPacket(int32 client_id, int32 bhascount, uint32 start, int32 count);
+	static SendBufferRef MakeAckControlPacket(int32 client_id, int32 bhascount, uint32 start, int32 count, uint32 curExpectedSN);
 	static SendBufferRef MakeRecoverRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size);
 	static SendBufferRef MakeADRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size);
 

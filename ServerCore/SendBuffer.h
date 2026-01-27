@@ -1,4 +1,5 @@
 #pragma once
+#include "RUDPWindow.h"
 
 class SendBufferChunk;
 
@@ -39,7 +40,7 @@ class SendBufferChunk : public enable_shared_from_this<SendBufferChunk>
 {
 	enum
 	{
-		SEND_BUFFER_CHUNK_SIZE = 6000
+		SEND_BUFFER_CHUNK_SIZE = RUDPWIND::SEND_BUFFER_CHUNK_SIZE,
 	};
 
 public:

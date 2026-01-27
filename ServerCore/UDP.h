@@ -11,7 +11,7 @@ class UDP
 public:
 	static enum
 	{
-		SOCKNUM = 100,
+		SOCKNUM = 20,
 		PLUS_WORKER_NUM = 0,
 		//POPRECV_WORKER_NUM = 2,
 		MAX_WORKER_NUM = QOS_SHARD_COUNT + PLUS_WORKER_NUM,
@@ -48,7 +48,7 @@ public:
 
 	PacketHandleFunc _func; // юс╫ц
 private:
-	bool UDPSocketReset(int32 index);
+	bool UDPSocketReset(int32 index, PCWSTR serverAddr = L"");
 private:
 	Array<UDPSocketPtr, SOCKNUM> _udpSockets = {};
 	Array<UDPRecvHandlerRef, MAX_WORKER_NUM> _udpRecvWorkers = {};
