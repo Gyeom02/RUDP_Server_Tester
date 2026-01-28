@@ -42,7 +42,7 @@ bool RUDPRecvWindow::CheckSize(uint32 SeqNum, int32 size) // Only For Single Pac
 	return true;
 }
 
-bool RUDPRecvWindow::CheckAndTryFrag(PacketHeader* header, FragmentHeader* fragHeader, int32 needSizeSpace)
+bool RUDPRecvWindow::CheckAndTryFrag(PacketHeader* header, FragmentHeader* fragHeader, int32 needSizeSpace) // needSizeSpace is frag all size
 {
 #ifdef _DEBUG
 	ASSERT_CRASH(needSizeSpace > 0);
@@ -50,13 +50,14 @@ bool RUDPRecvWindow::CheckAndTryFrag(PacketHeader* header, FragmentHeader* fragH
 	//Fragment 패킷임
 	//FragmentHeader* fragHeader = reinterpret_cast<FragmentHeader*>(&header[1]);
 	//uint16 fragPrimID = fragHeader->primID;
-	int32 dummySize = 0; //fragHeader->first_sn == _expctedSeqNum.load() = -1, else = packetSize
-	int32 index = header->sn % RUDPWIND::SN_MAX_SIZE;
+	const int32 dummySize = -1; //fragHeader->first_sn == _expctedSeqNum.load() = -1, else = packetSize
+	
 	auto iter = _frag_storeCountMap.find(fragHeader->first_sn);
 
 	if (fragHeader->first_sn == _expctedSeqNum.load()) // Fragment 패킷의 제일 앞 패킷의 SN이 예상하던 SN 값이다
 	{
-		dummySize = -1;
+		int32 index = header->sn % RUDPWIND::SN_MAX_SIZE;
+		//dummySize = -1;
 		_RecvedSizeMap[index] = dummySize;
 
 		if (iter != _frag_storeCountMap.end()) //현재 찾고있는 Frag 패킷이다
@@ -72,13 +73,13 @@ bool RUDPRecvWindow::CheckAndTryFrag(PacketHeader* header, FragmentHeader* fragH
 		}
 		else // 처음보는 Frag 패킷이다
 		{
-			if (!IsSpaceExistToRecv(needSizeSpace))
+			/*if (!IsSpaceExistToRecv(needSizeSpace))
 			{
 				cout << "1 Check Frag Out Of RWind : " << GetRWind() << " < " << needSizeSpace << endl;
 
 				return false;
 			}
-			ReduceSpaceRWind(needSizeSpace);
+			ReduceSpaceRWind(needSizeSpace);*/
 
 			_frag_storeCountMap.insert(make_pair(fragHeader->first_sn, 1));
 		}
@@ -86,16 +87,15 @@ bool RUDPRecvWindow::CheckAndTryFrag(PacketHeader* header, FragmentHeader* fragH
 	}
 	else // 기다리는 SN을 FirstSn으로 갖고있지 않은 Out Of Order Fragment 패킷 중 하나이다
 	{
-		if (_ofo_Valid_Wind < header->size) // ? header->size or  needSizeSpace
-		{
-			cout << "CheckFrag _ofo_Valid_Wind < header->size" << endl;
-			return false;
-		}
-
+		
 		if (iter != _frag_storeCountMap.end()) //현재 찾고있는 Frag 패킷이다
 		{
-			
+			if (header->sn != fragHeader->first_sn)
+			{
+				int32 index = header->sn % RUDPWIND::SN_MAX_SIZE;
+				_RecvedSizeMap[index] = dummySize;
 
+			}
 			iter->second += 1;
 			if (iter->second == fragHeader->frag_count) // Fragment 전부 모임
 			{
@@ -106,7 +106,7 @@ bool RUDPRecvWindow::CheckAndTryFrag(PacketHeader* header, FragmentHeader* fragH
 		}
 		else // 처음보는 Frag PrimID이다
 		{
-			if (!IsSpaceExistToRecv(needSizeSpace))
+			/*if (!IsSpaceExistToRecv(needSizeSpace))
 			{
 				cout << "2 Check Frag Out Of RWind : " << GetRWind() << " < " << needSizeSpace << endl;
 
@@ -114,14 +114,22 @@ bool RUDPRecvWindow::CheckAndTryFrag(PacketHeader* header, FragmentHeader* fragH
 			}
 
 			
-			ReduceSpaceRWind(needSizeSpace);
+			ReduceSpaceRWind(needSizeSpace);*/
+			int32 index = fragHeader->first_sn % RUDPWIND::SN_MAX_SIZE;
+
+			if (_ofo_Valid_Wind < header->size) // ? header->size or  needSizeSpace
+			{
+				cout << "CheckFrag _ofo_Valid_Wind < header->size" << endl;
+				return false;
+			}
+			_ofo_Valid_Wind -= needSizeSpace;
+			_RecvedSizeMap[index] = needSizeSpace;
 
 			_frag_storeCountMap.insert(make_pair(fragHeader->first_sn, 1));
 			//dummySize = header->size;
 		}
 		//ummySize = header->size;
-		_ofo_Valid_Wind -= header->size;
-		_RecvedSizeMap[index] = header->size;
+		
 	}
 		/*if (!IsSpaceExistToRecv(needSizeSpace))
 		{

@@ -257,22 +257,23 @@ bool DeliveryNotificationManager::ProcessSequenceNumber(PacketHeader* header)
 	}
 	
 	//
+	if (!_recvWindow.IsSpaceExistToRecv(header->size))
+	{
+		cout << "ProcessSequenceNumber Out Of RWind : " << GetRWind() << " < " << header->size << endl;
+
+		return false;
+	}
 	if (header->bFragment != 1) // rwind valid size check
 	{
 		
-		if (!_recvWindow.IsSpaceExistToRecv(size))
-		{
-			cout << "ProcessSequenceNumber Out Of RWind : " << GetRWind() << " < " << size << endl;
-
-			return false;
-		}
+		
 		if (!_recvWindow.CheckSize(SN, size))
 		{
 			cout << "!_recvWindow.CheckSize(SN, size) : " << "Packet Size : " << size << endl;
 
 			return false;
 		}
-		_recvWindow.TryRecv(SN, size);  _recvWindow.ReduceSpaceRWind(size);
+		_recvWindow.TryRecv(SN, size);  
 	}
 	else
 	{
@@ -290,7 +291,7 @@ bool DeliveryNotificationManager::ProcessSequenceNumber(PacketHeader* header)
 	//	_recvWindow.TryFrag(SN, header->size); 
 		//_recvWindow.TryRecv(SN, header->size);
 	}
-	
+	_recvWindow.ReduceSpaceRWind(header->size);
 	
 	
 	//cout << "  SN.GetSN() : " << SN.GetSN() << endl;

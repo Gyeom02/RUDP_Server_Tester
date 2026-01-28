@@ -127,9 +127,13 @@ void TransportControl::HandleControlPacket(PacketHeader* header)
     {
        // cout << "contHeader->ack.bexsist == true" << endl;
         int32 bhascount = contHeader->ack.bhascount;
-        int32 start = contHeader->ack.start;
+        uint32 start = contHeader->ack.start;
         int32 count = contHeader->ack.count;
         uint32 curExpectedSN = contHeader->ack.curExpectedSN;
+        if (start > 55338981)
+        {
+            cout << "A" << endl;
+        }
         _jobWorker.PushJob([player, bhascount, start, count, curExpectedSN]() {
             
             //cout << "jobworker.PushJob ProcessAcks" << endl;
@@ -336,6 +340,7 @@ SendBufferRef TransportControl::MakeControlPacketBuffer(int32 client_id)
     header->size = ControlPacketSize;
     header->controlflag = 1;
     header->client_Id = client_id;
+    header->bFragment = 0;
     sendBuffer->Close(ControlPacketSize);
     return sendBuffer;
 }
