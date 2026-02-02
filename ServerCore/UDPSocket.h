@@ -38,7 +38,7 @@ public:
 public:
 	int32 Send(HostRef player, SendBufferRef sendBuffer);
 	int32 ControlSend(HostRef player, SendBufferRef sendBuffer);
-	int32 PriortySend(HostRef player, SendBufferRef sendBuffer);
+	int32 PriortySend(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffers);
 
 protected:
 	bool CheckMSSover(SendBufferRef sendBuffer);
@@ -50,12 +50,15 @@ protected:
 	SendBufferRef MakeFragmentBuffer(int32 size);
 	
 private:
-	int ReliableSend(HostRef player, SendBufferRef sendBuffer);
+	int ReliableSend(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffers);
 	int UnReliable_Ordered_Send(HostRef player, SendBufferRef sendBuffer); // Only For ControlPacket
 	int UnReliableSend(HostRef player, SendBufferRef sendBuffer);
+	//int Pure_Send(HostRef player, SendBufferRef sendBuffer);
 
 	int FPCSend(HostRef player, SendBufferRef sendBuffer); // Pure Straight Send Function
 	int FPCSend(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffer); // Pure Straight Send Function
+
+	//int UnReliable_Control_Send(HostRef player, SendBufferRef sendBuffer);
 //	int ReliableSend(HostRef player, SendBufferRef sendBuffer);
 	//int UnReliable_Ordered_Send(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffer);
 	//int UnReliableSend(HostRef player, SendBufferRef sendBuffer);

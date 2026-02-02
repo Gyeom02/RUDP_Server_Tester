@@ -11,7 +11,7 @@ namespace RUDPWIND
 		/*RWIND_BASE_SIZE = RWIND_MAX_SIZE - DEFAULT_MTU_SIZE, */
 		RWIND_BASE_SIZE = 64000, // 64kb라는뜻 보통 FPS Server은 64~128, MMO Server은 128~256을 가진다
 		FRAG_BITMAP_INDEX_MAX = 65536,
-		SEND_BUFFER_CHUNK_SIZE = RWIND_BASE_SIZE / 2 - OVERHEAD, // Header와 Payload 전체 합쳐서 패킷 최대 크기
+		SEND_BUFFER_CHUNK_SIZE = 32000 + OVERHEAD, // Header와 Payload 전체 합쳐서 패킷 최대 크기
 		
 		OFO_MAX_SIZE = RWIND_BASE_SIZE - SEND_BUFFER_CHUNK_SIZE - OVERHEAD,
 	};
@@ -22,7 +22,7 @@ class RUDPRecvWindow // Recv할때 송신측이 보낸 패킷의 sn을 확인하고 ordered하게 
 
 public:
 	
-	explicit RUDPRecvWindow(uint32 _expctedSeqNum);
+	explicit RUDPRecvWindow(uint32 _expctedSeqNum = 0);
 
 
 	bool CheckRecved(uint32 SeqNum);
@@ -30,7 +30,7 @@ public:
 
 	bool CheckAndTryFrag(struct PacketHeader* header,  struct FragmentHeader* fragHeader, int32 needSpaceSize);
 	
-	void TryRecv(uint32 SeqNum, int32 size); // Only When CheckRecved return True
+	void TryRecv(uint32 SeqNum); // Only When CheckRecved return True
 	//void TryFrag(FragmentHeader* fragHeader, uint32 sn, int32 size);
 	void DetachExpectedSeq();
 	//void DetechLastFrag();
@@ -40,7 +40,7 @@ private:
 	uint32 _ofo_Valid_Wind = 0;
 	//uint32 windowSize = RUDPWIND::SN_RANGE_HALF;
 
-	vector<int32> _RecvedSizeMap; // For Out Of Order Packets
+	vector<uint8> _RecvedBitMap; // For Out Of Order Packets
 	//vector<uint8> _FragBitMap;
 
 	unordered_map<uint32, int16> _frag_storeCountMap;

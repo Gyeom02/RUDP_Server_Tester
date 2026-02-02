@@ -1,6 +1,6 @@
 #pragma once
 #define PRVT_SERVERADDR L"127.0.0.1"
-#define _LOCKTIMEOUT_CHECK
+//#define _LOCKTIMEOUT_CHECK
 #define CHECK_DEADLOCK
 
 #include "Types.h"

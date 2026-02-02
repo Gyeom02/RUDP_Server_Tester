@@ -34,19 +34,19 @@ void UDPRecvHandler::DOWork()
 		shared_ptr<QoSPlayer> _player = _shard->PopRecvReadyQueue();
 		if (!_player) {
 			//TODO Wait or Do Something
-			QoSShard* _busyShard = GQoS->GetBusyShard_RCV();
+			//QoSShard* _busyShard = GQoS->GetBusyShard_RCV();
 			
-			if (!_busyShard)
-			{
+			//if (!_busyShard)
+			//{
 				std::unique_lock<mutex> _lock(GQoS->GetRecvMutex());
-				GQoS->GetRecvCV().wait(_lock, [&]() { return !_shard->Empty_RecvReadyQueue() || GQoS->GetBusyShard_RCV() || !_continue.load(); });
+				GQoS->GetRecvCV().wait(_lock, [&]() { return !_shard->Empty_RecvReadyQueue() /*|| GQoS->GetBusyShard_RCV()*/ || !_continue.load(); });
 				if (!_continue.load())
 					return;
 				//cout << "UDPRecvHandler::DOWork()" << endl;
-				continue;
+			//	continue;
 				//this_thread::sleep_for(0ms);
-			}
-			_player = _busyShard->PopRecvReadyQueue();
+			//}
+			_player = _shard->PopRecvReadyQueue();
 			if (!_player)
 			{
 				//SleepTillGetSignal();
@@ -77,6 +77,8 @@ void UDPRecvHandler::HandleRecvPacket(std::shared_ptr<QoSPlayer> _Player)
 			
 			break;
 		}
+		//PacketHeader* header = reinterpret_cast<PacketHeader*>(savePacket->_buffer);
+		//std::cout << "Handle_C_MSG | Client ID : " << header->client_Id << endl;
 		_func(player->ownerSocket, player->netAddress, savePacket->_buffer, savePacket->_size);
 		//ServerPacketHandler::HandlePacket(player->ownerSocket, player->netAddress, savePacket->_buffer, savePacket->_size);
 				

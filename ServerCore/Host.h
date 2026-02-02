@@ -14,7 +14,8 @@ public:
 	void InitDeliveryManager() { deliveryManager->SetOwner(shared_from_this()); }
 
 	void Send(SendBufferRef sendBuffer);
-	void PriortySend(SendBufferRef sendBuffer);
+	//void PriortySend(SendBufferRef sendBuffer);
+	void PriortySend(shared_ptr<vector<SendBufferRef>> sendBuffers);
 	void ControlSend(SendBufferRef sendBuffer); // Only For Control Packet Send
 
 	bool CanRPCT();

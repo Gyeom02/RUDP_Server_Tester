@@ -5,9 +5,11 @@ void InFlightPacket::HandleDeliveryFailure(DeliveryManagerRef deliveryManager)
 {
 	SendBufferRef sendBuffer = GetTransmissionData();
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
-	header->retransnum++;
+	int32 prevRetransNum = header->retransnum;
+	
 
 	header->priority = QoS::Priority::RESEND; // 재전송이므로 제일 높은 우선순위로 변경
+	header->retransnum = prevRetransNum + 1;
 
 	HostRef owner = GetOwner();
 	if (owner)
@@ -44,8 +46,9 @@ void InFlightPacket::HandleDeliverySuccess(DeliveryManagerRef deliveryManager)
 		//cout << "header->retransnum : " << header->retransnum << endl;
 
 		deliveryManager->mSuccessReSendPacketNum += header->retransnum; // 1은 처음에 보낸 것을 의미
+		header->retransnum = 0;
 	}
-	header->retransnum = 0;
+	//
 }
 //
 //int32 InFlightPacket::Send()

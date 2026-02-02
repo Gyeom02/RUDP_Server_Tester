@@ -40,7 +40,7 @@ private:
 public:
 	enum : ULONGLONG
 	{
-		TIMEOUT = 3000,
+		TIMEOUT = 500,
 	};
 	explicit DeliveryNotificationManager();
 	~DeliveryNotificationManager();
@@ -52,7 +52,7 @@ public:
 	//////
 	//송신
 //	InFlightPacketPtr WriteSeqeuenceNumber(SendBufferRef sendBuffer);
-	InFlightPacketPtr WriteSeqeuenceNumber(SendBufferRef sendBuffer);
+	void WriteSeqeuenceNumber(shared_ptr<vector<SendBufferRef>> sendBuffers);
 
 	void ProcessAcks(uint32 start, uint32 count, bool hasCount, uint32 cuExpectedSN);
 	void HandlePacketDeliveryFailure(const InFlightPacketPtr& inFlightPacket);
@@ -121,7 +121,7 @@ private:
 	atomic<uint32> mResendPacketCount = 0;
 	atomic<uint32> mDeliveredPacketCount = 0;
 	//수신
-	atomic<uint32> mNextExpectedSequenceNumber = 0; // 현재 수신된 패킷의 예상되는 세퀀스번호
+	//atomic<uint32> mNextExpectedSequenceNumber = 0; // 현재 수신된 패킷의 예상되는 세퀀스번호
 	Deque<AckRange> mPendingAcks;
 	//전체
 	atomic<uint64> mDispatchedPacketCount; //전체 송신한 현재 패킷의 수 ( mDroppedPacketCount + mDeliveredPacketCount의 수와 같아야함 아님 패킷이 누락된거임)

@@ -1,9 +1,10 @@
 #include "pch.h"
 #include "DeliveryNotificationManager.h"
 #include "Host.h"
-
+//#define TEST_PRINT
+//#define TEST_PRINT2
 DeliveryNotificationManager::DeliveryNotificationManager()
-	: mNextExpectedSequenceNumber(0), _recvWindow(mNextExpectedSequenceNumber)
+	: _recvWindow(0)
 {
 }
 
@@ -64,43 +65,61 @@ bool DeliveryNotificationManager::CheckPacketChannel(PacketHeader* header)
 //	return mInFlightPackets.back();
 //}
 
-InFlightPacketPtr DeliveryNotificationManager::WriteSeqeuenceNumber(SendBufferRef sendBuffer)
+void DeliveryNotificationManager::WriteSeqeuenceNumber(shared_ptr<vector<SendBufferRef>> sendBuffers)
 {
 	HostRef owner = _weakOwner.lock();
 	//uint32 startSN;
 	//int32 bufferNum = sendBuffer->size();
-	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
-	//cout << "bufferNum : " << bufferNum << endl;
-	//if(firstHeader->retransnum <= 0)// 처음 전송일때만 sn 초기화 
-	//{
-	//	startSN = mNextOutgoingSequenceNumber.fetch_add(1);
-	//	
-	//}
-	
-	//PacketHeader* header = reinterpret_cast<PacketHeader*>((*sendBuffer)[i]->Buffer());
-	InFlightPacketPtr inflightPacket;
-	if (header->retransnum <= 0)  // 처음 전송일때만 sn 초기화
+	uint32 firstSN = 0;
+	for (int32 i = 0; i < sendBuffers->size(); i++)
 	{
-		PacketSequenceNumber sequenceNumber = mNextOutgoingSequenceNumber.fetch_add(1);
-		header->sn = sequenceNumber.GetSN(); // 패킷 헤더에 SequenceNumber 부착
-		inflightPacket = MakeShared<InFlightPacket>(owner, header->sn, sendBuffer);
-		StoreInFlightPacketFromSN(header->sn, inflightPacket);
-	}
-	else
-	{
-		inflightPacket = MakeShared<InFlightPacket>(owner, header->sn, sendBuffer);
-	}
+		PacketHeader* header = reinterpret_cast<PacketHeader*>((*sendBuffers)[i]->Buffer());
+		//cout << "bufferNum : " << bufferNum << endl;
+		//if(firstHeader->retransnum <= 0)// 처음 전송일때만 sn 초기화 
+		//{
+		//	startSN = mNextOutgoingSequenceNumber.fetch_add(1);
+		//	
+		//}
 
+		//PacketHeader* header = reinterpret_cast<PacketHeader*>((*sendBuffer)[i]->Buffer());
+		InFlightPacketPtr inflightPacket;
+		if (header->retransnum <= 0)  // 처음 전송일때만 sn 초기화
+		{
+			
+
+			//PacketSequenceNumber sequenceNumber = mNextOutgoingSequenceNumber.fetch_add(1);
+			header->sn = mNextOutgoingSequenceNumber.fetch_add(1); // 패킷 헤더에 SequenceNumber 부착
+			inflightPacket = MakeShared<InFlightPacket>(owner, header->sn, (*sendBuffers)[i]);
+			StoreInFlightPacketFromSN(header->sn, inflightPacket);
+
+			if (header->bFragment == 1) //Fragment Packet이다
+			{
+				FragmentHeader* fragHeader = reinterpret_cast<FragmentHeader*>(&header[1]);
+				if (fragHeader->index == 0) // 첫번째 fragment이다
+				{
+					firstSN = header->sn;
+				}
 	
-	//else cout << "header->sn : " << header->sn << endl;
-	++mDispatchedPacketCount;
+				fragHeader->first_sn = firstSN;
+			}
+		}
+		else
+		{
+			inflightPacket = MakeShared<InFlightPacket>(owner, header->sn, (*sendBuffers)[i]);
+		}
+
+
+		//else cout << "header->sn : " << header->sn << endl;
+		++mDispatchedPacketCount;
+
+		WRITE_LOCK_IDX(InFlightPacket_LOCK);
+
+		if (owner)
+			mInFlightPackets.emplace_back(inflightPacket);
+
 		
-	WRITE_LOCK_IDX(InFlightPacket_LOCK);
-
-	if (owner)
-		mInFlightPackets.emplace_back(inflightPacket);
-	
-	return mInFlightPackets.back();
+	}
+	//return mInFlightPackets.back();
 }
 
 void DeliveryNotificationManager::ProcessAcks(uint32 start, uint32 count, bool hasCount, uint32 curExpectedSN)
@@ -154,6 +173,9 @@ void DeliveryNotificationManager::ProcessAcks(uint32 start, uint32 count, bool h
 					if (!nextInFlightPacket)
 					{
 						//cout << "!nextInFlightPacket" << endl;
+#ifdef TEST_PRINT
+						cout << "end() Recv Ack Success ID : " << _weakOwner.lock()->client_Id << " | expected sn : " << _curExpectedAckSN.load() << " |  Handled sn : " << nextAckdSequenceNumber.GetSN() - 1 << " | recviver expected sn : " << curExpectedSN << endl;
+#endif
 						continue;
 					}
 					//mSequenceNotMatchedCount++;
@@ -178,6 +200,9 @@ void DeliveryNotificationManager::ProcessAcks(uint32 start, uint32 count, bool h
 				if (!nextInFlightPacket)
 				{
 					//cout << "!nextInFlightPacket SN : " << nextAckdSequenceNumber.GetSN() <<  endl;
+#ifdef TEST_PRINT
+					cout << "end() Recv Ack Success ID : " << _weakOwner.lock()->client_Id << " | expected sn : " << _curExpectedAckSN.load() - 1 << " |  Handled sn : " << nextAckdSequenceNumber.GetSN() - 1 << " | recviver expected sn : " << curExpectedSN << endl;
+#endif
 					continue;
 				}
 				//mInFlightPackets.pop_front();
@@ -199,7 +224,13 @@ void DeliveryNotificationManager::ProcessAcks(uint32 start, uint32 count, bool h
 		//if (success_flag == 1) //
 		//	HandlePacketDeliveryFailure(nextInFlightPacket);
 		if (success_flag == 1) //Ack 성공
+		{
+#ifdef TEST_PRINT
+			cout << "Recv Ack Success ID : " << _weakOwner.lock()->client_Id << " | expected sn : " << _curExpectedAckSN.load() - 1 << " |  Handled sn : " << nextAckdSequenceNumber.GetSN()  - 1<< " | recviver expected sn : " << curExpectedSN  << endl;
+#endif
 			HandlePacketDeliverySuccess(nextInFlightPacket);
+		}
+
 		else if (success_flag == 2) //
 			continue;
 		else
@@ -229,69 +260,74 @@ bool DeliveryNotificationManager::ProcessSequenceNumber(PacketHeader* header)
 	uint32 SN = header->sn;
 	FragmentHeader* fragHeader = nullptr;
 
-	if (SN < mNextExpectedSequenceNumber) //기다리고 있었던 수신 패킷 세퀀스 넘버가 아님 조용히 넘김
+	uint32 expectedSN = _recvWindow.GetExpectedSqeNum();
+	if (SN < expectedSN) //기다리고 있었던 수신 패킷 세퀀스 넘버가 아님 조용히 넘김
 	{
-		cout << "SN.GetSN() < mNextExpectedSequenceNumber : " << SN << " < " << mNextExpectedSequenceNumber << endl;
+		//cout << "SN.GetSN() < mNextExpectedSequenceNumber : " << SN << " < " << expectedSN << endl;
 
 		return false;
 	}
 
-	if (header->bFragment == 1) //Fragment Packet인지에 따라 size 값 세팅
-	{
-		fragHeader = reinterpret_cast<FragmentHeader*>(&header[1]);
-		//cout << "fragHeader->original_size : " << fragHeader->original_size << endl;
+	//if (header->bFragment == 1) //Fragment Packet인지에 따라 size 값 세팅
+	//{
+	//	fragHeader = reinterpret_cast<FragmentHeader*>(&header[1]);
+	//	//cout << "fragHeader->original_size : " << fragHeader->original_size << endl;
 
-		size += fragHeader->original_size;
-		size += (sizeof(FragmentHeader) * fragHeader->frag_count) + (sizeof(PacketHeader) * fragHeader->frag_count);
-	}
-	else
-	{
-		size = header->size;
-	}
+	//	size += fragHeader->original_size;
+	//	size += (sizeof(FragmentHeader) * fragHeader->frag_count) + (sizeof(PacketHeader) * fragHeader->frag_count);
+	//}
+	//else
+	//{
+	//	size = header->size;
+	//}
 
 	if (!_recvWindow.CheckRecved(SN)) // 중복 Seq
 	{
+
 		cout << "!_recvWindow.CheckRecved(SN.GetSN()) : " << "Recved SN : " << SN << " | Size : " << size << endl;
 
 		return false;
 	}
-	
-	//
-	if (!_recvWindow.IsSpaceExistToRecv(header->size))
-	{
-		cout << "ProcessSequenceNumber Out Of RWind : " << GetRWind() << " < " << header->size << endl;
 
-		return false;
-	}
-	if (header->bFragment != 1) // rwind valid size check
-	{
-		
-		
-		if (!_recvWindow.CheckSize(SN, size))
-		{
-			cout << "!_recvWindow.CheckSize(SN, size) : " << "Packet Size : " << size << endl;
+	_recvWindow.TryRecv(SN); 
 
-			return false;
-		}
-		_recvWindow.TryRecv(SN, size);  
-	}
-	else
-	{
-		if (!_recvWindow.CheckAndTryFrag(header, fragHeader, size))
-		{
-			cout << "!_recvWindow.CheckAndTryFrag" << endl;
-#ifdef _DEBUG
-			if (size >= 1503315811)
-			{
-				CRASH("size >= 1503315811");
-			}
-#endif
-			return false;
-		}
-	//	_recvWindow.TryFrag(SN, header->size); 
-		//_recvWindow.TryRecv(SN, header->size);
-	}
 	_recvWindow.ReduceSpaceRWind(header->size);
+	//
+//	if (!_recvWindow.IsSpaceExistToRecv(header->size))
+//	{
+//		cout << "ProcessSequenceNumber Out Of RWind : " << GetRWind() << " < " << header->size << endl;
+//
+//		return false;
+//	}
+//	if (header->bFragment != 1) // rwind valid size check
+//	{
+//		
+//		
+//		if (!_recvWindow.CheckSize(SN, size))
+//		{
+//			cout << "!_recvWindow.CheckSize(SN, size) : " << "Packet Size : " << size << endl;
+//
+//			return false;
+//		}
+//		_recvWindow.TryRecv(SN, size);  
+//	}
+//	else
+//	{
+//		if (!_recvWindow.CheckAndTryFrag(header, fragHeader, size))
+//		{
+//			cout << "!_recvWindow.CheckAndTryFrag" << endl;
+//#ifdef _DEBUG
+//			if (size >= 1503315811)
+//			{
+//				CRASH("size >= 1503315811");
+//			}
+//#endif
+//			return false;
+//		}
+//	//	_recvWindow.TryFrag(SN, header->size); 
+//		//_recvWindow.TryRecv(SN, header->size);
+//	}
+//	_recvWindow.ReduceSpaceRWind(header->size);
 	
 	
 	//cout << "  SN.GetSN() : " << SN.GetSN() << endl;
@@ -304,14 +340,16 @@ bool DeliveryNotificationManager::ProcessSequenceNumber(PacketHeader* header)
 	//	
 	//}
 
-	if (SN == mNextExpectedSequenceNumber) //예상하던 수신 패킷 세퀀스넘버가 맞음
-	{
-		mNextExpectedSequenceNumber += 1;
+	//if (SN == expectedSN) //예상하던 수신 패킷 세퀀스넘버가 맞음
+	//{
+	//	mNextExpectedSequenceNumber += 1;
 
-		//cout << "AddPendingAck(SN);" << endl;
-		//return true;
-	}
-
+	//	//cout << "AddPendingAck(SN);" << endl;
+	//	//return true;
+	//}
+#ifdef TEST_PRINT2
+	cout << "Recv Success ID : " << _weakOwner.lock()->client_Id  << " |  Handled sn : " << SN << " | recviver expected sn : " << _recvWindow.GetExpectedSqeNum() << endl;
+#endif
 	AddPendingAck(SN);
 	return true;
 

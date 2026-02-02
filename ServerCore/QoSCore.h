@@ -60,8 +60,9 @@ struct SavedSendPacket
 {
 	shared_ptr<vector<SendBufferRef>> sendBuffers;
 	int32 AllBuffersSize = 0;
-	int32 SendStartIndex = 0;
+	//int32 SendStartIndex = 0;
 	uint32 firstFragSN = -1;
+	bool hasFirstFrag = false;
 	SavedSendPacket(shared_ptr<vector<SendBufferRef>> buffers) :sendBuffers(buffers) { for (int32 i = 0; i < (*buffers).size(); i++) AllBuffersSize += (*buffers)[i]->WriteSize(); }
 	//SavedSendPacket(SendBufferRef buffer) { }
 	// TODO : Network 층에서의 조각화를 사전에 막기위해 Linked형태로 다음 또는 이전의 패킷의 ptr을 갖고있어야함

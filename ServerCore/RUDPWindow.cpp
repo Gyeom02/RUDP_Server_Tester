@@ -2,7 +2,7 @@
 #include "RUDPWindow.h"
 
 RUDPRecvWindow::RUDPRecvWindow(uint32 _expctedSeqNum)
-	: _expctedSeqNum(_expctedSeqNum), _ofo_Valid_Wind(RUDPWIND::OFO_MAX_SIZE), _RecvedSizeMap(RUDPWIND::SN_MAX_SIZE, 0),  _RWind_Fixed_Max(RUDPWIND::RWIND_BASE_SIZE), _RWind_Fixed_Lowest(0), _myRWind(_RWind_Fixed_Max), _totalRecoverRWind(0)
+	: _expctedSeqNum(_expctedSeqNum), _ofo_Valid_Wind(RUDPWIND::OFO_MAX_SIZE), _RecvedBitMap(RUDPWIND::SN_MAX_SIZE, 0),  _RWind_Fixed_Max(RUDPWIND::RWIND_BASE_SIZE), _RWind_Fixed_Lowest(0), _myRWind(_RWind_Fixed_Max), _totalRecoverRWind(0)
 {
 	
 #ifdef _DEBUG
@@ -22,7 +22,7 @@ bool RUDPRecvWindow::CheckRecved(uint32 SeqNum)
 
 	int32 index = SeqNum % RUDPWIND::SN_MAX_SIZE;
 	
-	if (_RecvedSizeMap[index] != 0)
+	if (_RecvedBitMap[index] != 0)
 		return false;
 	
 	//cout << "RUDPRecvWindow::CheckRecved true" << endl;
@@ -58,7 +58,7 @@ bool RUDPRecvWindow::CheckAndTryFrag(PacketHeader* header, FragmentHeader* fragH
 	{
 		int32 index = header->sn % RUDPWIND::SN_MAX_SIZE;
 		//dummySize = -1;
-		_RecvedSizeMap[index] = dummySize;
+		_RecvedBitMap[index] = dummySize;
 
 		if (iter != _frag_storeCountMap.end()) //현재 찾고있는 Frag 패킷이다
 		{
@@ -93,7 +93,7 @@ bool RUDPRecvWindow::CheckAndTryFrag(PacketHeader* header, FragmentHeader* fragH
 			if (header->sn != fragHeader->first_sn)
 			{
 				int32 index = header->sn % RUDPWIND::SN_MAX_SIZE;
-				_RecvedSizeMap[index] = dummySize;
+				_RecvedBitMap[index] = dummySize;
 
 			}
 			iter->second += 1;
@@ -123,7 +123,7 @@ bool RUDPRecvWindow::CheckAndTryFrag(PacketHeader* header, FragmentHeader* fragH
 				return false;
 			}
 			_ofo_Valid_Wind -= needSizeSpace;
-			_RecvedSizeMap[index] = needSizeSpace;
+			_RecvedBitMap[index] = needSizeSpace;
 
 			_frag_storeCountMap.insert(make_pair(fragHeader->first_sn, 1));
 			//dummySize = header->size;
@@ -145,18 +145,18 @@ bool RUDPRecvWindow::CheckAndTryFrag(PacketHeader* header, FragmentHeader* fragH
 	return true;
 }
 
-void RUDPRecvWindow::TryRecv(uint32 SeqNum, int32 size)
+void RUDPRecvWindow::TryRecv(uint32 SeqNum)
 {
-#ifdef _DEBUG
-	ASSERT_CRASH(size > 0);
-#endif
+//#ifdef _DEBUG
+//	ASSERT_CRASH(size > 0);
+//#endif
 	int32 index = SeqNum % RUDPWIND::SN_MAX_SIZE;
 	if (_expctedSeqNum.load() == SeqNum) //기다리던 패킷이 왔다.
 		DetachExpectedSeq();
 	else
 	{
-		_RecvedSizeMap[index] = size;
-		_ofo_Valid_Wind -= size;
+		_RecvedBitMap[index] = 1;
+		//_ofo_Valid_Wind -= size;
 	}
 }
 
@@ -181,26 +181,38 @@ void RUDPRecvWindow::TryRecv(uint32 SeqNum, int32 size)
 
 void RUDPRecvWindow::DetachExpectedSeq() // 예상하던 Seq의 패킷이 들어옴
 {
+
+	
 	while (true)
 	{
-		uint32 expectedSN = _expctedSeqNum.load();
-		if (_frag_storeCountMap.find(expectedSN) != _frag_storeCountMap.end()) //해당 SN을 FirstSN으로 하는 Fragment를 모집중 아직 다 안 모음
-			return;
-		int32 expectSNIndex = expectedSN % RUDPWIND::SN_MAX_SIZE;
+		int32 expectSNIndex = _expctedSeqNum % RUDPWIND::SN_MAX_SIZE;
+		_RecvedBitMap[(expectSNIndex + RUDPWIND::SN_RANGE_HALF) % RUDPWIND::SN_MAX_SIZE] = 0;
+		_RecvedBitMap[expectSNIndex] = 0;
+		_expctedSeqNum++;
 
-		if (_RecvedSizeMap[expectSNIndex] > 0) //Out Of Ordered Fragment Packet 또는 Single Packet
-		{
-			_ofo_Valid_Wind += _RecvedSizeMap[expectSNIndex];
-		}
-		_RecvedSizeMap[(expectSNIndex + RUDPWIND::SN_RANGE_HALF) % RUDPWIND::SN_MAX_SIZE] = 0;
-		_RecvedSizeMap[expectSNIndex] = 0;
-		_expctedSeqNum.fetch_add(1);
-
-		if (_RecvedSizeMap[_expctedSeqNum.load() % RUDPWIND::SN_MAX_SIZE] == 0)
-			break;
-
-		
+		if (_RecvedBitMap[_expctedSeqNum.load() % RUDPWIND::SN_MAX_SIZE] == 0)
+				break;
 	}
+	//while (true)
+	//{
+	//	uint32 expectedSN = _expctedSeqNum.load();
+	//	if (_frag_storeCountMap.find(expectedSN) != _frag_storeCountMap.end()) //해당 SN을 FirstSN으로 하는 Fragment를 모집중 아직 다 안 모음
+	//		return;
+	//	int32 expectSNIndex = expectedSN % RUDPWIND::SN_MAX_SIZE;
+
+	//	if (_RecvedSizeMap[expectSNIndex] > 0) //Out Of Ordered Fragment Packet 또는 Single Packet
+	//	{
+	//		_ofo_Valid_Wind += _RecvedSizeMap[expectSNIndex];
+	//	}
+	//	_RecvedSizeMap[(expectSNIndex + RUDPWIND::SN_RANGE_HALF) % RUDPWIND::SN_MAX_SIZE] = 0;
+	//	_RecvedSizeMap[expectSNIndex] = 0;
+	//	_expctedSeqNum.fetch_add(1);
+
+	//	if (_RecvedSizeMap[_expctedSeqNum.load() % RUDPWIND::SN_MAX_SIZE] == 0)
+	//		break;
+
+	//	
+	//}
 }
 //
 //void RUDPRecvWindow::DetechLastFrag()
