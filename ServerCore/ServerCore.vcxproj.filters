@@ -213,6 +213,7 @@
     <ClInclude Include="Host.h">
       <Filter>RUDP\QoS\UDP</Filter>
     </ClInclude>
+    <ClInclude Include="RTTManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CorePch.cpp">
@@ -359,5 +360,6 @@
     <ClCompile Include="Host.cpp">
       <Filter>RUDP\QoS\UDP</Filter>
     </ClCompile>
+    <ClCompile Include="RTTManager.cpp" />
   </ItemGroup>
 </Project>

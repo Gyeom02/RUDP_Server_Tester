@@ -215,6 +215,12 @@ void QoSPlayer::PopSend()
 					//		}
 					//	}
 					//}
+					_owner->GetRTTManager().UpdateCongestBudget();
+					if (!_owner->GetRTTManager().ValidBudget(savePacket->AllBuffersSize))
+					{
+						
+						break;
+					}
 					if (/*!PassCheckRwind && */!dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
 					{
 #ifdef _DEBUG
@@ -230,6 +236,7 @@ void QoSPlayer::PopSend()
 					//	bSendAll = false;
 						break;
 					}
+					_owner->GetRTTManager().UseBudget(savePacket->AllBuffersSize);
 					//_owner->GetDeliveryManager()->WriteSeqeuenceNumber(sendbuffer);
 					
 					//else cout << "Player ID : " << _owner->client_Id << " Valid RWind : " << dm->GetReceiverRWind() << " >= " << savePacket->AllBuffersSize << endl;
@@ -291,11 +298,18 @@ void QoSPlayer::PopSend()
 				savePacket = UROQueue[selected_priorty].front();
 				//int32 startindex = savePacket->SendStartIndex;
 				//bool bAllSend = true;
+				_owner->GetRTTManager().UpdateCongestBudget();
+				if (!_owner->GetRTTManager().ValidBudget(savePacket->AllBuffersSize))
+				{
+					
+					break;
+				}
 				if (!dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
 				{
 					//	bAllSend = false;
 					break;
 				}
+				_owner->GetRTTManager().UseBudget(savePacket->AllBuffersSize);
 
 				_owner->PriortySend(savePacket->sendBuffers);
 				//savePacket->SendStartIndex++;
@@ -322,8 +336,12 @@ void QoSPlayer::PopSend()
 			}//PacketHeader* header = reinterpret_cast<PacketHeader*>(savePacket->sendBuffer->Buffer());
 			
 			savePacket = _sendRPCTPacket_ptr;
-			if (dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
+
+			_owner->GetRTTManager().UpdateCongestBudget();
+			
+			if (_owner->GetRTTManager().ValidBudget(savePacket->AllBuffersSize) && dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
 			{
+				_owner->GetRTTManager().UseBudget(savePacket->AllBuffersSize);
 				_sendRPCTPacket_ptr = nullptr;
 
 				_sendSumNum.fetch_sub(1);

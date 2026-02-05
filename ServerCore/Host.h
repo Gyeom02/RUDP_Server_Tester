@@ -1,4 +1,6 @@
 #pragma once
+#include "RTTManager.h"
+
 class Host : public enable_shared_from_this<Host> 
 {
 private:
@@ -29,6 +31,8 @@ public:
 
 	int32 GetRWind() { return GetDeliveryManager()->GetRWind(); }
 
+	RTTManager& GetRTTManager() { return rttManager; }
+	void HandleACK(double rtt);
 public:
 	NetAddress				netAddress;
 	//	GameSessionRef			ownerSession; // Cycle
@@ -47,7 +51,7 @@ private:
 
 	atomic<int32> _giveFragmentID = 0;
 
-	
+	RTTManager rttManager;
 };
 
 using HostRef = shared_ptr<Host>;

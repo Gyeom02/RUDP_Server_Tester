@@ -34,7 +34,7 @@ struct Rwind
 struct Rtt
 {
 	uint8 bexsist = 0;
-	LONGLONG sent_timestamp;
+	uint64 sent_timestamp;
 };
 
 struct ControlHeader
@@ -86,7 +86,7 @@ public:
 
 
 public:
-	static SendBufferRef MakeAckControlPacket(int32 client_id, int32 bhascount, uint32 start, int32 count, uint32 curExpectedSN);
+	static SendBufferRef MakeAckControlPacket(int32 client_id, int32 bhascount, uint32 start, int32 count, uint32 curExpectedSN, uint64 rtt_timestamp);
 	static SendBufferRef MakeRecoverRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size);
 	static SendBufferRef MakeADRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size);
 

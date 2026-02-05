@@ -26,3 +26,8 @@ bool Host::CanRPCT()
 		return true;
 	return false;
 }
+
+void Host::HandleACK(double rtt)
+{
+	rttManager.HandleACK(rtt);
+}

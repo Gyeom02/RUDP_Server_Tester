@@ -10,6 +10,8 @@ class UDPSocket : public enable_shared_from_this<UDPSocket>
 		MSS = 1460,
 		USER_MSS = MSS - sizeof(PacketHeader),
 	};
+
+	using RTTFunc = void (*)(PacketHeader* header);
 public:
 	UDPSocket();
 	~UDPSocket();
@@ -56,8 +58,8 @@ private:
 	//int Pure_Send(HostRef player, SendBufferRef sendBuffer);
 
 	int FPCSend(HostRef player, SendBufferRef sendBuffer); // Pure Straight Send Function
-	int FPCSend(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffer); // Pure Straight Send Function
-
+	int FPCSend(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffer, RTTFunc func = nullptr); // Pure Straight Send Function
+	int FPCSend_RTT(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffers);
 	//int UnReliable_Control_Send(HostRef player, SendBufferRef sendBuffer);
 //	int ReliableSend(HostRef player, SendBufferRef sendBuffer);
 	//int UnReliable_Ordered_Send(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffer);

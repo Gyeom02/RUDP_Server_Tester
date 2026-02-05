@@ -9,13 +9,13 @@ class AckRange
 {
 public:
 	AckRange() {}
-	AckRange(uint32 start) : mStart(start), mCount(1) {}
+	AckRange(uint32 start, uint64 timestamp) : mStart(start), mCount(1), rtt_stamp(timestamp) {}
 	~AckRange() {}
 
 	AckRange operator=(const AckRange& ackRange) = delete;
 	bool ExtendIfShould(PacketSequenceNumber SN);
 
-	void AckWrite(OUT uint32& start, OUT int32& count, OUT bool& hasCount);
+	void AckWrite(OUT uint32& start, OUT int32& count, OUT bool& hasCount, OUT uint64& rtt_stamp);
 	void AckRead(uint32 start, int32 count);
 
 	uint32 GetStart() { return mStart; }
@@ -26,6 +26,7 @@ private:
 	
 	uint32 mStart;
 	int32 mCount;
+	uint64 rtt_stamp = 0;
 };
 
 class DeliveryNotificationManager final: public enable_shared_from_this<DeliveryNotificationManager>
@@ -61,8 +62,8 @@ public:
 
 	//수신
 	bool ProcessSequenceNumber(PacketHeader* header);
-	void AddPendingAck(PacketSequenceNumber SN);
-	bool WritePendingAcks(OUT uint32& start, OUT int32& count, OUT bool& hasCount);
+	void AddPendingAck(PacketSequenceNumber SN, uint64 timestamp = 0);
+	bool WritePendingAcks(OUT uint32& start, OUT int32& count, OUT bool& hasCount, OUT uint64& rtt_stamp);
 
 	//타임아웃체크
 	void ProcessTimeOutPackets();

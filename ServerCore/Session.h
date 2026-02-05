@@ -107,6 +107,7 @@ struct PacketHeader
 	int32 client_Id = -1;
 	uint32 sn = 0; // sequenceNumber (RUDP패킷 추적할때 사용)
 	int32 retransnum = 0;
+	uint64 sent_timestamp = 0;
 };
 
 struct FragmentHeader

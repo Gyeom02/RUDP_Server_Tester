@@ -291,7 +291,10 @@ bool DeliveryNotificationManager::ProcessSequenceNumber(PacketHeader* header)
 
 	_recvWindow.TryRecv(SN); 
 
-	_recvWindow.ReduceSpaceRWind(header->size);
+	if (!_recvWindow.ReduceSpaceRWind(header->size)) // 로직상 발생하면 안되는 상황
+	{
+		CRASH("Reciver has no RWind to Recv Packet");
+	}
 	//
 //	if (!_recvWindow.IsSpaceExistToRecv(header->size))
 //	{
@@ -350,12 +353,16 @@ bool DeliveryNotificationManager::ProcessSequenceNumber(PacketHeader* header)
 #ifdef TEST_PRINT2
 	cout << "Recv Success ID : " << _weakOwner.lock()->client_Id  << " |  Handled sn : " << SN << " | recviver expected sn : " << _recvWindow.GetExpectedSqeNum() << endl;
 #endif
-	AddPendingAck(SN);
+	if (header->retransnum > 0)
+		AddPendingAck(SN);
+	else
+		AddPendingAck(SN, header->sent_timestamp);
+	
 	return true;
 
 }
 
-void DeliveryNotificationManager::AddPendingAck(PacketSequenceNumber SN)
+void DeliveryNotificationManager::AddPendingAck(PacketSequenceNumber SN, uint64 timestamp)
 {
 	bool bexpected = false;
 	
@@ -363,7 +370,7 @@ void DeliveryNotificationManager::AddPendingAck(PacketSequenceNumber SN)
 	if (mPendingAcks.size() == 0 || !mPendingAcks.back().ExtendIfShould(SN))
 	{
 		//cout << "if (mPendingAcks.size() == 0 || !mPendingAcks.back().ExtendIfShould(SN))" << endl;
-		mPendingAcks.emplace_back(SN.GetSN());
+		mPendingAcks.emplace_back(SN.GetSN(), timestamp);
 	}
 
 	if (bInsertAckReadyQueue.compare_exchange_strong(bexpected, true))
@@ -384,13 +391,13 @@ void DeliveryNotificationManager::AddPendingAck(PacketSequenceNumber SN)
 	}
 }
 
-bool DeliveryNotificationManager::WritePendingAcks(OUT uint32& start, OUT int32& count, OUT bool& hasCount)
+bool DeliveryNotificationManager::WritePendingAcks(OUT uint32& start, OUT int32& count, OUT bool& hasCount, OUT uint64& rtt_stamp)
 {
 	WRITE_LOCK_IDX(Ack_LOCK);
 	bool hasAcks = (mPendingAcks.size() > 0);
 	if (hasAcks)
 	{
-		mPendingAcks.front().AckWrite(start, count, hasCount);
+		mPendingAcks.front().AckWrite(start, count, hasCount, rtt_stamp);
 		mPendingAcks.pop_front();
 		return true;
 	}
@@ -596,7 +603,7 @@ bool AckRange::ExtendIfShould(PacketSequenceNumber SN)
 	}
 }
 
-void AckRange::AckWrite(OUT uint32& start, OUT int32& count, OUT bool& hasCount)
+void AckRange::AckWrite(OUT uint32& start, OUT int32& count, OUT bool& hasCount, OUT uint64& rtt_stamp)
 {
 	start = mStart;
 	hasCount = mCount > 1;
@@ -606,6 +613,7 @@ void AckRange::AckWrite(OUT uint32& start, OUT int32& count, OUT bool& hasCount)
 		uint8 countToAck = countMinusOne > 255 ? 255 : static_cast<uint8>(countMinusOne);
 		count = static_cast<int32>(countToAck);
 	}
+	rtt_stamp = this->rtt_stamp;
 	//netAddr = netAddress;
 }
 

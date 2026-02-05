@@ -3,6 +3,7 @@
 #include "UDP.h"
 //#include "HostManager.h"
 #include "QoSCore.h"
+#include "RTTManager.h"
 
 UDPSocket::UDPSocket()
 	: udpRecvBuffer(65536)
@@ -368,7 +369,7 @@ int UDPSocket::ReliableSend(HostRef player, shared_ptr<vector<SendBufferRef>> se
 
 	player->GetDeliveryManager()->WriteSeqeuenceNumber(sendBuffers); //Move To QoSCore.cpp QoSPlayer::PopSend
 
-	return FPCSend(player, sendBuffers);
+	return FPCSend_RTT(player, sendBuffers);
 }
 
 int UDPSocket::UnReliable_Ordered_Send(HostRef player, SendBufferRef sendBuffer)
@@ -389,7 +390,7 @@ int UDPSocket::UnReliableSend(HostRef player, SendBufferRef sendBuffer)
 }
 
 
-int UDPSocket::FPCSend(HostRef player, shared_ptr<vector<SendBufferRef>>sendBuffer)
+int UDPSocket::FPCSend(HostRef player, shared_ptr<vector<SendBufferRef>>sendBuffer, RTTFunc func)
 {
 	//NetAddress netAddr = player->netAddress;
 	PacketHeader* header;
@@ -405,7 +406,8 @@ int UDPSocket::FPCSend(HostRef player, shared_ptr<vector<SendBufferRef>>sendBuff
 		header->client_Id = player->client_Id;
 		sendLen += (*sendBuffer)[i]->WriteSize();
 	//cout << "FPCSend PlayerID : " << header->playerId << endl;
-
+		if (func != nullptr)
+			func(header);
 		WRITE_LOCK;
 		while (true)
 		{
@@ -421,5 +423,10 @@ int UDPSocket::FPCSend(HostRef player, shared_ptr<vector<SendBufferRef>>sendBuff
 		
 	}
 	return sendLen;
+}
+
+int UDPSocket::FPCSend_RTT(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffers)
+{
+	return FPCSend(player, sendBuffers, [](PacketHeader* header) { header->sent_timestamp = RTTManager::GetNow(); });
 }
 

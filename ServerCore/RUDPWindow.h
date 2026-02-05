@@ -9,7 +9,7 @@ namespace RUDPWIND
 	 	SN_RANGE_HALF = SN_MAX_SIZE / 2,
 		//RWIND_MAX_SIZE = 64000,
 		/*RWIND_BASE_SIZE = RWIND_MAX_SIZE - DEFAULT_MTU_SIZE, */
-		RWIND_BASE_SIZE = 64000, // 64kb라는뜻 보통 FPS Server은 64~128, MMO Server은 128~256을 가진다
+		RWIND_BASE_SIZE = 64 * 1024, // 64kb라는뜻 보통 FPS Server은 64~128, MMO Server은 128~256을 가진다
 		FRAG_BITMAP_INDEX_MAX = 65536,
 		SEND_BUFFER_CHUNK_SIZE = 32000 + OVERHEAD, // Header와 Payload 전체 합쳐서 패킷 최대 크기
 		
@@ -53,7 +53,7 @@ public: 	/* rWind */
 	}
 	int32 GetRWind() { return _myRWind.load(); }
 	void MakeSpaceRWind(int32 doneRecvSize) { if (doneRecvSize <= 0) return; _myRWind.fetch_add(doneRecvSize); }
-	void ReduceSpaceRWind(int32 size) { if (size <= 0) return; _myRWind.fetch_sub(size); }
+	bool ReduceSpaceRWind(int32 size) { if (size <= 0) return false; _myRWind.fetch_sub(size); return true; }
 
 	uint32 GetTotalRWind() { return _totalRecoverRWind.load(); }
 	void AddTotalRWind(uint32 doneRecvSize) { if (doneRecvSize <= 0) return; _totalRecoverRWind.fetch_add(doneRecvSize); }

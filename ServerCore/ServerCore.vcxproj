@@ -202,6 +202,7 @@
     <ClInclude Include="rapidxml_utils.hpp" />
     <ClInclude Include="RecvBuffer.h" />
     <ClInclude Include="RefCounting.h" />
+    <ClInclude Include="RTTManager.h" />
     <ClInclude Include="RUDPUtils.h" />
     <ClInclude Include="RUDPWindow.h" />
     <ClInclude Include="SendBuffer.h" />
@@ -259,6 +260,7 @@
     <ClCompile Include="QoSCore.cpp" />
     <ClCompile Include="RecvBuffer.cpp" />
     <ClCompile Include="RefCounting.cpp" />
+    <ClCompile Include="RTTManager.cpp" />
     <ClCompile Include="RUDPUtils.cpp" />
     <ClCompile Include="RUDPWindow.cpp" />
     <ClCompile Include="SendBuffer.cpp" />

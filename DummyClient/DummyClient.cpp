@@ -125,8 +125,9 @@ void PacketDeliverCondition(PlayerRef player)
 	SetConsoleCursorPosition(h, pos);
 
 	DeliveryManagerRef GDeliveryManager = player->GetDeliveryManager();
-	cout << "플레이어 ID : " << player->client_Id << " 전체 보낸 패킷 수 : " << GDeliveryManager->GetDispatchedPacketCount() << " 성공패킷 : " << GDeliveryManager->GetDeliveredPacketCount()
-	<< " 실패패킷 : " << GDeliveryManager->GetDroppedPacketCount() << " 재전송패킷 : " << GDeliveryManager->GetResendPacketCount() << " 성공 + 실패 : " << GDeliveryManager->GetDeliveredPacketCount() + GDeliveryManager->GetDroppedPacketCount() + GDeliveryManager->GetSuccessReSendPacketNum()<< endl;
+	cout << "플레이어 ID : " << player->client_Id << " 성공패킷 : " << GDeliveryManager->GetDeliveredPacketCount()
+	<< " 실패패킷 : " << GDeliveryManager->GetDroppedPacketCount() << " 재전송패킷 : " << GDeliveryManager->GetResendPacketCount() << " 성공 + 실패 : " << GDeliveryManager->GetDeliveredPacketCount() + GDeliveryManager->GetDroppedPacketCount() + GDeliveryManager->GetSuccessReSendPacketNum()
+		<< " RTTGradient : " << player->GetRTTManager().GetRTTGradient() << " RTT Send Sec Rate: " << player->GetRTTManager().GetRTTPaceRate() << endl;
 	//cout << " 실패패킷 : " << GDeliveryManager->GetDroppedPacketCount() << " | 다시보낸 패킷 : " << GDeliveryManager->GetSuccessReSendPacketNum() << endl;
 }
 
@@ -287,15 +288,21 @@ int main()
 		longtext += "ABCDEFGHIJKLNMOPQRSWZXABCDEFGHIJKLNMOPQRSWZXABCDEFGHIJKLNMOPQRSWZX";
 	while (shorttext.size() < 1200)
 		shorttext += "Hello Server From Client";
-	
+	int32 longpacketSize = longtext.size() + sizeof(PacketHeader) * 3 + sizeof(FragmentHeader) * 3;
 	this_thread::sleep_for(1s);
 	for (int32 i = 0; i < 1; i++) // i = 패킷 강도를 나타냄
 		GThreadManager->Launch([=]() // 플레이어 클래스마다 RUDP AckRange 클래스 배열을 갖고있고 돌아가면서 차있으면 AckRange 정보를 송신한다
 			{
 				uint32 sendNum = 1000;
+
+				Protocol::C_MSG longChatPkt;
+				longChatPkt.set_msg(longtext);
+				Protocol::C_MSG shortChatPkt;
+				shortChatPkt.set_msg(shorttext);
+
 				while (true && sendNum >= 0)
 				{
-					this_thread::sleep_for(16ms);
+					this_thread::sleep_for(200ms);
 					if (GHostManager.GetPlayers().empty())
 						continue;
 
@@ -304,12 +311,10 @@ int main()
 					{
 						if (p.second->client_Id != 0)
 						{
-							Protocol::C_MSG longChatPkt;
-							longChatPkt.set_msg(longtext);
-							Protocol::C_MSG shortChatPkt;
-							shortChatPkt.set_msg(shorttext);
+							
 							//auto sendBufferchatPkttttt = ServerPacketHandler::MakeReliableBuffer_Low(chatPktt);
 							//Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkttttt);
+							
 							auto sendBufferchatPkt = ServerPacketHandler::MakeReliableBuffer_Medium(longChatPkt);
 							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt);
 							/*auto sendBufferchatPkt2 = ServerPacketHandler::MakeReliableBuffer_High(shortChatPkt);

@@ -182,7 +182,10 @@ void TransportControl::HandleControlPacket(PacketHeader* header)
     }
     if (contHeader->rtt.bexsist == true)
     {
-
+        double rtt = RTTManager::GetRTT(contHeader->rtt.sent_timestamp);
+        
+        _jobWorker.PushJob([player, rtt]() { player->HandleACK(rtt); });
+       
     }
     
 
@@ -285,7 +288,7 @@ void TransportControl::DoWork()
     }
 }
 
-SendBufferRef TransportControl::MakeAckControlPacket(int32 client_id,  int32 bhascount, uint32 start, int32 count, uint32 curExpectedSN)
+SendBufferRef TransportControl::MakeAckControlPacket(int32 client_id,  int32 bhascount, uint32 start, int32 count, uint32 curExpectedSN, uint64 rtt_timestamp)
 {
     SendBufferRef sendBuffer = MakeControlPacketBuffer(client_id);
     ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
@@ -297,6 +300,11 @@ SendBufferRef TransportControl::MakeAckControlPacket(int32 client_id,  int32 bha
     contheader->ack.count = count;
     contheader->ack.curExpectedSN = curExpectedSN;
 
+    if (rtt_timestamp > 0)
+    {
+        contheader->rtt.bexsist = true;
+        contheader->rtt.sent_timestamp = rtt_timestamp;
+    }
     return sendBuffer;
 }
 
@@ -352,6 +360,8 @@ void TransportControl::HandleHostReadyAck(HostRef host)
     uint32 ackStart = 1;
     int32 ackCount = 0;
     bool hasCount = false;
+    uint64 rtt_stamp = 0;
+
     NetAddress netAddr;
 
     int32 token = ACKTOKEN;
@@ -359,14 +369,14 @@ void TransportControl::HandleHostReadyAck(HostRef host)
     bool bAckEmpty = false;
     while (token--)
     {
-        if (host->GetDeliveryManager()->WritePendingAcks(ackStart, ackCount, hasCount)) // 보낼 Ack이 쌓였다
+        if (host->GetDeliveryManager()->WritePendingAcks(ackStart, ackCount, hasCount, rtt_stamp)) // 보낼 Ack이 쌓였다
         {
             /*if (ackpreStart == ackStart && ackpreStart > 1)
             {
                 cout << "ackpreStart : " << ackpreStart << endl;
                 CRASH("ackpreStart == ackStart");
             }*/
-            SendBufferRef sendBuffer = MakeAckControlPacket(host->client_Id, hasCount, ackStart, ackCount, host->GetDeliveryManager()->GetExpectedSeqNum());
+            SendBufferRef sendBuffer = MakeAckControlPacket(host->client_Id, hasCount, ackStart, ackCount, host->GetDeliveryManager()->GetExpectedSeqNum(), rtt_stamp);
 
             host->ControlSend(sendBuffer);
             //GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);

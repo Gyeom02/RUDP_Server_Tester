@@ -139,6 +139,7 @@ private:
 		header->bFragment = 0;
 		header->controlflag = 0;
 		header->retransnum = 0;
+		header->sent_timestamp = 0;
 		ASSERT_CRASH(pkt.SerializeToArray(&header[1], dataSize));
 		sendBuffer->Close(packetSize);
 
