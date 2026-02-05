@@ -66,7 +66,7 @@ public:
 	bool WritePendingAcks(OUT uint32& start, OUT int32& count, OUT bool& hasCount, OUT uint64& rtt_stamp);
 
 	//타임아웃체크
-	void ProcessTimeOutPackets();
+	//void ProcessTimeOutPackets();
 
 	uint32 GetDeliveredPacketCount() { return mDeliveredPacketCount.load(); }
 	uint32 GetDroppedPacketCount() { return mResendPacketCount.load() - mSuccessReSendPacketNum.load(); }
@@ -107,6 +107,8 @@ public:
 	bool GetbInsertAckReadyQueue() { return bInsertAckReadyQueue.load(); }
 	void SetbInsertAckReadyQueue(bool to) { bInsertAckReadyQueue.exchange(to); }
 	bool CheckHostAckEmpty();
+
+	InFlightPacketPtr FindOldestInFlightPacket();
 private:
 	InFlightPacketPtr FindInFlightPacketFromSN(uint32 sn);
 	void StoreInFlightPacketFromSN(uint32 sn, InFlightPacketPtr inflightPacket);
@@ -126,7 +128,7 @@ private:
 	Deque<AckRange> mPendingAcks;
 	//전체
 	atomic<uint64> mDispatchedPacketCount; //전체 송신한 현재 패킷의 수 ( mDroppedPacketCount + mDeliveredPacketCount의 수와 같아야함 아님 패킷이 누락된거임)
-	Deque<InFlightPacketPtr> mInFlightPackets;
+	//Deque<InFlightPacketPtr> mInFlightPackets;
 
 	atomic<int32> mTimeOutCount = 0;
 	atomic<int32> mSequenceNotMatchedCount = 0;

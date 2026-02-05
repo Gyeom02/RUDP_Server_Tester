@@ -17,18 +17,14 @@ RTTManager::~RTTManager()
 
 }
 
-using steady_clock = chrono::steady_clock;
-uint64 RTTManager::GetNow()
-{
-    return chrono::duration_cast<chrono::microseconds>(steady_clock::now().time_since_epoch()).count();
-}
+
 uint64 RTTManager::GetRTT(uint64 time_stamp)
 {
 #ifdef _DEBUG
     if (time_stamp <= 0)
         CRASH("rtt_stamp <= 0");
 #endif
-    uint64 now = GetNow();
+    uint64 now = UTime::GetNow();
     if (now < time_stamp)
         return 0;
     return now - time_stamp;
@@ -48,22 +44,25 @@ void RTTManager::HandleACK(double rtt)
     if (rtt > Reasonable_RTT_Us)
         return;
 
-    _recentRttsQueue.push_back({ GetNow(), rtt });
+    _recentRttsQueue.push_back({ UTime::GetNow(), rtt });
     
 
     if (_baseRTT == 0.0 && _oldSRTT == 0.0)
     {
         _baseRTT = rtt;
         _oldSRTT = rtt;
+        _rttVar.store(rtt * 0.5);
     }
 
     else
     {
+        double err = rtt - _oldSRTT;
         double prevSRTT = (1 - alpha) * _oldSRTT + alpha * rtt;
         _rttGradient = prevSRTT - _oldSRTT; // 양수 -> RTT가 점점 증가하고 있다, 음수 -> RTT가 감소하고있다.
         _oldSRTT = prevSRTT;
 
-        
+        double oldrttVar = _rttVar.load();
+        _rttVar.exchange(oldrttVar + (fabs(err) - oldrttVar) * 0.25);
        
     }
    
@@ -124,7 +123,7 @@ void RTTManager::UpdatePaceRate(double newRTT)
 
 void RTTManager::UpdateCongestBudget()
 {
-    uint64 now = GetNow();
+    uint64 now = UTime::GetNow();
 
     if (_lastUpdateBudgetUs == 0)
     {
@@ -147,7 +146,7 @@ void RTTManager::UpdateCongestBudget()
 
 void RTTManager::UpdateRttQueue(double queueDelay)
 {
-    uint64 now = GetNow();
+    uint64 now = UTime::GetNow();
     while (true)
     {
         if (_recentRttsQueue.empty())
@@ -167,6 +166,21 @@ void RTTManager::UpdateRttQueue(double queueDelay)
         _recentRttsQueue.pop_back();
 }
 
+double RTTManager::GetResendDelay(int32 retransCount)
+{
+    double baseDelay =  _oldSRTT + _rttVar.load() * 3.0;
+    const double kMinDelayUs = 2'000.0;   // 2ms
+
+    baseDelay = baseDelay > kMinDelayUs ? baseDelay : kMinDelayUs; //최소 하한
+    double backoff = 1.0 + retransCount * 0.5;
+
+    double resendDelay = baseDelay * backoff;
+
+    const double kMaxDelayUs = 500'000.0; // 500ms
+    resendDelay = resendDelay > kMaxDelayUs ? kMaxDelayUs : resendDelay; // 최대 상한
+
+    return resendDelay;
+}
 
 bool RTTManager::ValidBudget(int32 packetSize)
 {

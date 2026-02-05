@@ -36,7 +36,7 @@ public:
 	//void DetechLastFrag();
 	uint32 GetExpectedSqeNum() { return _expctedSeqNum.load();  }
 private:
-	atomic<int32> _expctedSeqNum = 0; // it's not atomic or need Lock, fundemental of this is one socket(recvfrom)
+	atomic<uint32> _expctedSeqNum = 0; // it's not atomic or need Lock, fundemental of this is one socket(recvfrom)
 	uint32 _ofo_Valid_Wind = 0;
 	//uint32 windowSize = RUDPWIND::SN_RANGE_HALF;
 

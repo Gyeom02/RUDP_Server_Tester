@@ -14,7 +14,7 @@ public:
 	USE_LOCK;
 };
 
-#pragma pack(push, 1)
+//#pragma pack(push, 1)
 
 struct Ack
 {
@@ -44,7 +44,7 @@ struct ControlHeader
 	Rwind rwind; 
 	Rtt rtt;
 };
-#pragma pack(pop)
+//#pragma pack(pop)
 
 class TransportControl
 {
@@ -87,6 +87,7 @@ public:
 
 public:
 	static SendBufferRef MakeAckControlPacket(int32 client_id, int32 bhascount, uint32 start, int32 count, uint32 curExpectedSN, uint64 rtt_timestamp);
+	
 	static SendBufferRef MakeRecoverRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size);
 	static SendBufferRef MakeADRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size);
 
@@ -106,6 +107,7 @@ private:
 	void DoWork();
 //	void DoJobWork();
 	static SendBufferRef MakeControlPacketBuffer(int32 client_id);
+	static ControlHeader* InitControlHeader(BYTE* buffer);
 
 	void HandleHostReadyAck(HostRef host);
 	

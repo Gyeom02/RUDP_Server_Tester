@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "QoSCore.h"
 #include "ThreadManager.h"
-
+#include "RTTManager.h"
 
 QoSShard* QoSCore::GetShard(int32 playerid)
 {
@@ -182,67 +182,48 @@ void QoSPlayer::PopSend()
 					break;
 
 				savePacket = ROQueue[selected_priorty].front();
-				//int32 startindex = savePacket->SendStartIndex;
-				//bool bSendAll = true;
 				
-			
-				//SendBufferRef sendbuffer = (*(savePacket->sendBuffers))[i];
 				PacketHeader* header = reinterpret_cast<PacketHeader*>((*savePacket->sendBuffers)[0]->Buffer());
+
+				_owner->GetRTTManager().UpdateCongestBudget();
+				if (!_owner->GetRTTManager().ValidBudget(savePacket->AllBuffersSize))
+				{
+
+					break;
+				}
 				if (header->retransnum <= 0 )//재전송 패킷이면 RWind 로직 패스(이미 처음 보낼때 패킷 사이즈만큼 RWind 처리했기때문)
 				{
 					if (header->priority == QoS::Priority::RESEND)
 					{
-						//cout << "Resend Error : " << _owner->client_Id << " |  Error Packet SN: " << header->sn  << endl;
 						
 						ROQueue[selected_priorty].pop();
 						_sendSumNum.fetch_sub(1);
 						break;
 					}
-					//bool PassCheckRwind = false;
-
-					//FragmentHeader* fragHeader = nullptr;
-					//if (header->bFragment == 1)
-					//{
-					//	fragHeader = reinterpret_cast<FragmentHeader*>(&header[1]);
-					//	if (fragHeader->index != 0)
-					//	{
-					//		if (savePacket->hasFirstFrag)
-					//			PassCheckRwind = true;
-					//		else // 이미 재전송 성공한 패킷인데 또 전송하려해서 오류나는 걸로 판정됨
-					//		{
-					//			
-					//			CRASH("Something Wrong");
-					//		}
-					//	}
-					//}
-					_owner->GetRTTManager().UpdateCongestBudget();
-					if (!_owner->GetRTTManager().ValidBudget(savePacket->AllBuffersSize))
-					{
-						
-						break;
-					}
-					if (/*!PassCheckRwind && */!dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
-					{
-#ifdef _DEBUG
-						//HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-						//CONSOLE_SCREEN_BUFFER_INFO info;
-						////GetConsoleScreenBufferInfo(h, &info);
-						//COORD pos = { (SHORT)0, (SHORT)11};
-						//SetConsoleCursorPosition(h, pos);
-
-						//cout << "Player ID : " << _owner->client_Id << " | Out Of RWind : " << dm->GetReceiverRWind() << " < " << savePacket->AllBuffersSize << endl;
-
-#endif
-					//	bSendAll = false;
-						break;
-					}
-					_owner->GetRTTManager().UseBudget(savePacket->AllBuffersSize);
-					//_owner->GetDeliveryManager()->WriteSeqeuenceNumber(sendbuffer);
+				
 					
-					//else cout << "Player ID : " << _owner->client_Id << " Valid RWind : " << dm->GetReceiverRWind() << " >= " << savePacket->AllBuffersSize << endl;
+					if (!dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
+					{			
+						InFlightPacketPtr inflight = dm->FindOldestInFlightPacket();
+						if (!inflight)
+						{
+						//	cout << "oldest inflight not exisit | ID : " << _owner->client_Id  << endl;
+							break;
+						}
+						double ResendDelay = _owner->GetRTTManager().GetResendDelay(reinterpret_cast<PacketHeader*>(inflight->GetTransmissionData()->Buffer())->retransnum);
+						if (double(UTime::GetNow() - inflight->_time_recent_send.load()) > ResendDelay)
+						{
+							//reinterpret_cast<PacketHeader*>(inflight->GetTransmissionData()->Buffer())->sn = inflight->GetSequenceNumber().GetSN(); // 임시
+						//	cout << " HandlePacketDeliveryFailure ID : " << _owner->client_Id << " | InFlight SN : " << inflight->GetSequenceNumber().GetSN() << " | Resend Packet SN : " << reinterpret_cast<PacketHeader*>(inflight->GetTransmissionData()->Buffer())->sn << endl;
+							
+							dm->HandlePacketDeliveryFailure(inflight);
+						}
+						break;
+					}
+					
 				}
-				//else cout << "Retrans Packet header->retransnum <= 0" << endl;
-
+			
+				_owner->GetRTTManager().UseBudget(savePacket->AllBuffersSize);
 
 
 				//cout << "savePacket->sendBuffers->size() : " << savePacket->sendBuffers->size() << endl;

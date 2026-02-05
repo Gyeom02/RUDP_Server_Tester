@@ -427,6 +427,6 @@ int UDPSocket::FPCSend(HostRef player, shared_ptr<vector<SendBufferRef>>sendBuff
 
 int UDPSocket::FPCSend_RTT(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffers)
 {
-	return FPCSend(player, sendBuffers, [](PacketHeader* header) { header->sent_timestamp = RTTManager::GetNow(); });
+	return FPCSend(player, sendBuffers, [](PacketHeader* header) { header->sent_timestamp = UTime::GetNow(); });
 }
 

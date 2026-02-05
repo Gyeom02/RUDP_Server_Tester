@@ -302,7 +302,7 @@ int main()
 
 				while (true && sendNum >= 0)
 				{
-					this_thread::sleep_for(200ms);
+					this_thread::sleep_for(16ms);
 					if (GHostManager.GetPlayers().empty())
 						continue;
 
@@ -315,14 +315,14 @@ int main()
 							//auto sendBufferchatPkttttt = ServerPacketHandler::MakeReliableBuffer_Low(chatPktt);
 							//Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkttttt);
 							
-							auto sendBufferchatPkt = ServerPacketHandler::MakeReliableBuffer_Medium(longChatPkt);
-							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt);
-							/*auto sendBufferchatPkt2 = ServerPacketHandler::MakeReliableBuffer_High(shortChatPkt);
+							//auto sendBufferchatPkt = ServerPacketHandler::MakeReliableBuffer_Medium(longChatPkt);
+							//Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt);
+							auto sendBufferchatPkt2 = ServerPacketHandler::MakeReliableBuffer_High(shortChatPkt);
 							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt2);
 							auto sendBufferchatPkt3 = ServerPacketHandler::MakeReliableBuffer_Low(shortChatPkt);
 							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt3);
 							auto sendBufferchatPkt4 = ServerPacketHandler::MakeReliableBuffer_Low(shortChatPkt);
-							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt4);*/
+							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt4);/**/
 
 							//cout << "SENDING MSG ID : " << p.second->playerId << endl;
 							//Protocol::C_MSG chatPkt;

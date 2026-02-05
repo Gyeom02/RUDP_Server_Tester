@@ -95,7 +95,7 @@ private:
 /*-----------------
 	PacketSession
 ------------------*/
-#pragma pack(push, 1)
+//#pragma pack(push, 1)
 struct PacketHeader
 {
 	uint16 size;
@@ -121,7 +121,7 @@ struct FragmentHeader
 	uint32 first_sn = -1;
 };
 
-#pragma pack(pop)
+//#pragma pack(pop)
 
 class PacketSession : public Session
 {

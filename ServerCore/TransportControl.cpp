@@ -265,7 +265,7 @@ void TransportControl::DoWork()
            //     else
            //         break;
            // }
-            p.second->GetDeliveryManager()->ProcessTimeOutPackets();
+           // p.second->GetDeliveryManager()->ProcessTimeOutPackets();
 
             LONGLONG curTick = GetTickCount64();
             if (p.second->curRwindTimeStamp == 0)
@@ -291,7 +291,7 @@ void TransportControl::DoWork()
 SendBufferRef TransportControl::MakeAckControlPacket(int32 client_id,  int32 bhascount, uint32 start, int32 count, uint32 curExpectedSN, uint64 rtt_timestamp)
 {
     SendBufferRef sendBuffer = MakeControlPacketBuffer(client_id);
-    ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
+    ControlHeader* contheader = InitControlHeader(sendBuffer->Buffer());
     //  Protocol::S_RUDPACK pkt;
     contheader->Type = ControlType::ACK;
     contheader->ack.bexsist = true;
@@ -311,7 +311,7 @@ SendBufferRef TransportControl::MakeAckControlPacket(int32 client_id,  int32 bha
 SendBufferRef TransportControl::MakeRecoverRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size)
 {
     SendBufferRef sendBuffer = MakeControlPacketBuffer(client_id);
-    ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
+    ControlHeader* contheader = InitControlHeader(sendBuffer->Buffer());
     //  Protocol::S_RUDPACK pkt;
 
 
@@ -326,7 +326,7 @@ SendBufferRef TransportControl::MakeRecoverRwindControlPacket(int32 client_id, i
 SendBufferRef TransportControl::MakeADRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size)
 {
     SendBufferRef sendBuffer = MakeControlPacketBuffer(client_id);
-    ControlHeader* contheader = reinterpret_cast<ControlHeader*>(sendBuffer->Buffer() + sizeof(PacketHeader));
+    ControlHeader* contheader = InitControlHeader(sendBuffer->Buffer());
     //  Protocol::S_RUDPACK pkt;
 
 
@@ -351,6 +351,28 @@ SendBufferRef TransportControl::MakeControlPacketBuffer(int32 client_id)
     header->bFragment = 0;
     sendBuffer->Close(ControlPacketSize);
     return sendBuffer;
+}
+
+ControlHeader* TransportControl::InitControlHeader(BYTE* buffer)
+{
+    
+    ControlHeader* contHeader = reinterpret_cast<ControlHeader*>(buffer  + sizeof(PacketHeader));
+
+    contHeader->ack.bexsist = false;
+    contHeader->ack.bhascount = 0;
+    contHeader->ack.start = 0;
+    contHeader->ack.count = -1;
+    contHeader->ack.curExpectedSN = 0;
+
+    contHeader->rwind.bexsist = false;
+    contHeader->rwind.rwindsize = -1;
+    contHeader->rwind.total_recovered_size = -1;
+
+    contHeader->rtt.bexsist = false;
+    contHeader->rtt.sent_timestamp = 0;
+    
+   
+    return contHeader;
 }
 
 void TransportControl::HandleHostReadyAck(HostRef host)

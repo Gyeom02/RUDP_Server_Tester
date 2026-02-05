@@ -73,6 +73,8 @@ private:
 		header->priority = priorty;
 		header->bFragment = 0;
 		header->controlflag = 0;
+		header->client_Id = -1;
+		header->sn = 0;
 		header->retransnum = 0;
 		header->sent_timestamp = 0;
 		ASSERT_CRASH(pkt.SerializeToArray(&header[1], dataSize));

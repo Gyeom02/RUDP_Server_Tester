@@ -28,13 +28,13 @@ private:
 class InFlightPacket
 {
 public:
-	explicit InFlightPacket(std::weak_ptr<Host> owner, PacketSequenceNumber packetSN, SendBufferRef sendBuffer) : _owner(owner), _packetSequenceNumber(packetSN), _sendBuffer(sendBuffer) { mTimeDispatched = GetTickCount64(); }
+	explicit InFlightPacket(std::weak_ptr<Host> owner, PacketSequenceNumber packetSN, SendBufferRef sendBuffer) : _owner(owner), _packetSequenceNumber(packetSN), _sendBuffer(sendBuffer) { mTimeDispatched = GetTickCount64();  }
 	~InFlightPacket() {}
 
 	shared_ptr<Host> GetOwner() { return _owner.lock(); }
 	void SetTransmissionData(SendBufferRef sendBuffer) { _sendBuffer = sendBuffer; }
 	SendBufferRef GetTransmissionData() { return _sendBuffer; }
-	void HandleDeliveryFailure(DeliveryManagerRef deliveryManager);
+	void HandleDeliveryFailure(DeliveryManagerRef deliveryManager); //Resend
 	void HandleDeliverySuccess(DeliveryManagerRef deliveryManager);
 	
 	PacketSequenceNumber& GetSequenceNumber() { return _packetSequenceNumber; }
@@ -42,7 +42,8 @@ public:
 
 	//int32 Send();
 
-
+	atomic<uint64> _time_first_send = 0;
+	atomic<uint64> _time_recent_send = 0;
 private:
 	
 	PacketSequenceNumber _packetSequenceNumber;

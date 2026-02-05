@@ -25,7 +25,7 @@ public:
 	RTTManager();
 	~RTTManager();
 
-	static uint64 GetNow(); // return microseconds
+	
 
 	static uint64 GetRTT(uint64 time_stamp); // return microseconds
 	
@@ -38,11 +38,14 @@ public:
 	void UseBudget(int32 packetSize);
 
 	void UpdateRttQueue(double queueDelay); //참조만을 인자로 받음 복사 배제
+
+	double GetResendDelay(int32 retransCount = 0);
 private:
 	double _baseRTT; // RTT when qeueuing is zero or very low
 	double _oldSRTT; // recent SRTT;
 	//double _queueDelay; // SRTT - BaseRTT;
 	double _rttGradient; // prevSRTT - oldSRTT; // + = 송수신 흐름 안좋아지는 중 , - = 송수신 흐름 좋아지는 중
+	atomic<double> _rttVar = 0.0f;
 	atomic<double> _paceRateBytePerSec = 0.0;
 	atomic<double> _paceSendBudget = 0.0;
 	

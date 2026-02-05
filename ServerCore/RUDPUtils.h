@@ -19,4 +19,13 @@ struct LazyWorkAssist
 	void SetNextTickFromNow() { _nextTick = std::chrono::steady_clock::now() + std::chrono::milliseconds(_tickMs); }
 };
 
+namespace UTime
+{
+	using steady_clock = chrono::steady_clock;
 
+	static uint64 GetNow()
+	{
+		return std::chrono::duration_cast<chrono::microseconds>(steady_clock::now().time_since_epoch()).count();
+	}
+		// return microseconds
+}
