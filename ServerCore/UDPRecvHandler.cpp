@@ -34,19 +34,19 @@ void UDPRecvHandler::DOWork()
 		shared_ptr<QoSPlayer> _player = _shard->PopRecvReadyQueue();
 		if (!_player) {
 			//TODO Wait or Do Something
-			//QoSShard* _busyShard = GQoS->GetBusyShard_RCV();
+			QoSShard* _busyShard = GQoS->GetBusyShard_RCV();
 			
-			//if (!_busyShard)
-			//{
+			if (!_busyShard)
+			{
 				std::unique_lock<mutex> _lock(GQoS->GetRecvMutex());
-				GQoS->GetRecvCV().wait(_lock, [&]() { return !_shard->Empty_RecvReadyQueue() /*|| GQoS->GetBusyShard_RCV()*/ || !_continue.load(); });
+				GQoS->GetRecvCV().wait(_lock, [&]() { return !_shard->Empty_RecvReadyQueue() || GQoS->GetBusyShard_RCV() || !_continue.load(); });
 				if (!_continue.load())
 					return;
-				//cout << "UDPRecvHandler::DOWork()" << endl;
-			//	continue;
+				
+				continue;
 				//this_thread::sleep_for(0ms);
-			//}
-			_player = _shard->PopRecvReadyQueue();
+			}
+			_player = _busyShard->PopRecvReadyQueue();
 			if (!_player)
 			{
 				//SleepTillGetSignal();
@@ -61,7 +61,7 @@ void UDPRecvHandler::DOWork()
 
 void UDPRecvHandler::HandleRecvPacket(std::shared_ptr<QoSPlayer> _Player)
 {
-	
+	//cout << "Recv Work Thread ID : " << this_thread::get_id() << endl;
 	shared_ptr<SavedRecvPacket> savePacket; //기아 현상 해결해야함
 	
 

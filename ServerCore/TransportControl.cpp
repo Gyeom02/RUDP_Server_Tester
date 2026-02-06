@@ -130,10 +130,12 @@ void TransportControl::HandleControlPacket(PacketHeader* header)
         uint32 start = contHeader->ack.start;
         int32 count = contHeader->ack.count;
         uint32 curExpectedSN = contHeader->ack.curExpectedSN;
+#ifdef _DEBUG
         if (start > 55338981)
         {
-            cout << "A" << endl;
+            CRASH("start > 55338981");
         }
+#endif
         _jobWorker.PushJob([player, bhascount, start, count, curExpectedSN]() {
             
             //cout << "jobworker.PushJob ProcessAcks" << endl;

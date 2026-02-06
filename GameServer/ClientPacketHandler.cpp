@@ -82,6 +82,9 @@ bool Handle_C_INIT(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* 
 		id = reuse_id;
 	}
 
+	// 단일 Shard에 모든 플레이어 집어넣는 코드
+	/*int32 index = ++idGenerator;
+	id = index + (index - 1) * 3;*/
 
 	PlayerRef playerRef = MakeShared<Player>(id);
 	playerRef->InitDeliveryManager();
@@ -187,7 +190,7 @@ bool Handle_C_ENTER_GAME(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHe
 
 bool Handle_C_MSG(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_MSG& pkt)
 {
-	//std::cout << "ID : " << header->client_Id << " | " << pkt.msg() << "^^" << endl;
+	//std::cout << "ID : " << header->client_Id << /*" | " << pkt.msg() << "^^" <<*/ endl;
 	
 	/*Protocol::S_MSG chatPkt;
 	chatPkt.set_msg(pkt.msg());

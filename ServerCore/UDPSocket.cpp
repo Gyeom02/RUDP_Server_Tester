@@ -73,7 +73,7 @@ void UDPSocket::UDPWork()
 					if (!player)
 					{
 						//cout << "if (!player)" << endl;
-						CRASH("!player");
+						//CRASH("!player");
 						processLen += header->size;
 						continue;
 					}
