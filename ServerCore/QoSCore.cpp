@@ -229,15 +229,18 @@ void QoSPlayer::PopSend()
 				//cout << "savePacket->sendBuffers->size() : " << savePacket->sendBuffers->size() << endl;
 				//cout << "Send Client ID : " << _owner->client_Id << " |  Packet SN: " << header->sn << endl;
 
-				_owner->PriortySend(savePacket->sendBuffers);
+				
 				//savePacket->SendStartIndex++;
-				
-				
+				/*if (!savePacket->bSend)
+					savePacket->bSend = true;
+				else
+					cout << "A" << endl;*/
 				ROQueue[selected_priorty].pop();
 				_sendSumNum.fetch_sub(1);
+				//savePacket->bSend = true;
 				
 			}
-				
+			_owner->PriortySend(savePacket->sendBuffers);
 			//PacketHeader* header = reinterpret_cast<PacketHeader*>(savePacket->sendBuffer->Buffer());
 			
 			
@@ -292,14 +295,15 @@ void QoSPlayer::PopSend()
 				}
 				_owner->GetRTTManager().UseBudget(savePacket->AllBuffersSize);
 
-				_owner->PriortySend(savePacket->sendBuffers);
+				
 				//savePacket->SendStartIndex++;
 
-				_sendSumNum.fetch_sub(1);
 				UROQueue[selected_priorty].pop();
+				_sendSumNum.fetch_sub(1);
+				
 			
 			}
-				
+			_owner->PriortySend(savePacket->sendBuffers);
 			//PacketHeader* header = reinterpret_cast<PacketHeader*>(savePacket->sendBuffer->Buffer());
 			
 			
@@ -705,11 +709,8 @@ void QoSCore::OnRecv(int32 SeqNum, int32 client_Id, BYTE* buffer, int32 size)
 
 void QoSCore::PushSend(int32 client_Id, shared_ptr<vector<SendBufferRef>> packet)
 {
-	for (int32 i = 0; i < (*packet).size(); i++)
-	{
-		QoSShard* shard = GetShard(client_Id);
-		shard->PushSend(client_Id, packet);
-	}
+	QoSShard* shard = GetShard(client_Id);
+	shard->PushSend(client_Id, packet);
 }
 
 void QoSCore::PushRecv(int32 client_Id, BYTE* buffer, int32 size)

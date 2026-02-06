@@ -97,11 +97,10 @@ void DeliveryNotificationManager::WriteSeqeuenceNumber(shared_ptr<vector<SendBuf
 			
 			
 			//PacketSequenceNumber sequenceNumber = mNextOutgoingSequenceNumber.fetch_add(1);
-			if (header->sn > 2)
-				cout << "A" << endl;
+			
 			header->sn = startSN++; // 패킷 헤더에 SequenceNumber 부착
 			inflightPacket = MakeShared<InFlightPacket>(owner, header->sn, sendBuffer);
-		
+			
 			StoreInFlightPacketFromSN(header->sn, inflightPacket);
 			
 			if (header->bFragment == 1) //Fragment Packet이다
@@ -587,10 +586,10 @@ InFlightPacketPtr DeliveryNotificationManager::FindInFlightPacketFromSN(uint32 s
 		return nullptr;
 	}
 	PacketHeader* header = reinterpret_cast<PacketHeader*>(iter->second->GetTransmissionData()->Buffer());
-	if (header->sn != sn) {
-		//cout << "A" << endl;
-		header->sn = sn;
-	}
+	//if (header->sn != sn) {
+	//	//cout << "A" << endl;
+	//	header->sn = sn;
+	//}
 	return iter->second;
 }
 

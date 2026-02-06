@@ -277,6 +277,7 @@ int32 UDPSocket::SizeOverSend(HostRef player, SendBufferRef sendBuffer)
 		PacketHeader* newHeader = reinterpret_cast<PacketHeader*>(fragmentSendBuffer->Buffer());
 		memcpy(newHeader, header, sizeof(PacketHeader));
 
+
 		newHeader->bFragment = 1;
 		newHeader->size = PktTotallSize;
 
@@ -284,7 +285,7 @@ int32 UDPSocket::SizeOverSend(HostRef player, SendBufferRef sendBuffer)
 		memcpy(newFgHeader_dummy, &newFgHeader, sizeof(FragmentHeader));
 
 
-		memcpy(fragmentSendBuffer->Buffer() + sizeof(PacketHeader) + sizeof(FragmentHeader), sendBuffer->Buffer() + sizeof(PacketHeader), newPayloadSize);
+		memcpy(fragmentSendBuffer->Buffer() + sizeof(PacketHeader) + sizeof(FragmentHeader), sendBuffer->Buffer() + sizeof(PacketHeader) + Finished_Size, newPayloadSize);
 		
 
 		_bufferRef->push_back(fragmentSendBuffer);
