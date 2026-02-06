@@ -101,9 +101,9 @@ void RTTManager::UpdatePaceRate(double newRTT)
 
     _paceRateBytePerSec.exchange(std::clamp(sendRate, _minSendRate, _maxSendRate));
 
-//#ifdef _DEBUG
-//    _debugQueueDelay = _queueDelay;
-//#endif
+#ifdef _DEBUG
+    _debugQueueDelay.exchange(_queueDelay);
+#endif
  /*   else if (DRAINING <= _queueDelay && _queueDelay <= BUILDUP)
     {
         Flag = IDLE_FLAG;
@@ -180,6 +180,26 @@ double RTTManager::GetResendDelay(int32 retransCount)
     resendDelay = resendDelay > kMaxDelayUs ? kMaxDelayUs : resendDelay; // 최대 상한
 
     return resendDelay;
+}
+
+string RTTManager::GetRttState()
+{
+    string outstring = "";
+    if (_debugQueueDelay.load() > CONGESTED)
+    {
+        // Flag = CONGEST_FLAG;
+        outstring = "CONGESTED";
+    }
+    else if (_debugQueueDelay.load() > BUILDUP)
+    {
+        // Flag = CONGEST_FLAG;
+        outstring = "BUILDUP";
+    }
+    else
+    {
+        outstring = "IDLE & DRAIN";
+    }
+    return outstring;
 }
 
 bool RTTManager::ValidBudget(int32 packetSize)

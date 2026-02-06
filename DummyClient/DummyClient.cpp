@@ -127,7 +127,7 @@ void PacketDeliverCondition(PlayerRef player)
 	DeliveryManagerRef GDeliveryManager = player->GetDeliveryManager();
 	cout << "플레이어 ID : " << player->client_Id << " 성공패킷 : " << GDeliveryManager->GetDeliveredPacketCount()
 	<< " 실패패킷 : " << GDeliveryManager->GetDroppedPacketCount() << " 재전송패킷 : " << GDeliveryManager->GetResendPacketCount() << " 성공 + 실패 : " << GDeliveryManager->GetDeliveredPacketCount() + GDeliveryManager->GetDroppedPacketCount() + GDeliveryManager->GetSuccessReSendPacketNum()
-		<< " RTTGradient : " << player->GetRTTManager().GetRTTGradient() << " RTT Send Sec Rate: " << player->GetRTTManager().GetRTTPaceRate() << endl;
+		<< " RTTGradient : " << player->GetRTTManager().GetRTTGradient() << " | RTT State : " << player->GetRTTManager().GetRttState() << endl;
 	//cout << " 실패패킷 : " << GDeliveryManager->GetDroppedPacketCount() << " | 다시보낸 패킷 : " << GDeliveryManager->GetSuccessReSendPacketNum() << endl;
 }
 

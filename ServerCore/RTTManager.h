@@ -70,8 +70,8 @@ public:
 	double GetRTTGradient() { return _rttGradient; }
 	double GetRTTPaceRate() { return _paceRateBytePerSec.load(); }
 	double GetRTTBudget() { return _paceSendBudget.load(); }
-private:
-	//double _debugQueueDelay; // Only For Debug
-	//atomic<double> _sendRate;
+public:
+	atomic<double> _debugQueueDelay; // Only For Debug
+	string GetRttState(); // Only For Debug
 };
 
