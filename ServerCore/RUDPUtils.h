@@ -34,21 +34,23 @@ namespace SPSC
 {
 	
 #ifdef _DEBUG
-	const int32 ccapacity = 1024;
+	const int32 ccapacity = 1024 * 64;
 #else
 	const int32 ccapacity = 256;
 #endif
 	template<typename T, int32 _Capacity = ccapacity>
-	class Queue
+	class UQueue
 	{
-		static_assert((_Capacity& (_Capacity - 1)) == 0,
+		static_assert((_Capacity & (_Capacity - 1)) == 0,
 			"Capacity must be power of 2");
 	public:
-		Queue() : _pushIdx(0), _popIdx(0) {}
-		~Queue() {}
+		UQueue() : _pushIdx(0), _popIdx(0) {}
+		~UQueue() {}
 
 		void Push(const T& v);
 		T Pop();
+		T Front();
+		int32 Size();
 		bool Empty();
 
 	private:
@@ -58,4 +60,49 @@ namespace SPSC
 		T _buffer[_Capacity];
 	};
 	
+}
+
+
+template<typename T, int32 _Capacity>
+inline void SPSC::UQueue<T, _Capacity>::Push(const T& v)
+{
+	const uint32 nowidx = _pushIdx.load();
+	const uint32 next = (nowidx + 1) % _Capacity;
+	if (next == _popIdx.load())
+		CRASH("SPSCQueue Full of Queue");
+	_buffer[nowidx] = v;
+	_pushIdx.store(next);
+}
+
+template<typename T, int32 _Capacity>
+inline T SPSC::UQueue<T, _Capacity>::Pop()
+{
+	const uint32 now_popidx = _popIdx.load();
+	const uint32 now_pushidx = _pushIdx.load();
+	if (now_popidx == now_pushidx)
+		CRASH("SPSCQueue Empty Pop");
+	_popIdx.store((now_popidx + 1) % _Capacity);
+	return _buffer[now_popidx];
+}
+
+template<typename T, int32 _Capacity>
+inline T SPSC::UQueue<T, _Capacity>::Front()
+{
+	if (Empty())
+		CRASH("SPSCQueue Empty");
+	return _buffer[_popIdx.load()];
+}
+
+template<typename T, int32 _Capacity>
+inline int32 SPSC::UQueue<T, _Capacity>::Size()
+{
+	return _pushIdx.load() - _popIdx.load();
+}
+
+template<typename T, int32 _Capacity>
+inline bool SPSC::UQueue<T, _Capacity>::Empty()
+{
+	if (_popIdx.load() == _pushIdx.load())
+		return true;
+	return false;
 }
