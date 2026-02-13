@@ -2,17 +2,18 @@
 #include "RUDPUtils.h"
 //TimerWheel을 통한 Transport 층의 Timer TIck Event 실행 및 고유 JobQueue를 통한 Lock없는 단일 쓰레드 처리로 Lock 경쟁 제거
 
-class ControlJobWorker
-{
-public:
+//class ControlJobs
+//{
+//public:
+//
+//	void PushJob(CallbackType&& callback);
+//	bool Execute();
+//	bool IsEmpty() {  return _jobs.Empty(); }
+//	
+//	SPSC::Queue<JobRef> _jobs;
+//
+//};
 
-	void PushJob(CallbackType&& callback);
-	bool Execute();
-	bool IsEmpty() { READ_LOCK; return _jobs.empty(); }
-	
-	queue<JobRef> _jobs;
-	USE_LOCK;
-};
 
 //#pragma pack(push, 1)
 
@@ -62,6 +63,7 @@ private:
 		ControlPacketSize = sizeof(PacketHeader) + sizeof(ControlHeader),
 		TICKMS = LazyAssist::NORMAL_TickMs,
 		ACKTOKEN = 5,
+		CONTROLJOB_TOKEN = 5,
 		AD_RWIND_PERIOD = 200, // ms단위
 	};
 public:
@@ -81,7 +83,7 @@ public:
 
 	bool CheckValidControl(PacketHeader* header);
 
-	void PushJob(CallbackType&& callback) { _jobWorker.PushJob(std::move(callback)); _lazyAssist._jobCv.notify_one(); }
+	//void PushJob(CallbackType&& callback) { _controlJobWorker.PushJob(std::move(callback)); _lazyAssist._jobCv.notify_one(); }
 
 
 
@@ -98,31 +100,36 @@ public:
 	void PushHostAckReady(HostRef host);
 	HostRef PopHostAckReady();
 
+	bool EmptyReadyControlJobQueue();
+	void PushHostControlJobReady(HostRef host);
+	HostRef PopHostControlJobReady();
+
 	LazyWorkAssist& GetLazyAssist() { return _lazyAssist; }
 private:
 	bool IsControlPacket(int16 flag) { if (flag <= 0) return false; else return true; }
 
 	void HandleControlPacket(PacketHeader* header);
 
-	void DoWork();
+	void DoWork();  // Only One Thread Has to Run this Work Function(SPSC Queue Using)
 //	void DoJobWork();
 	static SendBufferRef MakeControlPacketBuffer(int32 client_id);
 	static ControlHeader* InitControlHeader(BYTE* buffer);
 
 	void HandleHostReadyAck(HostRef host);
-	
+	void HandleHostReadyControlJob(HostRef host);
+
 	void PeriodicRwindSync(HostRef host, int32 rwindsize, uint32 total_recovered_size); // 송신측과 수신측의 Rwind 동기화를 위한 주기적인 Control Packet 송신
 private:
 	atomic<bool> brunning = false;
-	ControlJobWorker _jobWorker;
+	
 	
 	LazyWorkAssist _lazyAssist;
 	
 
 	queue<HostRef> _readyAckHostQueue;
-
+	queue<HostRef> _readyControlJobHostQueue;
 	
-	USE_LOCK; // For ReadyAckHostQueue;
+	USE_MANY_LOCKS(2); // For ReadyAckHostQueue, _readyControlJobHostQueue;
 };
 
 extern TransportControl GTransportControl;

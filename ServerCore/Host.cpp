@@ -31,3 +31,16 @@ void Host::HandleACK(double rtt)
 {
 	rttManager.HandleACK(rtt);
 }
+
+void Host::PushControlJob(CallbackType&& func)
+{
+	_controlJobs.PushJob(move(func));
+
+	bool expected = false;
+	if (_controlJobs.bInsertReadyQueue.compare_exchange_strong(expected, true))
+	{
+		GTransportControl.PushHostControlJobReady(shared_from_this());
+		GTransportControl.GetLazyAssist()._jobCv.notify_one();
+	}
+}
+

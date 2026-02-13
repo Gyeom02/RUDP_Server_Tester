@@ -29,3 +29,33 @@ namespace UTime
 	}
 		// return microseconds
 }
+
+namespace SPSC
+{
+	
+#ifdef _DEBUG
+	const int32 ccapacity = 1024;
+#else
+	const int32 ccapacity = 256;
+#endif
+	template<typename T, int32 _Capacity = ccapacity>
+	class Queue
+	{
+		static_assert((_Capacity& (_Capacity - 1)) == 0,
+			"Capacity must be power of 2");
+	public:
+		Queue() : _pushIdx(0), _popIdx(0) {}
+		~Queue() {}
+
+		void Push(const T& v);
+		T Pop();
+		bool Empty();
+
+	private:
+		atomic<uint32> _pushIdx; 
+		atomic<uint32> _popIdx;
+
+		T _buffer[_Capacity];
+	};
+	
+}

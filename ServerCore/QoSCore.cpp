@@ -98,6 +98,14 @@ QoSShard* QoSCore::GetBusyShard_SEND()
 //	}
 //}
 
+QoSPlayer::QoSPlayer(HostRef& owner, QoSShard* _shard, int32 tokenper, int32 burst)
+	: _owner(owner), _ownerShard(_shard), _sendBucket(tokenper, burst) 
+{
+	cout << "QoSPlayer Added " << endl;
+
+	InitSendQueuesOutStand();
+}
+
 void QoSPlayer::PushSend(shared_ptr<vector<SendBufferRef>> packet)
 {
 	bool expected = false;
@@ -154,7 +162,7 @@ void QoSPlayer::PopSend()
 			{
 				SEND_WRITE_LOCK;
 				auto& ROQueue = _sendQueues[QoS::RO]._queue;
-
+				
 				
 				/*if (ROQueue.empty() || )
 					break;*/
@@ -184,6 +192,11 @@ void QoSPlayer::PopSend()
 				savePacket = ROQueue[selected_priorty].front();
 				
 				PacketHeader* header = reinterpret_cast<PacketHeader*>((*savePacket->sendBuffers)[0]->Buffer());
+
+				_sendQueues[QoS::RO].UpdateOutStandBudget();
+
+				if (!_sendQueues[QoS::RO].CheckHas_OutStandBudget(savePacket->AllBuffersSize))
+					break;
 
 				_owner->GetRTTManager().UpdateCongestBudget();
 				if (!_owner->GetRTTManager().ValidBudget(savePacket->AllBuffersSize))
@@ -282,6 +295,12 @@ void QoSPlayer::PopSend()
 				savePacket = UROQueue[selected_priorty].front();
 				//int32 startindex = savePacket->SendStartIndex;
 				//bool bAllSend = true;
+				_sendQueues[QoS::URO].UpdateOutStandBudget();
+
+				if (!_sendQueues[QoS::URO].CheckHas_OutStandBudget(savePacket->AllBuffersSize))
+					break;
+
+
 				_owner->GetRTTManager().UpdateCongestBudget();
 				if (!_owner->GetRTTManager().ValidBudget(savePacket->AllBuffersSize))
 				{
@@ -577,6 +596,13 @@ void QoSPlayer::ResetRecvReady()
 		//cout << "expectNum : " << expectNum << endl;
 		_ownerShard->PushRecvReadyQueue(shared_from_this()); //PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
 	}
+}
+
+void QoSPlayer::InitSendQueuesOutStand()
+{
+	_sendQueues[QoS::Channel::RO]._maxOutStandBudget = RO_OUTSTAND;
+	_sendQueues[QoS::Channel::URO]._maxOutStandBudget = URO_OUTSTAND;
+
 }
 
 void QoSShard::MakeQoSPlayer(HostRef object, int32 client_Id, int32 rate, int32 burst)
@@ -955,6 +981,37 @@ void QoSPlayer::QoSSendQueue::Push(const shared_ptr<SavedSendPacket>& rhs, uint1
 	
 }
 
+void QoSPlayer::QoSSendQueue::UpdateOutStandBudget()
+{
+#ifdef _DEBUG
+	ASSERT_CRASH(_maxOutStandBudget > 0);
+#endif
+
+	if (_recentOutStandBudgetUpdateDate == 0) // when first call func
+	{
+		_recentOutStandBudgetUpdateDate = UTime::GetNow();
+		_outStandBudget = _maxOutStandBudget;
+		return;
+	}
+	double secRate = (double)(UTime::GetNow() - _recentOutStandBudgetUpdateDate) / 1'000'000;
+#ifdef _DEBUG
+	if (secRate < 0)
+		CRASH("secRate < 0");
+#endif
+	int64 newBudget = _outStandBudget + _maxOutStandBudget * secRate;
+
+	_outStandBudget = _maxOutStandBudget < newBudget ? _maxOutStandBudget : newBudget;
+}
+
+bool QoSPlayer::QoSSendQueue::CheckHas_OutStandBudget(int32 packetSize)
+{
+	if (_outStandBudget - packetSize < 0)
+		return false;
+
+	_outStandBudget -= packetSize;
+	return true;
+}
+
 void QoSPlayer::QoSRecvQueue::Push(const shared_ptr<SavedRecvPacket>& rhs, uint16 priority)
 {
 	ASSERT_CRASH(priority >= 0 && priority <QoS::Priority::PRIORTY_NUM);
@@ -962,5 +1019,4 @@ void QoSPlayer::QoSRecvQueue::Push(const shared_ptr<SavedRecvPacket>& rhs, uint1
 	_queue[priority].push(rhs);
 
 }
-
 

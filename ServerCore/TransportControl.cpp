@@ -5,17 +5,19 @@
 TransportControl GTransportControl;
 
 
-void ControlJobWorker::PushJob(CallbackType&& callback)
+void ControlJobs::PushJob(CallbackType&& callback)
 {
     WRITE_LOCK;
     //cout << "ControlJobWorker::PushJob()" << endl;
     _jobs.push(MakeShared<Job>(std::move(callback)));
     
+    
 }
 
-bool ControlJobWorker::Execute()
+bool ControlJobs::Execute()
 {
     JobRef job;
+ 
     {
         WRITE_LOCK;
         if (_jobs.empty())
@@ -26,6 +28,18 @@ bool ControlJobWorker::Execute()
    // cout << "ControlJobWorker::Execute()" << endl;
     job->Execute();
     return true;
+}
+
+bool ControlJobs::CheckHostControlJobEmpty()
+{
+    WRITE_LOCK;
+    if (IsEmpty()) //비어있음을 확인
+    {
+        bInsertReadyQueue.exchange(false);
+        return true;
+    }
+    return false;
+  
 }
 
 
@@ -75,7 +89,7 @@ void TransportControl::OnPushRWind(int32 client_id, int32 add_size, uint32 total
     if (!host)
         return;
   //  cout << "OnPushRWind 2" << endl;
-    _jobWorker.PushJob([this, client_id, host, add_size, total_recovered_size]() {
+    host->PushControlJob([this, client_id, host, add_size, total_recovered_size]() {
      //   cout << "jobworker.PushJob OnPushRWind" << endl;
         SendBufferRef sendBuffer = MakeRecoverRwindControlPacket(client_id, add_size, total_recovered_size);
        
@@ -113,6 +127,41 @@ HostRef TransportControl::PopHostAckReady()
     return popHost;
 }
 
+bool TransportControl::EmptyReadyControlJobQueue()
+{
+    bool bempty;
+    {
+        READ_LOCK_IDX(1);
+        bempty = _readyControlJobHostQueue.empty();
+    }
+    return bempty;
+}
+
+void TransportControl::PushHostControlJobReady(HostRef host)
+{
+    if (!host)
+        return;
+    WRITE_LOCK_IDX(1);
+    _readyControlJobHostQueue.push(host);
+}
+
+HostRef TransportControl::PopHostControlJobReady()
+{
+
+    HostRef popHost = nullptr;
+
+    {
+        WRITE_LOCK_IDX(1);
+        if (EmptyReadyControlJobQueue())
+            return popHost;
+        popHost = _readyControlJobHostQueue.front();
+        _readyControlJobHostQueue.pop();
+    }
+
+    return popHost;
+    
+}
+
 void TransportControl::HandleControlPacket(PacketHeader* header)
 {
     if (header->size != ControlPacketSize)
@@ -136,7 +185,7 @@ void TransportControl::HandleControlPacket(PacketHeader* header)
             CRASH("start > 55338981");
         }
 #endif
-        _jobWorker.PushJob([player, bhascount, start, count, curExpectedSN]() {
+        player->PushControlJob([player, bhascount, start, count, curExpectedSN]() {
             
             //cout << "jobworker.PushJob ProcessAcks" << endl;
             if (player == nullptr)
@@ -186,16 +235,17 @@ void TransportControl::HandleControlPacket(PacketHeader* header)
     {
         double rtt = RTTManager::GetRTT(contHeader->rtt.sent_timestamp);
         
-        _jobWorker.PushJob([player, rtt]() { player->HandleACK(rtt); });
+        player->PushControlJob([player, rtt]() { player->HandleACK(rtt); });
        
     }
     
 
 }
 
-void TransportControl::DoWork()
+void TransportControl::DoWork() // Only One Thread Has to Run this Work Function(SPSC Queue Using)
 {
     HostRef ackReadyHost;
+    HostRef ControlJobReadyHost;
     while (brunning.load())
     {
         
@@ -210,21 +260,28 @@ void TransportControl::DoWork()
             _lazyAssist.SetNextTickFromNow();
 
             unique_lock<mutex> _lock(_lazyAssist._jobMutex);
-            _lazyAssist._jobCv.wait_until(_lock, _lazyAssist._nextTick, [&]() { return !_jobWorker.IsEmpty() || !EmptyReadyAckQueue() || !brunning.load(); });
+            _lazyAssist._jobCv.wait_until(_lock, _lazyAssist._nextTick, [&]() { return !EmptyReadyControlJobQueue() || !EmptyReadyAckQueue() || !brunning.load(); });
             //Lastly Do JobQueue
             if (brunning.load() == false)
                 return;
+
+            if (!EmptyReadyControlJobQueue())
+            {
+                ControlJobReadyHost = PopHostControlJobReady();
+            }
             if (!EmptyReadyAckQueue())
             {
                 
                 ackReadyHost = PopHostAckReady();
             }
-            
+           
         }
 
-        if (!_jobWorker.IsEmpty())
+        if (ControlJobReadyHost)
         {
-            _jobWorker.Execute();
+            HandleHostReadyControlJob(ControlJobReadyHost);
+            ControlJobReadyHost = nullptr;
+            //_controlJobWorker.Execute();
         }
 
         if (ackReadyHost)
@@ -426,6 +483,35 @@ void TransportControl::HandleHostReadyAck(HostRef host)
     GetLazyAssist()._jobCv.notify_one();
 }
 
+void TransportControl::HandleHostReadyControlJob(HostRef host)
+{
+    int32 token = CONTROLJOB_TOKEN;
+
+    bool bAckEmpty = false;
+    while (token--)
+    {
+        if (!host->GetControlJobs().Execute()) // Control Job Queue Empty
+        {
+            bAckEmpty = true;
+            break;
+        }
+       
+    }
+
+
+   
+
+    if (bAckEmpty && host->GetControlJobs().CheckHostControlJobEmpty()/*정밀 Check*/)
+    {
+
+        return; //다 보냄 
+    }
+    // 해당 호스트의 Ack을 다 못 보냄 다시 AckReadyQueue에 넣어야함
+
+    PushHostControlJobReady(host);
+    GetLazyAssist()._jobCv.notify_one();
+}
+
 void TransportControl::PeriodicRwindSync(HostRef host, int32 rwindsize, uint32 total_recovered_size)
 {
    // HostRef host = GHostManager.GetPlayer(client_id);
@@ -434,7 +520,7 @@ void TransportControl::PeriodicRwindSync(HostRef host, int32 rwindsize, uint32 t
     if (!host)
         return;
     //  cout << "OnPushRWind 2" << endl;
-    _jobWorker.PushJob([this, client_id, host, rwindsize, total_recovered_size]() {
+    host->PushControlJob([this, client_id, host, rwindsize, total_recovered_size]() {
         //   cout << "jobworker.PushJob OnPushRWind" << endl;
         SendBufferRef sendBuffer = MakeADRwindControlPacket(client_id, rwindsize, total_recovered_size);
 

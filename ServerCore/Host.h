@@ -1,7 +1,26 @@
 #pragma once
 #include "RTTManager.h"
 
-class Host : public enable_shared_from_this<Host> 
+class ControlJobs
+{
+public:
+	friend class Host;
+
+	bool Execute();
+	bool IsEmpty() { READ_LOCK; return _jobs.empty(); }
+
+	bool CheckHostControlJobEmpty();
+
+private:
+	void PushJob(CallbackType&& callback);
+
+	queue<JobRef> _jobs;
+
+	atomic<bool> bInsertReadyQueue = false;
+	USE_LOCK;
+};
+
+class Host : public enable_shared_from_this<Host>
 {
 private:
 	enum
@@ -33,6 +52,11 @@ public:
 
 	RTTManager& GetRTTManager() { return rttManager; }
 	void HandleACK(double rtt);
+
+public: //ControlJob 
+	ControlJobs& GetControlJobs() { return _controlJobs; }
+	void PushControlJob(CallbackType&& func);
+
 public:
 	NetAddress				netAddress;
 	//	GameSessionRef			ownerSession; // Cycle
@@ -52,6 +76,8 @@ private:
 	atomic<int32> _giveFragmentID = 0;
 
 	RTTManager rttManager;
+
+	ControlJobs _controlJobs;
 };
 
 using HostRef = shared_ptr<Host>;

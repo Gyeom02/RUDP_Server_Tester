@@ -67,6 +67,7 @@ struct SavedSendPacket
 	//SavedSendPacket(SendBufferRef buffer) { }
 	// TODO : Network 층에서의 조각화를 사전에 막기위해 Linked형태로 다음 또는 이전의 패킷의 ptr을 갖고있어야함
 };
+
 struct SavedRecvPacket
 {
 	explicit SavedRecvPacket(BYTE* buffer, int32 size); // 그냥 쌩 new BYTE* Pointer 아님 큰일남,소멸자에서 해당 버퍼를 delete 처리하기 때문이다
@@ -89,13 +90,23 @@ private:
 	enum
 	{
 		QUEUE_MAX = 2, // RFCT Dose Not Need Queue 
+		RO_OUTSTAND = 128 * 1024,
+		URO_OUTSTAND = 32*1024,
 	};
 
 	struct QoSSendQueue
 	{
 		void Push(const shared_ptr<SavedSendPacket>& rhs, uint16 priority);
 		//void UROPush(const shared_ptr<SavedSendPacket>& rhs, uint16 priority);
+		void UpdateOutStandBudget();
+		bool CheckHas_OutStandBudget(int32 packetSize);
+
+		uint64 _recentOutStandBudgetUpdateDate = 0;
+		double _outStandBudget = 0;
+		uint32 _maxOutStandBudget = 0;
 		
+		//const uint64 CanUpdateBudget_us = 1'000'000; // 1s
+
 		std::array<queue<shared_ptr<SavedSendPacket>>, QoS::Priority::PRIORTY_NUM> _queue;
 	};
 	struct QoSRecvQueue
@@ -106,7 +117,7 @@ private:
 		std::array<queue<shared_ptr<SavedRecvPacket>>, QoS::Priority::PRIORTY_NUM> _queue;
 	};
 public:
-	QoSPlayer(HostRef& owner, QoSShard* _shard, int32 tokenper, int32 burst) : _owner(owner), _ownerShard(_shard), _sendBucket(tokenper, burst) { cout << "QoSPlayer Added " << endl; }
+	QoSPlayer(HostRef& owner, QoSShard* _shard, int32 tokenper, int32 burst);
 	~QoSPlayer() { cout << "QoSPlayer Erased " << endl; }
 	
 	//void PushSend(SendBufferRef packet);
@@ -130,6 +141,8 @@ public:
 
 public:
 	HostRef& GetOwner() { return _owner; }
+
+	void InitSendQueuesOutStand();
 
 	array<QoSSendQueue, QUEUE_MAX> _sendQueues;
 	array<QoSRecvQueue, QUEUE_MAX> _recvQueues;
