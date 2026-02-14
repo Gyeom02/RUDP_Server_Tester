@@ -66,7 +66,7 @@ public:
 	bool WritePendingAcks(OUT uint32& start, OUT int32& count, OUT bool& hasCount, OUT uint64& rtt_stamp);
 
 	//타임아웃체크
-	void ProcessTimeOutPackets();
+	//void ProcessTimeOutPackets();
 
 	uint32 GetDeliveredPacketCount() { return mDeliveredPacketCount.load(); }
 	uint32 GetDroppedPacketCount() { return mResendPacketCount.load() - mSuccessReSendPacketNum.load(); }
@@ -135,7 +135,7 @@ private:
 	Deque<AckRange> mPendingAcks;
 	//전체
 	atomic<uint64> mDispatchedPacketCount; //전체 송신한 현재 패킷의 수 ( mDroppedPacketCount + mDeliveredPacketCount의 수와 같아야함 아님 패킷이 누락된거임)
-	SPSC::UQueue<uint32> mInFlightPacketsSN; // Push -> Send Thread, Pop -> Control(TimeOut Check, Ack Handle) Thread
+	//SPSC::UQueue<uint32> mInFlightPacketsSN; // Push -> Send Thread, Pop -> Control(TimeOut Check, Ack Handle) Thread
 
 	atomic<int32> mTimeOutCount = 0;
 	atomic<int32> mSequenceNotMatchedCount = 0;

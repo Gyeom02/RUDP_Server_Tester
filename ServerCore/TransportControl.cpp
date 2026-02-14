@@ -555,10 +555,14 @@ void TransportControl::CheckTimeOutPacket()
             if (_rtoMinQueue.empty())
                 return;
             state = _rtoMinQueue.top();
-            _rtoMinQueue.pop();
+            
             if (state.rto_us > UTime::GetNow()) // ¾ÆÁ÷ Å¸ÀÓ¾Æ¿ô ¾Æ´Ô
                 return;
+
+            _rtoMinQueue.pop();
         }
+
+        //cout << "RTO : " << state.rto_us / 1'000'000 << endl;
         HostRef host = state.inflightPacket->GetOwner();
         if (!host)
         {
