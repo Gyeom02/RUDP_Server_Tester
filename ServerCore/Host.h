@@ -42,7 +42,7 @@ public:
 	bool CanRPCT();
 
 	/* DeliveryManager */
-	int32 GetExpectedSeqNum() { return GetDeliveryManager()->GetExpectedSeqNum(); }
+	int32 GetRWindExpectedSeqNum() { return GetDeliveryManager()->GetRWindExpectedSeqNum(); }
 
 	DeliveryManagerRef GetDeliveryManager() { return deliveryManager; }
 
@@ -52,6 +52,7 @@ public:
 
 	RTTManager& GetRTTManager() { return rttManager; }
 	void HandleACK(double rtt);
+
 
 public: //ControlJob 
 	ControlJobs& GetControlJobs() { return _controlJobs; }

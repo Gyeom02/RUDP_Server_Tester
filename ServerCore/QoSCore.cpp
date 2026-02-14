@@ -217,25 +217,25 @@ void QoSPlayer::PopSend()
 					
 					if (!dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
 					{			
-						InFlightPacketPtr inflight = dm->FindOldestInFlightPacket();
-						if (!inflight)
-						{
-						//	cout << "oldest inflight not exisit | ID : " << _owner->client_Id  << endl;
-							break;
-						}
-						double ResendDelay = _owner->GetRTTManager().GetResendDelay(reinterpret_cast<PacketHeader*>(inflight->GetTransmissionData()->Buffer())->retransnum);
-						if (double(UTime::GetNow() - inflight->_time_recent_send.load()) > ResendDelay)
-						{
-							//reinterpret_cast<PacketHeader*>(inflight->GetTransmissionData()->Buffer())->sn = inflight->GetSequenceNumber().GetSN(); // 임시
-						//	cout << " HandlePacketDeliveryFailure ID : " << _owner->client_Id << " | InFlight SN : " << inflight->GetSequenceNumber().GetSN() << " | Resend Packet SN : " << reinterpret_cast<PacketHeader*>(inflight->GetTransmissionData()->Buffer())->sn << endl;
-							
-							dm->HandlePacketDeliveryFailure(inflight);
-						}
+						//InFlightPacketPtr inflight = dm->FindOldestInFlightPacket();
+						//if (!inflight)
+						//{
+						////	cout << "oldest inflight not exisit | ID : " << _owner->client_Id  << endl;
+						//	break;
+						//}
+						//double ResendDelay = _owner->GetRTTManager().GetResendDelay(reinterpret_cast<PacketHeader*>(inflight->GetTransmissionData()->Buffer())->retransnum);
+						//if (double(UTime::GetNow() - inflight->_time_recent_send.load()) > ResendDelay)
+						//{
+						//	//reinterpret_cast<PacketHeader*>(inflight->GetTransmissionData()->Buffer())->sn = inflight->GetSequenceNumber().GetSN(); // 임시
+						////	cout << " HandlePacketDeliveryFailure ID : " << _owner->client_Id << " | InFlight SN : " << inflight->GetSequenceNumber().GetSN() << " | Resend Packet SN : " << reinterpret_cast<PacketHeader*>(inflight->GetTransmissionData()->Buffer())->sn << endl;
+						//	
+						//	dm->HandlePacketDeliveryFailure(inflight);
+						//}
 						break;
 					}
 					
 				}
-			
+				_sendQueues[QoS::RO].Use_OutStandBudget(savePacket->AllBuffersSize);
 				_owner->GetRTTManager().UseBudget(savePacket->AllBuffersSize);
 
 
@@ -1007,9 +1007,16 @@ bool QoSPlayer::QoSSendQueue::CheckHas_OutStandBudget(int32 packetSize)
 {
 	if (_outStandBudget - packetSize < 0)
 		return false;
-
-	_outStandBudget -= packetSize;
 	return true;
+}
+
+void QoSPlayer::QoSSendQueue::Use_OutStandBudget(int32 packetSize)
+{
+#ifdef _DEBUG
+	ASSERT_CRASH(packetSize > 0);
+	ASSERT_CRASH(packetSize <= _outStandBudget);
+#endif
+	_outStandBudget -= packetSize;
 }
 
 void QoSPlayer::QoSRecvQueue::Push(const shared_ptr<SavedRecvPacket>& rhs, uint16 priority)

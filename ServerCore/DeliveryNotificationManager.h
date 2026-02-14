@@ -41,7 +41,7 @@ private:
 public:
 	enum : ULONGLONG
 	{
-		TIMEOUT = 500,
+		TIMEOUT = 500, // ms
 	};
 	explicit DeliveryNotificationManager();
 	~DeliveryNotificationManager();
@@ -66,12 +66,15 @@ public:
 	bool WritePendingAcks(OUT uint32& start, OUT int32& count, OUT bool& hasCount, OUT uint64& rtt_stamp);
 
 	//타임아웃체크
-	//void ProcessTimeOutPackets();
+	void ProcessTimeOutPackets();
 
 	uint32 GetDeliveredPacketCount() { return mDeliveredPacketCount.load(); }
 	uint32 GetDroppedPacketCount() { return mResendPacketCount.load() - mSuccessReSendPacketNum.load(); }
 	uint32 GetResendPacketCount() { return mResendPacketCount.load(); }
+	
 	int32 GetTimeOutCount() { return mTimeOutCount.load(); }
+	void AddTimeOutCount() { mTimeOutCount++; }
+
 	int32 GetSequenceNotMatchedCount() { return mSequenceNotMatchedCount.load(); }
 	uint32 GetDispatchedPacketCount() { return mDispatchedPacketCount.load(); }
 
@@ -89,7 +92,7 @@ public:
 
 	/*--------------------------------------------*/
 	/*   _recvWindow의 함수   */
-	int32 GetExpectedSeqNum() { return _recvWindow.GetExpectedSqeNum(); }
+	uint32 GetRWindExpectedSeqNum() { return _recvWindow.GetExpectedSqeNum(); }
 	int32 GetRWind() { return _recvWindow.GetRWind(); }
 	uint32 GetTotal_Recv_RWind() { return _recvWindow.GetTotalRWind(); }
 	void MakeSpaceRWind(int32 doneSize) { _recvWindow.MakeSpaceRWind(doneSize); }
@@ -109,12 +112,16 @@ public:
 	bool CheckHostAckEmpty();
 
 	InFlightPacketPtr FindOldestInFlightPacket();
+
+	uint32 GetExpectedAckSN() { return _curExpectedAckSN.load(); }
+
+	InFlightPacketPtr HandleAck(uint32 sn);
 private:
 	InFlightPacketPtr FindInFlightPacketFromSN(uint32 sn);
 	void StoreInFlightPacketFromSN(uint32 sn, InFlightPacketPtr inflightPacket);
 	InFlightPacketPtr EraseInFlightPacketFronSN(uint32 sn);
 	bool CheckValidAckSN(uint32 sn);
-	InFlightPacketPtr HandleAck(uint32 sn);
+	
 
 	void UpdateExpectedAckSN(uint32 newSN);
 private:
@@ -128,7 +135,7 @@ private:
 	Deque<AckRange> mPendingAcks;
 	//전체
 	atomic<uint64> mDispatchedPacketCount; //전체 송신한 현재 패킷의 수 ( mDroppedPacketCount + mDeliveredPacketCount의 수와 같아야함 아님 패킷이 누락된거임)
-	//Deque<InFlightPacketPtr> mInFlightPackets;
+	SPSC::UQueue<uint32> mInFlightPacketsSN; // Push -> Send Thread, Pop -> Control(TimeOut Check, Ack Handle) Thread
 
 	atomic<int32> mTimeOutCount = 0;
 	atomic<int32> mSequenceNotMatchedCount = 0;

@@ -8,6 +8,7 @@
 #include "CoreTLS.h"
 #include "CoreGlobal.h"
 #include "Container.h"
+#include "RUDPUtils.h"
 
 #include <windows.h>
 #include <iostream>
@@ -27,6 +28,7 @@ using namespace std;
 #include "Session.h"
 #include "JobQueue.h"
 #include "ConsoleLog.h"
+
 #include "DeliveryNotificationManager.h"
 #include "QoSCore.h"
 #include "UDP.h"

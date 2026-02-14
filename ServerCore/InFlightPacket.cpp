@@ -50,6 +50,39 @@ void InFlightPacket::HandleDeliverySuccess(DeliveryManagerRef deliveryManager)
 	}
 	//
 }
+void InFlightPacket::InitSendTime()
+{
+	uint64 now = UTime::GetNow();
+	_time_first_send.store(now);
+	_time_recent_send.store(now);
+
+}
+uint64 InFlightPacket::GetRecentSendTime()
+{
+	return _time_recent_send.load();
+}
+void InFlightPacket::UpdateRecentSendTime()
+{
+	_time_recent_send.exchange(UTime::GetNow());
+}
+bool InFlightPacket::Check_CoolTime_ReSend()
+{
+	if (_time_recent_resend == 0)
+	{
+		_time_recent_resend = UTime::GetNow();
+	}
+	else
+	{
+		uint64 now = UTime::GetNow();
+		double ResendDelay = _owner.lock()->GetRTTManager().GetResendDelay(reinterpret_cast<PacketHeader*>(GetTransmissionData()->Buffer())->retransnum);
+		if (double(now - _time_recent_resend.load()) <= ResendDelay)
+		{
+			return false;
+		}
+		_time_recent_resend = now;
+	}
+	return true;
+}
 //
 //int32 InFlightPacket::Send()
 //{

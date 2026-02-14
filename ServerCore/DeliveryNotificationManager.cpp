@@ -102,7 +102,8 @@ void DeliveryNotificationManager::WriteSeqeuenceNumber(shared_ptr<vector<SendBuf
 			inflightPacket = MakeShared<InFlightPacket>(owner, header->sn, sendBuffer);
 			
 			StoreInFlightPacketFromSN(header->sn, inflightPacket);
-			
+			//mInFlightPacketsSN.Push(header->sn);
+
 			if (header->bFragment == 1) //Fragment Packet이다
 			{
 				FragmentHeader* fragHeader = reinterpret_cast<FragmentHeader*>(&header[1]);
@@ -113,9 +114,7 @@ void DeliveryNotificationManager::WriteSeqeuenceNumber(shared_ptr<vector<SendBuf
 	
 				fragHeader->first_sn = firstSN;
 			}
-			double now = UTime::GetNow();
-			inflightPacket->_time_first_send.store(now);
-			inflightPacket->_time_recent_send.store(now);
+			inflightPacket->InitSendTime();
 		}
 		else
 		{
@@ -124,11 +123,10 @@ void DeliveryNotificationManager::WriteSeqeuenceNumber(shared_ptr<vector<SendBuf
 				return;
 				//	cout << "WriteSeqeuenceNumber 110 layer" << endl;
 				
-			else
-			{
-			//	header->sn = inflightPacket->GetSequenceNumber().GetSN();
-				inflightPacket->_time_recent_send.exchange(UTime::GetNow());
-			}
+			
+		//	header->sn = inflightPacket->GetSequenceNumber().GetSN();
+			inflightPacket->UpdateRecentSendTime();
+			
 		}
 
 
@@ -136,9 +134,9 @@ void DeliveryNotificationManager::WriteSeqeuenceNumber(shared_ptr<vector<SendBuf
 		++mDispatchedPacketCount;
 
 		/*WRITE_LOCK_IDX(InFlightPacket_LOCK);
-
-		if (owner)
-			mInFlightPackets.emplace_back(inflightPacket);*/
+		*/
+		GTransportControl.PushRTOQueue({ inflightPacket, inflightPacket->GetRecentSendTime() + owner->GetRTTManager().GetRTO() });
+		//mInFlightPacketsSN.Push(header->sn);
 
 		
 	}
@@ -269,7 +267,7 @@ void DeliveryNotificationManager::ProcessAcks(uint32 start, uint32 count, bool h
 	}
 	//cout << "UpdateExpectedAckSN : " << _weakOwner.lock()->client_Id << " | expected sn : " << _curExpectedAckSN.load() - 1 << " |  Handled sn : " << nextAckdSequenceNumber.GetSN() - 1 << " | recviver expected sn : " << curExpectedSN << endl;
 
-	//UpdateExpectedAckSN(curExpectedSN);
+	UpdateExpectedAckSN(curExpectedSN);
 }
 
 void DeliveryNotificationManager::HandlePacketDeliveryFailure(const InFlightPacketPtr& inFlightPacket)
@@ -437,76 +435,93 @@ bool DeliveryNotificationManager::WritePendingAcks(OUT uint32& start, OUT int32&
 	}
 	return false;
 }
-//
-//void DeliveryNotificationManager::ProcessTimeOutPackets()
-//{
-//	//WRITE_LOCK;
-//	//int32 token = 10;
-//	
-//	uint64 now = GetTickCount64();
-//
-//	
-//
-//	while (true)
-//	{
-//		InFlightPacketPtr nextInFlightPacket;
-//		int32 handleFlag = -1; // 1 = success | 2 = fail
-//		{
-//			WRITE_LOCK_IDX(InFlightPacket_LOCK);
-//			if (mInFlightPackets.empty())
-//				return;
-//			
-//			
-//			nextInFlightPacket = mInFlightPackets.front();
-//
-//
-//
-//			if (now - nextInFlightPacket->GetTimeDispactched() > TIMEOUT)
-//			{
-//
-//				if (nextInFlightPacket->GetTransmissionData()->IsGotAck()) // Ack Packet을 받은 패킷임
-//				{
-//					mInFlightPackets.pop_front();
-//				}
-//				else
-//				{
-//					PacketHeader* header = reinterpret_cast<PacketHeader*>(nextInFlightPacket->GetTransmissionData()->Buffer());
-//					if (header->sn < _curExpectedAckSN.load()) //_curExpectedAckSN보다 작다는건 이미 처리된 SN을 가진 패킷임으로 성공처리함(그저 Ack을 못받았을 뿐)
-//					{
-//						handleFlag = 1;
-//
-//						mInFlightPackets.pop_front();
-//						//continue;
-//					}
-//					else
-//					{
-//						mTimeOutCount++;
-//						handleFlag = 2;
-//						//PacketHeader* header = reinterpret_cast<PacketHeader*>(nextInFlightPacket->GetTransmissionData()->Buffer());
-//					//	cout << " TimeOutPacket ID : " << header->id << " | SN : " << header->sn << endl;
-//
-//						mInFlightPackets.pop_front();
-//					}
-//				}
-//			}
-//			else
-//				return; //이후 다음 패킷부터는 초과가 아님(시간순서대로 넣어져있기 때문이다)
-//			
-//		}
-//		switch (handleFlag)
-//		{
-//		case 1:
-//			HandleAck(nextInFlightPacket->GetSequenceNumber().GetSN());
-//			HandlePacketDeliverySuccess(nextInFlightPacket);
-//			break;
-//		case 2:
-//			HandlePacketDeliveryFailure(nextInFlightPacket);
-//			break;
-//		default:
-//			break;
-//		}
-//	}
-//}
+
+void DeliveryNotificationManager::ProcessTimeOutPackets()
+{
+	//WRITE_LOCK;
+	//int32 token = 10;
+	
+	
+
+	
+
+	while (true)
+	{
+		uint32 nextInFlightPacketSN;
+		InFlightPacketPtr nextInFlightPacket;
+		int32 handleFlag = -1; // 1 = success | 2 = fail
+		
+		//WRITE_LOCK_IDX(InFlightPacket_LOCK);
+		if (mInFlightPacketsSN.Empty())
+			return;
+			
+			
+		nextInFlightPacketSN = mInFlightPacketsSN.Front();
+
+		nextInFlightPacket = FindInFlightPacketFromSN(nextInFlightPacketSN);
+		//cout << "1" << endl;
+		if (!nextInFlightPacket) // 이미 Ack 처리한 패킷임
+		{
+			mInFlightPacketsSN.Pop();
+			continue;
+		}
+
+		uint64 now = UTime::GetNow();
+
+		if ((now - nextInFlightPacket->GetRecentSendTime()) / 1'000 > TIMEOUT)
+		{
+				
+			//if (nextInFlightPacket->GetTransmissionData()->IsGotAck()) // Ack Packet을 받은 패킷임
+			//{
+			//	mInFlightPackets.pop_front();
+			//}
+			
+			PacketHeader* header = reinterpret_cast<PacketHeader*>(nextInFlightPacket->GetTransmissionData()->Buffer());
+			if (header->sn < _curExpectedAckSN.load()) //_curExpectedAckSN보다 작다는건 이미 처리된 SN을 가진 패킷임으로 성공처리함(그저 Ack을 못받았을 뿐)
+			{
+				//cout << "2" << endl;
+				handleFlag = 1;
+
+				mInFlightPacketsSN.Pop();
+				//continue;
+			}
+			else
+			{
+				if (!nextInFlightPacket->Check_CoolTime_ReSend())
+					return;
+				//cout << "3" << endl;
+				
+				//cout << "4" << endl;
+				mTimeOutCount++;
+				handleFlag = 2;
+				//PacketHeader* header = reinterpret_cast<PacketHeader*>(nextInFlightPacket->GetTransmissionData()->Buffer());
+			//	cout << " TimeOutPacket ID : " << header->id << " | SN : " << header->sn << endl;
+
+				//mInFlightPacketsSN.Pop();
+				return;
+			}
+				
+		}
+		else
+		{
+			//cout << "5" << endl;
+			return; //이후 다음 패킷부터는 초과가 아님(시간순서대로 넣어져있기 때문이다)
+		}
+		
+		switch (handleFlag)
+		{
+		case 1:
+			HandleAck(nextInFlightPacketSN);
+			HandlePacketDeliverySuccess(nextInFlightPacket);
+			break;
+		case 2:
+			HandlePacketDeliveryFailure(nextInFlightPacket);
+			break;
+		default:
+			break;
+		}
+	}
+}
 
 bool DeliveryNotificationManager::ProcessSequenceNumber_URO(PacketSequenceNumber SN)
 {
@@ -635,7 +650,7 @@ InFlightPacketPtr DeliveryNotificationManager::HandleAck(uint32 sn)
 	//InFlightPacketPtr nextInFlightPacket = FindInFlightPacketFromSN(sn);
 	if (!nextInFlightPacket)
 		return nullptr;
-	nextInFlightPacket->GetTransmissionData()->GotAck();
+	nextInFlightPacket->GotAck();
 	return nextInFlightPacket;
 }
 

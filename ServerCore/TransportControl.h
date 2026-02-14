@@ -1,5 +1,5 @@
 #pragma once
-#include "RUDPUtils.h"
+
 //TimerWheel을 통한 Transport 층의 Timer TIck Event 실행 및 고유 JobQueue를 통한 Lock없는 단일 쓰레드 처리로 Lock 경쟁 제거
 
 //class ControlJobs
@@ -47,6 +47,17 @@ struct ControlHeader
 };
 //#pragma pack(pop)
 
+struct Packet_RTO_State
+{
+	InFlightPacketPtr inflightPacket;
+	double rto_us = 0; // microseconds // UTime::now() + rto
+
+	
+};
+struct RTO_Cmp
+{
+	bool operator()(const Packet_RTO_State& left, const Packet_RTO_State& right) { return left.rto_us < right.rto_us; }
+};
 class TransportControl
 {
 public:
@@ -61,7 +72,7 @@ private:
 	enum
 	{
 		ControlPacketSize = sizeof(PacketHeader) + sizeof(ControlHeader),
-		TICKMS = LazyAssist::NORMAL_TickMs,
+		TICKMS = 1,
 		ACKTOKEN = 5,
 		CONTROLJOB_TOKEN = 5,
 		AD_RWIND_PERIOD = 200, // ms단위
@@ -105,6 +116,9 @@ public:
 	HostRef PopHostControlJobReady();
 
 	LazyWorkAssist& GetLazyAssist() { return _lazyAssist; }
+
+	void PushRTOQueue(const Packet_RTO_State& rhs);
+	void PopRTOQueue();
 private:
 	bool IsControlPacket(int16 flag) { if (flag <= 0) return false; else return true; }
 
@@ -119,6 +133,8 @@ private:
 	void HandleHostReadyControlJob(HostRef host);
 
 	void PeriodicRwindSync(HostRef host, int32 rwindsize, uint32 total_recovered_size); // 송신측과 수신측의 Rwind 동기화를 위한 주기적인 Control Packet 송신
+
+	void CheckTimeOutPacket();
 private:
 	atomic<bool> brunning = false;
 	
@@ -129,7 +145,8 @@ private:
 	queue<HostRef> _readyAckHostQueue;
 	queue<HostRef> _readyControlJobHostQueue;
 	
-	USE_MANY_LOCKS(2); // For ReadyAckHostQueue, _readyControlJobHostQueue;
+	priority_queue<Packet_RTO_State, vector< Packet_RTO_State>, RTO_Cmp> _rtoMinQueue;
+	USE_MANY_LOCKS(3); // For ReadyAckHostQueue, _readyControlJobHostQueue, _rtoMinQueue;
 };
 
 extern TransportControl GTransportControl;

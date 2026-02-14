@@ -28,7 +28,7 @@ private:
 class InFlightPacket
 {
 public:
-	explicit InFlightPacket(std::weak_ptr<Host> owner, PacketSequenceNumber packetSN, SendBufferRef sendBuffer) : _owner(owner), _packetSequenceNumber(packetSN), _sendBuffer(sendBuffer) { mTimeDispatched = GetTickCount64();  }
+	explicit InFlightPacket(std::weak_ptr<Host> owner, PacketSequenceNumber packetSN, SendBufferRef sendBuffer) : _owner(owner), _packetSequenceNumber(packetSN), _sendBuffer(sendBuffer) {  }
 	~InFlightPacket() {}
 
 	shared_ptr<Host> GetOwner() { return _owner.lock(); }
@@ -38,16 +38,28 @@ public:
 	void HandleDeliverySuccess(DeliveryManagerRef deliveryManager);
 	
 	PacketSequenceNumber& GetSequenceNumber() { return _packetSequenceNumber; }
-	ULONGLONG GetTimeDispactched() { return mTimeDispatched;  }
+	//ULONGLONG GetTimeDispactched() { return mTimeDispatched;  }
 
 	//int32 Send();
 
+	void InitSendTime();
+	uint64 GetRecentSendTime();
+	void UpdateRecentSendTime();
+	bool Check_CoolTime_ReSend();
+
+public: // For RUDP
+	bool IsGotAck() { return _bAcked.load(); }
+	void GotAck() { SetbAcked(true); }
+private:
+	void SetbAcked(bool bAck) { _bAcked.store(bAck); }
+	atomic<bool> _bAcked = false;
+
+private:
 	atomic<uint64> _time_first_send = 0;
 	atomic<uint64> _time_recent_send = 0;
-private:
-	
+	atomic<uint64> _time_recent_resend = 0;
 	PacketSequenceNumber _packetSequenceNumber;
-	ULONGLONG mTimeDispatched = 0;
+	//ULONGLONG mTimeDispatched = 0;
 	SendBufferRef _sendBuffer;
 	std::weak_ptr<Host> _owner;
 	

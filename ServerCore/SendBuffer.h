@@ -18,17 +18,13 @@ public:
 	uint32		WriteSize() { return _writeSize; }
 	void		Close(uint32 writeSize);
 
-public: // For RUDP
-	bool IsGotAck() { return _bAcked.load(); }
-	void GotAck() { SetbAcked(true); }
-private:
-	void SetbAcked(bool bAck) { _bAcked.store(bAck); }
+
 private:
 	BYTE*				_buffer;
 	uint32				_allocSize = 0;
 	uint32				_writeSize = 0;
 	SendBufferChunkRef	_owner;
-	atomic<bool> _bAcked = false;
+	
 
 };
 

@@ -100,7 +100,7 @@ private:
 		//void UROPush(const shared_ptr<SavedSendPacket>& rhs, uint16 priority);
 		void UpdateOutStandBudget();
 		bool CheckHas_OutStandBudget(int32 packetSize);
-
+		void Use_OutStandBudget(int32 packetSize);
 		uint64 _recentOutStandBudgetUpdateDate = 0;
 		double _outStandBudget = 0;
 		uint32 _maxOutStandBudget = 0;

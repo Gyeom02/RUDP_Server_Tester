@@ -52,6 +52,8 @@ void RTTManager::HandleACK(double rtt)
         _baseRTT = rtt;
         _oldSRTT = rtt;
         _rttVar.store(rtt * 0.5);
+
+       
     }
 
     else
@@ -65,7 +67,12 @@ void RTTManager::HandleACK(double rtt)
         _rttVar.exchange(oldrttVar + (fabs(err) - oldrttVar) * 0.25);
        
     }
-   
+
+    //Setting RTO
+    double rto = _rtoG > (_rtoK * _rttVar) ? _rtoG : (_rtoK * _rttVar);
+    rto += _oldSRTT;
+
+    _rto.store(std::clamp(rto, _rtoMin, _rtoMax));
 
     UpdatePaceRate(rtt);
     

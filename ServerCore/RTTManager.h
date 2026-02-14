@@ -40,6 +40,8 @@ public:
 	void UpdateRttQueue(double queueDelay); //참조만을 인자로 받음 복사 배제
 
 	double GetResendDelay(int32 retransCount = 0);
+
+	double GetRTO() { return _rto.load(); }
 private:
 	double _baseRTT; // RTT when qeueuing is zero or very low
 	double _oldSRTT; // recent SRTT;
@@ -48,12 +50,17 @@ private:
 	atomic<double> _rttVar = 0.0f;
 	atomic<double> _paceRateBytePerSec = 0.0;
 	atomic<double> _paceSendBudget = 0.0;
-	
+	atomic<double> _rto = 0.0f;
+
 	const double _minSendRate = 10 * 1024;
 	const double _maxSendRate = 50 * 1024 * 1024;
 	const double _InitSendRate = 24 * 1024;
 	const double alpha = 0.1;
 	
+	const double _rtoMin = 10'000.0; // 10ms
+	const double _rtoMax = 60'000'000.0; // 60s -> 1min
+	const double _rtoK = 4.0;
+	const double _rtoG = 1'000.0; // 1ms Granularity
 	deque<RecentRTT> _recentRttsQueue;
 
 	uint64 _lastUpdateBudgetUs = 0;
@@ -70,6 +77,7 @@ public:
 	double GetRTTGradient() { return _rttGradient; }
 	double GetRTTPaceRate() { return _paceRateBytePerSec.load(); }
 	double GetRTTBudget() { return _paceSendBudget.load(); }
+
 public:
 	atomic<double> _debugQueueDelay; // Only For Debug
 	string GetRttState(); // Only For Debug

@@ -162,6 +162,18 @@ HostRef TransportControl::PopHostControlJobReady()
     
 }
 
+void TransportControl::PushRTOQueue(const Packet_RTO_State& rhs)
+{
+    WRITE_LOCK_IDX(2);
+    _rtoMinQueue.push(rhs);
+}
+
+void TransportControl::PopRTOQueue()
+{
+    WRITE_LOCK_IDX(2);
+    _rtoMinQueue.pop();
+}
+
 void TransportControl::HandleControlPacket(PacketHeader* header)
 {
     if (header->size != ControlPacketSize)
@@ -295,7 +307,7 @@ void TransportControl::DoWork() // Only One Thread Has to Run this Work Function
         //system("cls");
 
         //Thread 최적화 필요
-        
+        CheckTimeOutPacket();
        
         for (auto& p : GHostManager.GetPlayers())
         {
@@ -324,7 +336,7 @@ void TransportControl::DoWork() // Only One Thread Has to Run this Work Function
            //     else
            //         break;
            // }
-           // p.second->GetDeliveryManager()->ProcessTimeOutPackets();
+             //p.second->GetDeliveryManager()->ProcessTimeOutPackets();
 
             LONGLONG curTick = GetTickCount64();
             if (p.second->curRwindTimeStamp == 0)
@@ -457,7 +469,7 @@ void TransportControl::HandleHostReadyAck(HostRef host)
                 cout << "ackpreStart : " << ackpreStart << endl;
                 CRASH("ackpreStart == ackStart");
             }*/
-            SendBufferRef sendBuffer = MakeAckControlPacket(host->client_Id, hasCount, ackStart, ackCount, host->GetDeliveryManager()->GetExpectedSeqNum(), rtt_stamp);
+            SendBufferRef sendBuffer = MakeAckControlPacket(host->client_Id, hasCount, ackStart, ackCount, host->GetDeliveryManager()->GetRWindExpectedSeqNum(), rtt_stamp);
 
             host->ControlSend(sendBuffer);
             //GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);
@@ -529,5 +541,93 @@ void TransportControl::PeriodicRwindSync(HostRef host, int32 rwindsize, uint32 t
         host->ControlSend(sendBuffer);
         });
     
+}
+
+void TransportControl::CheckTimeOutPacket()
+{
+    
+    while (true)
+    {
+
+        Packet_RTO_State state;
+        {
+            WRITE_LOCK_IDX(2);
+            if (_rtoMinQueue.empty())
+                return;
+            state = _rtoMinQueue.top();
+            _rtoMinQueue.pop();
+            if (state.rto_us > UTime::GetNow()) // 아직 타임아웃 아님
+                return;
+        }
+        HostRef host = state.inflightPacket->GetOwner();
+        if (!host)
+        {
+            
+            continue;
+        }
+        
+        //uint32 nextInFlightPacketSN;
+        
+        //int32 handleFlag = -1; // 1 = success | 2 = fail
+
+        //WRITE_LOCK_IDX(InFlightPacket_LOCK);
+       // if (mInFlightPacketsSN.Empty())
+          //  return;
+
+
+        //nextInFlightPacketSN = state.sn;
+
+        InFlightPacketPtr& nextInFlightPacket = state.inflightPacket;
+        //cout << "1" << endl;
+        if (nextInFlightPacket->IsGotAck()) // 이미 Ack 처리한 패킷임
+        {
+            //PopRTOQueue();
+            continue;
+        }
+
+        //uint64 now = UTime::GetNow();
+
+        
+
+            //if (nextInFlightPacket->GetTransmissionData()->IsGotAck()) // Ack Packet을 받은 패킷임
+            //{
+            //	mInFlightPackets.pop_front();
+            //}
+
+        //PacketHeader* header = reinterpret_cast<PacketHeader*>(nextInFlightPacket->GetTransmissionData()->Buffer());
+        DeliveryManagerRef deliveryManager = host->GetDeliveryManager();
+        uint32 inflightSN = nextInFlightPacket->GetSequenceNumber().GetSN();
+        if (inflightSN < deliveryManager->GetExpectedAckSN()) //_curExpectedAckSN보다 작다는건 이미 처리된 SN을 가진 패킷임으로 성공처리함(그저 Ack을 못받았을 뿐)
+        {
+            //cout << "2" << endl;
+            
+           // PopRTOQueue();
+
+            deliveryManager->HandleAck(inflightSN);
+            deliveryManager->HandlePacketDeliverySuccess(nextInFlightPacket);
+
+            //continue;
+        }
+        else
+        {
+            /*if (!nextInFlightPacket->Check_CoolTime_ReSend())
+                return;*/
+            //cout << "3" << endl;
+
+            //cout << "4" << endl;
+            deliveryManager->AddTimeOutCount();
+
+            deliveryManager->HandlePacketDeliveryFailure(nextInFlightPacket);
+            //PacketHeader* header = reinterpret_cast<PacketHeader*>(nextInFlightPacket->GetTransmissionData()->Buffer());
+        //	cout << " TimeOutPacket ID : " << header->id << " | SN : " << header->sn << endl;
+
+            //mInFlightPacketsSN.Pop();
+            return;
+        }
+
+        
+       
+
+    }
 }
 

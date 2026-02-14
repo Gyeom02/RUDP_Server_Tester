@@ -96,7 +96,7 @@ void UDPSocket::UDPWork()
 							continue;
 						}
 						//std::cout << "Handle_OnRecv | Client ID : " << header->client_Id << endl;
-						GQoS->OnRecv(player->GetExpectedSeqNum(), header->client_Id, &udpRecvBuffer.ReadPos()[processLen], header->size);
+						GQoS->OnRecv(player->GetRWindExpectedSeqNum(), header->client_Id, &udpRecvBuffer.ReadPos()[processLen], header->size);
 					}
 					processLen += header->size;
 				}
@@ -370,6 +370,10 @@ int UDPSocket::ReliableSend(HostRef player, shared_ptr<vector<SendBufferRef>> se
 
 	player->GetDeliveryManager()->WriteSeqeuenceNumber(sendBuffers); //Move To QoSCore.cpp QoSPlayer::PopSend
 
+	/*int32 rand = UTime::GetNow() % 3;
+	if (rand == 2)
+		return -1;*/
+
 	return FPCSend_RTT(player, sendBuffers);
 }
 
@@ -380,7 +384,8 @@ int UDPSocket::UnReliable_Ordered_Send(HostRef player, SendBufferRef sendBuffer)
 	//header->playerId = player->playerId;
 
 	player->GetDeliveryManager()->WriteSeqeuenceNumber_URO(sendBuffer);
-
+	
+	
 	return FPCSend(player, sendBuffer);
 }
 
