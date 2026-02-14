@@ -99,6 +99,22 @@ void TransportControl::OnPushRWind(int32 client_id, int32 add_size, uint32 total
         });
 }
 
+void TransportControl::OnSendPing(int32 client_id)
+{
+    HostRef host = GHostManager.GetPlayer(client_id);
+    if (!host)
+        return;
+    //  cout << "OnPushRWind 2" << endl;
+    host->PushControlJob([client_id, host]() {
+        //   cout << "jobworker.PushJob OnPushRWind" << endl;
+        SendBufferRef sendBuffer = MakePingControlPacket(client_id);
+
+        // pkt.set_rwindsize();
+
+        host->ControlSend(sendBuffer);
+        });
+}
+
 bool TransportControl::EmptyReadyAckQueue()
 {
     READ_LOCK; 
@@ -121,7 +137,7 @@ HostRef TransportControl::PopHostAckReady()
         WRITE_LOCK;
         if (EmptyReadyAckQueue())
             return popHost;
-        popHost = _readyAckHostQueue.front();
+        popHost = _readyAckHostQueue.front().lock();
         _readyAckHostQueue.pop();
     }
     return popHost;
@@ -154,7 +170,7 @@ HostRef TransportControl::PopHostControlJobReady()
         WRITE_LOCK_IDX(1);
         if (EmptyReadyControlJobQueue())
             return popHost;
-        popHost = _readyControlJobHostQueue.front();
+        popHost = _readyControlJobHostQueue.front().lock();
         _readyControlJobHostQueue.pop();
     }
 
@@ -272,11 +288,13 @@ void TransportControl::DoWork() // Only One Thread Has to Run this Work Function
             _lazyAssist.SetNextTickFromNow();
 
             unique_lock<mutex> _lock(_lazyAssist._jobMutex);
-            _lazyAssist._jobCv.wait_until(_lock, _lazyAssist._nextTick, [&]() { return !EmptyReadyControlJobQueue() || !EmptyReadyAckQueue() || !brunning.load(); });
+            _lazyAssist._jobCv.wait_until(_lock, _lazyAssist._nextTick, [&]() { return !EmptyReadyControlJobQueue() || !EmptyReadyAckQueue() || !(brunning.load()); });
             //Lastly Do JobQueue
             if (brunning.load() == false)
+            {
+                cout << "brunning.load() == false" << endl;
                 return;
-
+            }
             if (!EmptyReadyControlJobQueue())
             {
                 ControlJobReadyHost = PopHostControlJobReady();
@@ -288,7 +306,7 @@ void TransportControl::DoWork() // Only One Thread Has to Run this Work Function
             }
            
         }
-
+       
         if (ControlJobReadyHost)
         {
             HandleHostReadyControlJob(ControlJobReadyHost);
@@ -308,52 +326,55 @@ void TransportControl::DoWork() // Only One Thread Has to Run this Work Function
 
         //Thread 최적화 필요
         CheckTimeOutPacket();
-       
-        for (auto& p : GHostManager.GetPlayers())
-        {
-            //auto player = p.second;
-           // memset(&netAddr, 0, sizeof(netAddr));
-           // //this_thread::sleep_for(300ms);
-           //// int32 token = 5;
-           // while (true) //AckRange 비울때까지
-           // {
-           //     //token--;
-
-           //     if (p.second->GetDeliveryManager()->WritePendingAcks(ackStart, ackCount, hasCount)) // 보낼 Ack이 쌓였다
-           //     {
-           //         /*if (ackpreStart == ackStart && ackpreStart > 1)
-           //         {
-           //             cout << "ackpreStart : " << ackpreStart << endl;
-           //             CRASH("ackpreStart == ackStart");
-           //         }*/
-           //         SendBufferRef sendBuffer = MakeAckControlPacket(p.second->client_Id, hasCount, ackStart, ackCount);
-
-           //         p.second->NoWaitPriortySend(sendBuffer);
-           //         //GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);
-           //       //  ackpreStart = ackStart;
-           //       //  cout << "Send RUDP ACK  " << endl;
-           //     }
-           //     else
-           //         break;
-           // }
-             //p.second->GetDeliveryManager()->ProcessTimeOutPackets();
-
-            LONGLONG curTick = GetTickCount64();
-            if (p.second->curRwindTimeStamp == 0)
-                p.second->curRwindTimeStamp = curTick;
-            else
-            {
-                if (curTick - p.second->curRwindTimeStamp > AD_RWIND_PERIOD)
-                {
-                    PeriodicRwindSync(p.second, p.second->GetDeliveryManager()->GetRWind(), p.second->GetDeliveryManager()->GetTotal_Recv_RWind());
-                 
-
-                    p.second->curRwindTimeStamp = curTick;
-                }
-            }
-            //PacketDeliverCondition(static_pointer_cast<Player>(p.second));
-        }
         
+        _tickTimeWheel.Tick();
+
+
+        //for (auto& p : GHostManager.GetPlayers())
+        //{
+        //    //auto player = p.second;
+        //   // memset(&netAddr, 0, sizeof(netAddr));
+        //   // //this_thread::sleep_for(300ms);
+        //   //// int32 token = 5;
+        //   // while (true) //AckRange 비울때까지
+        //   // {
+        //   //     //token--;
+
+        //   //     if (p.second->GetDeliveryManager()->WritePendingAcks(ackStart, ackCount, hasCount)) // 보낼 Ack이 쌓였다
+        //   //     {
+        //   //         /*if (ackpreStart == ackStart && ackpreStart > 1)
+        //   //         {
+        //   //             cout << "ackpreStart : " << ackpreStart << endl;
+        //   //             CRASH("ackpreStart == ackStart");
+        //   //         }*/
+        //   //         SendBufferRef sendBuffer = MakeAckControlPacket(p.second->client_Id, hasCount, ackStart, ackCount);
+
+        //   //         p.second->NoWaitPriortySend(sendBuffer);
+        //   //         //GUDP.GetUDPSocket(0)->Send(netAddr, sendBuffer);
+        //   //       //  ackpreStart = ackStart;
+        //   //       //  cout << "Send RUDP ACK  " << endl;
+        //   //     }
+        //   //     else
+        //   //         break;
+        //   // }
+        //     //p.second->GetDeliveryManager()->ProcessTimeOutPackets();
+
+        //    /*LONGLONG curTick = GetTickCount64();
+        //    if (p.second->curRwindTimeStamp == 0)
+        //        p.second->curRwindTimeStamp = curTick;
+        //    else
+        //    {
+        //        if (curTick - p.second->curRwindTimeStamp > AD_RWIND_PERIOD)
+        //        {
+        //            OnPeriodicRwindSync(p.second, p.second->GetDeliveryManager()->GetRWind(), p.second->GetDeliveryManager()->GetTotal_Recv_RWind());
+        //         
+
+        //            p.second->curRwindTimeStamp = curTick;
+        //        }
+        //    }*/
+        //    //PacketDeliverCondition(static_pointer_cast<Player>(p.second));
+        //}
+        //
 
         
     }
@@ -409,6 +430,18 @@ SendBufferRef TransportControl::MakeADRwindControlPacket(int32 client_id, int32 
     return sendBuffer;
 }
 
+SendBufferRef TransportControl::MakePingControlPacket(int32 client_id)
+{
+    SendBufferRef sendBuffer = MakeControlPacketBuffer(client_id);
+    ControlHeader* contheader = InitControlHeader(sendBuffer->Buffer());
+
+    contheader->Type = ControlType::PING;
+    contheader->ping.bexsist = true;
+
+    return sendBuffer;
+    //  Protocol::S_RUDPACK pkt;
+}
+
 
 
 SendBufferRef TransportControl::MakeControlPacketBuffer(int32 client_id)
@@ -442,7 +475,8 @@ ControlHeader* TransportControl::InitControlHeader(BYTE* buffer)
     contHeader->rtt.bexsist = false;
     contHeader->rtt.sent_timestamp = 0;
     
-   
+    contHeader->ping.bexsist = false;
+
     return contHeader;
 }
 
@@ -524,17 +558,17 @@ void TransportControl::HandleHostReadyControlJob(HostRef host)
     GetLazyAssist()._jobCv.notify_one();
 }
 
-void TransportControl::PeriodicRwindSync(HostRef host, int32 rwindsize, uint32 total_recovered_size)
+void TransportControl::OnPeriodicRwindSync(int32 client_id)
 {
    // HostRef host = GHostManager.GetPlayer(client_id);
    // cout << "PeriodicRwindSync" << endl;
-    int32 client_id = host->client_Id;
+    HostRef host = GHostManager.GetPlayer(client_id);
     if (!host)
         return;
     //  cout << "OnPushRWind 2" << endl;
-    host->PushControlJob([this, client_id, host, rwindsize, total_recovered_size]() {
+    host->PushControlJob([client_id, host]() {
         //   cout << "jobworker.PushJob OnPushRWind" << endl;
-        SendBufferRef sendBuffer = MakeADRwindControlPacket(client_id, rwindsize, total_recovered_size);
+        SendBufferRef sendBuffer = MakeADRwindControlPacket(client_id, host->GetDeliveryManager()->GetRWind(), host->GetDeliveryManager()->GetTotal_Recv_RWind());
 
         // pkt.set_rwindsize();
 

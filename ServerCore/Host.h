@@ -1,5 +1,6 @@
 #pragma once
 #include "RTTManager.h"
+#include "TickConnectManager.h"
 
 class ControlJobs
 {
@@ -29,7 +30,7 @@ private:
 		
 	};
 public:
-	Host(int32 id) : client_Id(id) { deliveryManager = MakeShared<DeliveryNotificationManager>(); }
+	Host(int32 id);
 	virtual ~Host() {}
 
 	void InitDeliveryManager() { deliveryManager->SetOwner(shared_from_this()); }
@@ -53,7 +54,9 @@ public:
 	RTTManager& GetRTTManager() { return rttManager; }
 	void HandleACK(double rtt);
 
-
+	shared_ptr<TickConnectManager> GetConnectManager() { return _tickConnectManager; }
+	void UpdateLastSendTime() { _tickConnectManager->UpdateLastSendTime(); }
+	void UpdateLastRecvTime() { _tickConnectManager->UpdateLastRecvTime(); }
 public: //ControlJob 
 	ControlJobs& GetControlJobs() { return _controlJobs; }
 	void PushControlJob(CallbackType&& func);
@@ -79,6 +82,8 @@ private:
 	RTTManager rttManager;
 
 	ControlJobs _controlJobs;
+
+	shared_ptr<TickConnectManager> _tickConnectManager;
 };
 
 using HostRef = shared_ptr<Host>;

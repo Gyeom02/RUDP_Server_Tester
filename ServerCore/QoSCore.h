@@ -140,7 +140,7 @@ public:
 	
 
 public:
-	HostRef& GetOwner() { return _owner; }
+	HostRef GetOwner() { return _owner.lock(); }
 
 	void InitSendQueuesOutStand();
 
@@ -152,7 +152,7 @@ public:
 	
 private:
 	//TokenBucket _recvBucket;
-	HostRef _owner;
+	weak_ptr<Host> _owner;
 	QoSShard* _ownerShard;
 	TokenBucket _sendBucket; // For Send 
 	
@@ -204,8 +204,8 @@ public:
 	int32 GetSendReadyPlayerNum() { return _sendWorkReadyPlayerNum.load(); }
 private:
 	unordered_map<int32, shared_ptr<QoSPlayer>> _qosPlayers;
-	queue<shared_ptr<QoSPlayer>> _recvReadyQueue; // queue for Players Stacked Packets in recvQueue;
-	queue<shared_ptr<QoSPlayer>> _sendReadyQueue;
+	queue<weak_ptr<QoSPlayer>> _recvReadyQueue; // queue for Players Stacked Packets in recvQueue;
+	queue<weak_ptr<QoSPlayer>> _sendReadyQueue;
 	atomic<int32> _recvWorkReadyPlayerNum = 0;
 	atomic<int32> _sendWorkReadyPlayerNum = 0;
 	//queue<condition_variable&> _sleepWorkers;

@@ -38,12 +38,18 @@ struct Rtt
 	uint64 sent_timestamp;
 };
 
+struct Ping
+{
+	uint8 bexsist = 0;
+};
+
 struct ControlHeader
 {
 	uint8 Type; // Control Type
 	Ack ack;
 	Rwind rwind; 
 	Rtt rtt;
+	Ping ping;
 };
 //#pragma pack(pop)
 
@@ -67,6 +73,7 @@ public:
 		RECOVER_RWIND = 2,
 		AD_RWIND = 3,
 		RTT = 4,
+		PING = 5,
 	};
 private:
 	enum
@@ -78,6 +85,7 @@ private:
 		AD_RWIND_PERIOD = 200, // ms단위
 	};
 public:
+	friend TickConnectManager;
 	/*enum ControlType
 	{
 		INIT = 1,
@@ -85,7 +93,7 @@ public:
 		RWIND = 3,
 	};*/
 public:
-
+	
 	TransportControl(uint32 tickms = TICKMS);
 	~TransportControl();
 
@@ -100,12 +108,16 @@ public:
 
 public:
 	static SendBufferRef MakeAckControlPacket(int32 client_id, int32 bhascount, uint32 start, int32 count, uint32 curExpectedSN, uint64 rtt_timestamp);
-	
 	static SendBufferRef MakeRecoverRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size);
 	static SendBufferRef MakeADRwindControlPacket(int32 client_id, int32 rwindsize, uint32 total_recovered_size);
-
+	static SendBufferRef MakePingControlPacket(int32 client_id);
+	//JobQueue Push Job
 
 	void OnPushRWind(int32 client_id, int32 add_size, uint32 total_recovered_size);
+	void OnSendPing(int32 client_id);//KeepAlive Ping Packet
+	void OnPeriodicRwindSync(int32 client_id); // 송신측과 수신측의 Rwind 동기화를 위한 주기적인 Control Packet 송신
+
+	/*----------------------*/
 
 	bool EmptyReadyAckQueue();
 	void PushHostAckReady(HostRef host);
@@ -119,6 +131,8 @@ public:
 
 	void PushRTOQueue(const Packet_RTO_State& rhs);
 	void PopRTOQueue();
+
+	UTime::TimeWheel& GetTickTimerWheel() { return _tickTimeWheel; }
 private:
 	bool IsControlPacket(int16 flag) { if (flag <= 0) return false; else return true; }
 
@@ -132,8 +146,7 @@ private:
 	void HandleHostReadyAck(HostRef host);
 	void HandleHostReadyControlJob(HostRef host);
 
-	void PeriodicRwindSync(HostRef host, int32 rwindsize, uint32 total_recovered_size); // 송신측과 수신측의 Rwind 동기화를 위한 주기적인 Control Packet 송신
-
+	
 	void CheckTimeOutPacket();
 private:
 	atomic<bool> brunning = false;
@@ -141,12 +154,17 @@ private:
 	
 	LazyWorkAssist _lazyAssist;
 	
+	
 
-	queue<HostRef> _readyAckHostQueue;
-	queue<HostRef> _readyControlJobHostQueue;
+	queue<weak_ptr<Host>> _readyAckHostQueue;
+	queue<weak_ptr<Host>> _readyControlJobHostQueue;
 	
 	priority_queue<Packet_RTO_State, vector< Packet_RTO_State>, RTO_Cmp> _rtoMinQueue;
+
+	UTime::TimeWheel _tickTimeWheel;
+
 	USE_MANY_LOCKS(3); // For ReadyAckHostQueue, _readyControlJobHostQueue, _rtoMinQueue;
+
 };
 
 extern TransportControl GTransportControl;

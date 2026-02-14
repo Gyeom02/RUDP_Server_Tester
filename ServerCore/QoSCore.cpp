@@ -154,7 +154,10 @@ void QoSPlayer::PopSend()
 	uint16 selected_priorty = -1;
 	{
 		int coin = 5;
-		DeliveryManagerRef dm = _owner->GetDeliveryManager();
+		HostRef owner = GetOwner();
+		if (!owner)
+			return;
+		DeliveryManagerRef dm = owner->GetDeliveryManager();
 		while (coin--)
 		{
 			
@@ -198,8 +201,8 @@ void QoSPlayer::PopSend()
 				if (!_sendQueues[QoS::RO].CheckHas_OutStandBudget(savePacket->AllBuffersSize))
 					break;
 
-				_owner->GetRTTManager().UpdateCongestBudget();
-				if (!_owner->GetRTTManager().ValidBudget(savePacket->AllBuffersSize))
+				owner->GetRTTManager().UpdateCongestBudget();
+				if (!owner->GetRTTManager().ValidBudget(savePacket->AllBuffersSize))
 				{
 
 					break;
@@ -236,7 +239,7 @@ void QoSPlayer::PopSend()
 					
 				}
 				_sendQueues[QoS::RO].Use_OutStandBudget(savePacket->AllBuffersSize);
-				_owner->GetRTTManager().UseBudget(savePacket->AllBuffersSize);
+				owner->GetRTTManager().UseBudget(savePacket->AllBuffersSize);
 
 
 				//cout << "savePacket->sendBuffers->size() : " << savePacket->sendBuffers->size() << endl;
@@ -253,7 +256,7 @@ void QoSPlayer::PopSend()
 				//savePacket->bSend = true;
 				
 			}
-			_owner->PriortySend(savePacket->sendBuffers);
+			owner->PriortySend(savePacket->sendBuffers);
 			//PacketHeader* header = reinterpret_cast<PacketHeader*>(savePacket->sendBuffer->Buffer());
 			
 			
@@ -301,8 +304,8 @@ void QoSPlayer::PopSend()
 					break;
 
 
-				_owner->GetRTTManager().UpdateCongestBudget();
-				if (!_owner->GetRTTManager().ValidBudget(savePacket->AllBuffersSize))
+				owner->GetRTTManager().UpdateCongestBudget();
+				if (!owner->GetRTTManager().ValidBudget(savePacket->AllBuffersSize))
 				{
 					
 					break;
@@ -313,7 +316,7 @@ void QoSPlayer::PopSend()
 				//	break;
 				//}
 				_sendQueues[QoS::URO].Use_OutStandBudget(savePacket->AllBuffersSize);
-				_owner->GetRTTManager().UseBudget(savePacket->AllBuffersSize);
+				owner->GetRTTManager().UseBudget(savePacket->AllBuffersSize);
 
 				
 				//savePacket->SendStartIndex++;
@@ -323,7 +326,7 @@ void QoSPlayer::PopSend()
 				
 			
 			}
-			_owner->PriortySend(savePacket->sendBuffers);
+			owner->PriortySend(savePacket->sendBuffers);
 			//PacketHeader* header = reinterpret_cast<PacketHeader*>(savePacket->sendBuffer->Buffer());
 			
 			
@@ -342,11 +345,11 @@ void QoSPlayer::PopSend()
 			
 			savePacket = _sendRPCTPacket_ptr;
 
-			_owner->GetRTTManager().UpdateCongestBudget();
+			owner->GetRTTManager().UpdateCongestBudget();
 			
-			if (_owner->GetRTTManager().ValidBudget(savePacket->AllBuffersSize) && dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
+			if (owner->GetRTTManager().ValidBudget(savePacket->AllBuffersSize) && dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
 			{
-				_owner->GetRTTManager().UseBudget(savePacket->AllBuffersSize);
+				owner->GetRTTManager().UseBudget(savePacket->AllBuffersSize);
 				_sendRPCTPacket_ptr = nullptr;
 
 				_sendSumNum.fetch_sub(1);
@@ -357,7 +360,7 @@ void QoSPlayer::PopSend()
 			
 		}
 		if(cansend)
-			_owner->PriortySend(savePacket->sendBuffers);
+			owner->PriortySend(savePacket->sendBuffers);
 		//_sendSumNum.fetch_add(-1);
 		
 				
@@ -538,7 +541,10 @@ void QoSPlayer::OnOrderedRecv(int32 SeqNum, BYTE* buffer, int32 size)
 {
 	
 	//int PacketNum = 0;
-	DeliveryManagerRef dm = _owner->GetDeliveryManager();
+	HostRef owner = GetOwner();
+	if (!owner)
+		return;
+	DeliveryManagerRef dm = owner->GetDeliveryManager();
 	if (_fragmentManager.OnOrderedRecv(SeqNum, buffer, size, _orderedPacketQueue))
 	{
 		int32 allSize = 0;
@@ -565,7 +571,7 @@ void QoSPlayer::OnOrderedRecv(int32 SeqNum, BYTE* buffer, int32 size)
 		dm->AddTotal_Recv_RWind(allSize);
 		//cout <<" | " << "After RWind : " << dm->GetRWind() << endl;
 		//cout << "dm->GetTotal_Recv_RWind() : " << dm->GetTotal_Recv_RWind() << endl;
-		GTransportControl.OnPushRWind(_owner->client_Id, allSize, dm->GetTotal_Recv_RWind());
+		GTransportControl.OnPushRWind(owner->client_Id, allSize, dm->GetTotal_Recv_RWind());
 	}
 
 }
@@ -849,13 +855,13 @@ shared_ptr<QoSPlayer> QoSShard::PopRecvReadyQueue()
 		WRITE_LOCK_IDX(1);
 		if (_recvReadyQueue.empty())
 			return nullptr;
-		returnPtr = _recvReadyQueue.front();
+		returnPtr = _recvReadyQueue.front().lock();
 		_recvReadyQueue.pop();
 	}
-#ifdef _DEBUG
-	_ASSERT(returnPtr);
-#else
-#endif
+//#ifdef _DEBUG
+//	_ASSERT(returnPtr);
+//#else
+//#endif
 	//cout << "PopRecvReadyQueue" << endl;
 
 	_recvWorkReadyPlayerNum.fetch_add(-1);
@@ -884,13 +890,13 @@ shared_ptr<QoSPlayer> QoSShard::PopSendReadyQueue()
 		WRITE_LOCK_IDX(2);
 		if (_sendReadyQueue.empty())
 			return nullptr;
-		returnPtr = _sendReadyQueue.front();
+		returnPtr = _sendReadyQueue.front().lock();
 		_sendReadyQueue.pop();
 	}
-#ifdef _DEBUG
-	_ASSERT(returnPtr);
-#else
-#endif
+//#ifdef _DEBUG
+//	_ASSERT(returnPtr);
+//#else
+//#endif
 //	cout << "PopSendReadyQueue" << endl;
 	_sendWorkReadyPlayerNum.fetch_add(-1);
 	return returnPtr;

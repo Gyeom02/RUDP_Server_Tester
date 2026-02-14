@@ -214,6 +214,9 @@
       <Filter>RUDP\QoS\UDP</Filter>
     </ClInclude>
     <ClInclude Include="RTTManager.h" />
+    <ClInclude Include="TickConnectManager.h">
+      <Filter>RUDP</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CorePch.cpp">
@@ -361,5 +364,8 @@
       <Filter>RUDP\QoS\UDP</Filter>
     </ClCompile>
     <ClCompile Include="RTTManager.cpp" />
+    <ClCompile Include="TickConnectManager.cpp">
+      <Filter>RUDP</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

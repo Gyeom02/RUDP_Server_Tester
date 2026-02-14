@@ -48,6 +48,8 @@ public:
 int32 Send(int32 id, UDPSocketPtr udpSocket, NetAddress netAddr, SendBufferRef sendBuffer)
 {
 	PlayerRef player = static_pointer_cast<Player>(GHostManager.GetPlayer(id));
+	if (!player)
+		return -1;
 	player->Send(sendBuffer);
 	//GPlayerManager._sendPacketNum++;
 	return sendBuffer->WriteSize();

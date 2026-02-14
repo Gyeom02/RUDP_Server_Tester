@@ -1,6 +1,12 @@
 #include "pch.h"
 #include "Host.h"
 
+Host::Host(int32 id)
+	: client_Id(id) {
+	_tickConnectManager = MakeShared<TickConnectManager>(id, GTransportControl.GetTickTimerWheel());
+	_tickConnectManager->Init();
+	deliveryManager = MakeShared<DeliveryNotificationManager>();
+}
 void Host::Send(SendBufferRef sendBuffer)
 {
 	//WRITE_LOCK;

@@ -82,7 +82,8 @@ void UDPSocket::UDPWork()
 							cout << "header->channel == QoSCore::Channel::RO | SN : " << header->sn << " | header->ControlFlag : " << header->controlflag << endl;
 					*/
 					
-					
+					player->UpdateLastRecvTime();
+
 					if (GTransportControl.CheckValidControl(header)) // ControlPacket¿Ã¥Ÿ
 					{
 						//cout << "CheckValidControl SN : " << header->sn << endl;
@@ -330,37 +331,6 @@ SendBufferRef UDPSocket::MakeFragmentBuffer(int32 size)
 //	return FPCSend(player, sendBuffer);
 //}
 
-int UDPSocket::FPCSend(HostRef player, SendBufferRef sendBuffer)
-{
-
-	//int32 sendLen = 0;
-	
-	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
-	//cout << "FPCSend : " << player->playerId << endl;
-	header->client_Id = player->client_Id;
-	//sendLen += sendBuffer->WriteSize();
-	//cout << "FPCSend PlayerID : " << header->playerId << endl;
-	SOCKADDR_IN netaddr = player->netAddress.GetSockAddr();
-	//cout << netAddr.GetPort()<< endl;
-	//wcout << netAddr.GetIpAddress() << endl;
-	int32 addrLen = sizeof(netaddr);
-	while (true)
-	{
-		if (::sendto(_socket, reinterpret_cast<const char*>(sendBuffer->Buffer()), sendBuffer->WriteSize(), 0, reinterpret_cast<SOCKADDR*>(&netaddr), addrLen) == SOCKET_ERROR)
-		{
-			if (::WSAGetLastError() == WSAEWOULDBLOCK)
-				continue;
-			//cout << header->playerId << " : Failed Sending PAcket" << endl;
-			break;
-		}
-		else break;
-	}
-
-	
-	return sendBuffer->WriteSize();
-}
-
-
 
 int UDPSocket::ReliableSend(HostRef player, shared_ptr<vector<SendBufferRef>> sendBuffers)
 {
@@ -390,6 +360,40 @@ int UDPSocket::UnReliable_Ordered_Send(HostRef player, SendBufferRef sendBuffer)
 int UDPSocket::UnReliableSend(HostRef player, SendBufferRef sendBuffer)
 {
 	return FPCSend(player, sendBuffer);
+}
+
+
+int UDPSocket::FPCSend(HostRef player, SendBufferRef sendBuffer)
+{
+
+	//int32 sendLen = 0;
+
+	PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());
+	//cout << "FPCSend : " << player->playerId << endl;
+	header->client_Id = player->client_Id;
+	//sendLen += sendBuffer->WriteSize();
+	//cout << "FPCSend PlayerID : " << header->playerId << endl;
+	SOCKADDR_IN netaddr = player->netAddress.GetSockAddr();
+	//cout << netAddr.GetPort()<< endl;
+	//wcout << netAddr.GetIpAddress() << endl;
+	int32 addrLen = sizeof(netaddr);
+
+	
+	while (true)
+	{
+		if (::sendto(_socket, reinterpret_cast<const char*>(sendBuffer->Buffer()), sendBuffer->WriteSize(), 0, reinterpret_cast<SOCKADDR*>(&netaddr), addrLen) == SOCKET_ERROR)
+		{
+			if (::WSAGetLastError() == WSAEWOULDBLOCK)
+				continue;
+			//cout << header->playerId << " : Failed Sending PAcket" << endl;
+			break;
+		}
+		else break;
+	}
+
+	player->UpdateLastSendTime();
+
+	return sendBuffer->WriteSize();
 }
 
 
@@ -425,6 +429,9 @@ int UDPSocket::FPCSend(HostRef player, shared_ptr<vector<SendBufferRef>>sendBuff
 		}
 		
 	}
+
+	player->UpdateLastSendTime();
+
 	return sendLen;
 }
 

@@ -29,14 +29,16 @@ bool Handle_C_RUDPACK(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeade
 bool Handle_C_DISCONNECT(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_DISCONNECT& pkt)
 {
 	cout << "GET DISCONNECT PKT By : " << pkt.id() << endl;
+	HostRef host = GHostManager.GetPlayer(pkt.id());
+	if (!host)
+		return false;
+	host->GetConnectManager()->OnClosedByPeer();
+
 	int32 id = pkt.id();
 	int32 roomid = pkt.roomid();
 	int32 roomprimid = pkt.roomprimid();
 	//PlayerManager Release
-	GHostManager.Remove(id);
-	// ID Reuse Setting
-	GHostManager.PushID(id);
-	GQoS->ErasePlayer(id);
+	
 	//Room Release
 	if (roomid == -1) // 방에 들어가있지 않음
 	{
