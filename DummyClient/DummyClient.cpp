@@ -146,9 +146,9 @@ void CloseApp()
 		pkt.set_id(player->client_Id);
 		pkt.set_roomid(player->roomId);
 		pkt.set_roomprimid(player->roomprimid);
-		SendBufferRef sendBuffer = ServerPacketHandler::MakeReliableBuffer(pkt);
+		SendBufferRef sendBuffer = ServerPacketHandler::MakeReplicateBuffer(pkt);
 
-		player->Send(sendBuffer);
+		player->ControlSend(sendBuffer);
 	}
 }
 BOOL WINAPI ConsoleHandler(DWORD signal) {
@@ -326,6 +326,8 @@ int main()
 							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt4);
 							auto sendBufferchatPkt5 = ServerPacketHandler::MakeUnReliableBuffer_High(shortChatPkt);
 							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt5);
+							auto sendBufferchatPkt7 = ServerPacketHandler::MakeUnReliableBuffer_Medium(shortChatPkt);
+							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt7);
 							auto sendBufferchatPkt6 = ServerPacketHandler::MakeReplicateBuffer(shortChatPkt);
 							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt6);
 

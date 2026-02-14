@@ -34,7 +34,7 @@ namespace SPSC
 {
 	
 #ifdef _DEBUG
-	const int32 ccapacity = 1024 * 64;
+	const int32 ccapacity = 1024;
 #else
 	const int32 ccapacity = 256;
 #endif
