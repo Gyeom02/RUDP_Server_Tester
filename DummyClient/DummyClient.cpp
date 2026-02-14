@@ -322,8 +322,12 @@ int main()
 							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt2);
 							auto sendBufferchatPkt3 = ServerPacketHandler::MakeReliableBuffer_High(shortChatPkt);
 							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt3);
-							/*auto sendBufferchatPkt4 = ServerPacketHandler::MakeReliableBuffer_Low(shortChatPkt);
-							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt4);*/
+							auto sendBufferchatPkt4 = ServerPacketHandler::MakeUnReliableBuffer_Low(shortChatPkt);
+							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt4);
+							auto sendBufferchatPkt5 = ServerPacketHandler::MakeUnReliableBuffer_High(shortChatPkt);
+							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt5);
+							auto sendBufferchatPkt6 = ServerPacketHandler::MakeReplicateBuffer(shortChatPkt);
+							Send(p.second->client_Id, static_pointer_cast<UDPSocket>(p.second->ownerSocket), p.second->netAddress, sendBufferchatPkt6);
 
 							//cout << "SENDING MSG ID : " << p.second->playerId << endl;
 							//Protocol::C_MSG chatPkt;

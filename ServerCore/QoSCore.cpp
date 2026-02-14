@@ -307,11 +307,12 @@ void QoSPlayer::PopSend()
 					
 					break;
 				}
-				if (!dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
-				{
-					//	bAllSend = false;
-					break;
-				}
+				//if (!dm->IsSpaceExistToSend(savePacket->AllBuffersSize)) // 상대방의 rwind가 보내려는 패킷의 사이즈보다 작음(보낼 수 없음 Flow-Control)
+				//{
+				//	//	bAllSend = false;
+				//	break;
+				//}
+				_sendQueues[QoS::URO].Use_OutStandBudget(savePacket->AllBuffersSize);
 				_owner->GetRTTManager().UseBudget(savePacket->AllBuffersSize);
 
 				

@@ -191,7 +191,13 @@ bool Handle_C_ENTER_GAME(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHe
 bool Handle_C_MSG(UDPSocketPtr udpSocket, NetAddress clientAddr, PacketHeader* header, Protocol::C_MSG& pkt)
 {
 	//std::cout << "ID : " << header->client_Id << /*" | " << pkt.msg() << "^^" <<*/ endl;
-	std::cout << pkt.msg() << "^^" << endl;
+	if(header->channel == QoS::Channel::RO)
+		std::cout << "RO Packet" << endl;
+	else if (header->channel == QoS::Channel::URO)
+		std::cout << "URO Packet" << endl;
+	else if (header->channel == QoS::Channel::RPCT)
+		std::cout << "RPCT Packet" << endl;
+	
 	/*Protocol::S_MSG chatPkt;
 	chatPkt.set_msg(pkt.msg());
 	auto sendBuffer = ClientPacketHandler::MakeReliableBuffer(chatPkt, QoSCore::Priority::LOW);

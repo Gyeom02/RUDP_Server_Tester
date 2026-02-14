@@ -370,9 +370,6 @@ int UDPSocket::ReliableSend(HostRef player, shared_ptr<vector<SendBufferRef>> se
 
 	player->GetDeliveryManager()->WriteSeqeuenceNumber(sendBuffers); //Move To QoSCore.cpp QoSPlayer::PopSend
 
-	/*int32 rand = UTime::GetNow() % 3;
-	if (rand == 2)
-		return -1;*/
 
 	return FPCSend_RTT(player, sendBuffers);
 }
